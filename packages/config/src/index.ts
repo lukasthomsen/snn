@@ -82,14 +82,20 @@ export function getCanonicalAuthOrigin() {
 }
 
 export function getTrustedOrigins() {
-  return [
+  const origins = new Set([
     getAppOrigin("storefront"),
     getAppOrigin("admin"),
     getCanonicalAuthOrigin(),
     "http://localhost:3000",
     "http://localhost:3001",
     "https://*.vercel.app",
-  ];
+  ]);
+
+  if (hasAppleOAuth()) {
+    origins.add("https://appleid.apple.com");
+  }
+
+  return Array.from(origins);
 }
 
 export function getAuthAllowedHosts() {

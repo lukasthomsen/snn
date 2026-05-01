@@ -2,6 +2,7 @@ import { SignJWT, importPKCS8 } from "jose";
 
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins";
 
 import {
@@ -103,5 +104,6 @@ export const auth = betterAuth({
   },
   plugins: [
     admin(),
+    nextCookies(),
   ],
 });
