@@ -17,6 +17,12 @@
     "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
   },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.13",
+      "esbuild": "0.25.12"
+    }
+  },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "drizzle-kit": "0.31.10",
