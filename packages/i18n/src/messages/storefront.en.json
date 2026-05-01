@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Veloro foundation",
+  "eyebrow": "SNN foundation",
   "title": "The store foundation is in place before theme and homepage work.",
   "description": "This storefront runtime is set up for phase 1 only: monorepo, auth, database, i18n, custom CSS, and deployment architecture. The next major step is the theme system.",
   "phaseHeading": "Planned delivery order",
@@ -7,4 +7,3 @@
   "statusLabel": "Current focus",
   "statusValue": "Phase 1 - Foundation"
 }
-

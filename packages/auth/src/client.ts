@@ -1,8 +1,9 @@
 import { createAuthClient } from "better-auth/react";
 
-export function createVeloroAuthClient(baseURL?: string) {
+export function createSnnAuthClient(baseURL?: string) {
   return createAuthClient({
     baseURL,
   });
 }
 
+export const createVeloroAuthClient = createSnnAuthClient;

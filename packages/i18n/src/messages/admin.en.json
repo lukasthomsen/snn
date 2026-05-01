@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Veloro admin foundation",
+  "eyebrow": "SNN admin foundation",
   "title": "The admin runtime is ready for staff, inventory, and operations tooling.",
   "description": "This app is still foundation-only. It is prepared for shared auth, role-based access, inventory management, and later internal workflows.",
   "phaseHeading": "Planned delivery order",
@@ -7,4 +7,3 @@
   "statusLabel": "Current focus",
   "statusValue": "Phase 1 - Foundation"
 }
-

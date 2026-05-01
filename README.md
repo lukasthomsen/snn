@@ -1,6 +1,6 @@
-# Veloro
+# SNN
 
-Veloro is a scalable ecommerce monorepo built on:
+SNN is a scalable ecommerce monorepo built on:
 
 - Next.js 16
 - TypeScript
@@ -43,4 +43,3 @@ pnpm lint
 pnpm typecheck
 pnpm build
 ```
-

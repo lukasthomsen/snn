@@ -12,8 +12,8 @@ type LocaleLayoutProps = Readonly<{
 }>;
 
 export const metadata: Metadata = {
-  title: "Veloro Storefront Foundation",
-  description: "Phase 1 foundation for the Veloro storefront runtime.",
+  title: "SNN Storefront Foundation",
+  description: "Phase 1 foundation for the SNN storefront runtime.",
 };
 
 export function generateStaticParams() {
@@ -33,4 +33,3 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     </html>
   );
 }
-

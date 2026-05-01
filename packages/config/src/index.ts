@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-export type VeloroApp = "storefront" | "admin" | "auth";
+export type SnnApp = "storefront" | "admin" | "auth";
+export type VeloroApp = SnnApp;
 export type DeploymentTarget = "local" | "preview" | "production";
 
 const serverEnvSchema = z.object({
@@ -11,11 +12,11 @@ const serverEnvSchema = z.object({
   APPLE_PRIVATE_KEY: z.string().optional(),
   APPLE_TEAM_ID: z.string().optional(),
   AUTH_SUBDOMAIN: z.string().default("auth"),
-  BASE_DOMAIN: z.string().default("veloro.dk"),
+  BASE_DOMAIN: z.string().default("snn.com"),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   CF_TURNSTILE_SECRET_KEY: z.string().optional(),
-  DATABASE_URL: z.string().default("postgresql://postgres:postgres@127.0.0.1:5432/veloro"),
+  DATABASE_URL: z.string().default("postgresql://postgres:postgres@127.0.0.1:5432/snn"),
   DATABASE_URL_UNPOOLED: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -39,9 +40,9 @@ const localOrigins = {
   admin: cachedEnv.LOCAL_ADMIN_ORIGIN,
   auth: cachedEnv.LOCAL_AUTH_ORIGIN,
   storefront: cachedEnv.LOCAL_STOREFRONT_ORIGIN,
-} satisfies Record<VeloroApp, string>;
+} satisfies Record<SnnApp, string>;
 
-function getAppHost(app: VeloroApp) {
+function getAppHost(app: SnnApp) {
   if (app === "storefront") {
     return `${cachedEnv.STOREFRONT_SUBDOMAIN}.${cachedEnv.BASE_DOMAIN}`;
   }
@@ -69,7 +70,7 @@ export function getDeploymentTarget(): DeploymentTarget {
   return "local";
 }
 
-export function getAppOrigin(app: VeloroApp) {
+export function getAppOrigin(app: SnnApp) {
   if (getDeploymentTarget() === "local") {
     return localOrigins[app];
   }
@@ -129,7 +130,7 @@ export function getDatabaseMigrationUrl() {
 export function getBetterAuthSecret() {
   return (
     cachedEnv.BETTER_AUTH_SECRET ??
-    "veloro-local-development-secret-change-me-before-deploying"
+    "snn-local-development-secret-change-me-before-deploying"
   );
 }
 
@@ -170,4 +171,3 @@ export function getVercelMetadata() {
     runtimeHostname: cachedEnv.VERCEL_URL,
   };
 }
-

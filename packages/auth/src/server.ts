@@ -75,7 +75,7 @@ const socialProviders = await buildSocialProviders();
 const cookieDomain = getCookieDomain();
 
 export const auth = betterAuth({
-  appName: "Veloro",
+  appName: "SNN",
   baseURL: {
     allowedHosts: getAuthAllowedHosts(),
     fallback: getCanonicalAuthOrigin(),
