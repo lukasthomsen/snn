@@ -1,12 +1,14 @@
 import { SignJWT, importPKCS8 } from "jose";
 
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins";
 
 import {
   getAuthAllowedHosts,
+  getBetterAuthInfrastructureConfig,
   getBetterAuthSecret,
   getCanonicalAuthOrigin,
   getCookieDomain,
@@ -74,6 +76,24 @@ async function buildSocialProviders() {
 
 const socialProviders = await buildSocialProviders();
 const cookieDomain = getCookieDomain();
+const betterAuthInfrastructure = getBetterAuthInfrastructureConfig();
+const authPlugins = [
+  ...(betterAuthInfrastructure.apiKey
+    ? [
+        dash({
+          apiKey: betterAuthInfrastructure.apiKey,
+          ...(betterAuthInfrastructure.apiUrl
+            ? { apiUrl: betterAuthInfrastructure.apiUrl }
+            : {}),
+          ...(betterAuthInfrastructure.kvUrl
+            ? { kvUrl: betterAuthInfrastructure.kvUrl }
+            : {}),
+        }),
+      ]
+    : []),
+  admin(),
+  nextCookies(),
+];
 
 export const auth = betterAuth({
   appName: "SNN",
@@ -99,11 +119,8 @@ export const auth = betterAuth({
         }
       : {
           enabled: false,
-        },
+    },
     useSecureCookies: getDeploymentTarget() !== "local",
   },
-  plugins: [
-    admin(),
-    nextCookies(),
-  ],
+  plugins: authPlugins,
 });

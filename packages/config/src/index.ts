@@ -11,6 +11,9 @@ const serverEnvSchema = z.object({
   APPLE_PRIVATE_KEY: z.string().optional(),
   APPLE_TEAM_ID: z.string().optional(),
   AUTH_SUBDOMAIN: z.string().default("auth"),
+  BETTER_AUTH_API_KEY: z.string().optional(),
+  BETTER_AUTH_API_URL: z.string().url().optional(),
+  BETTER_AUTH_KV_URL: z.string().url().optional(),
   BASE_DOMAIN: z.string().default("snn.com"),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
@@ -137,6 +140,14 @@ export function getBetterAuthSecret() {
     cachedEnv.BETTER_AUTH_SECRET ??
     "snn-local-development-secret-change-me-before-deploying"
   );
+}
+
+export function getBetterAuthInfrastructureConfig() {
+  return {
+    apiKey: cachedEnv.BETTER_AUTH_API_KEY,
+    apiUrl: cachedEnv.BETTER_AUTH_API_URL,
+    kvUrl: cachedEnv.BETTER_AUTH_KV_URL,
+  };
 }
 
 export function getTurnstileSiteKey() {
