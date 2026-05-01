@@ -1,0 +1,17 @@
+{
+  "name": "@veloro/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./next-app": "./src/next-app.mjs",
+    "./package": "./src/package.mjs"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "16.2.4",
+    "globals": "^16.4.0",
+    "typescript-eslint": "^8.46.4"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "eyebrow": "Veloro admin foundation",
+  "title": "Adminmiljoeet er klar til staff-, lager- og driftsvaerktoejer.",
+  "description": "Denne app er kun et fundament endnu. Den er gjort klar til delt auth, rollebaseret adgang, inventory-styring og kommende interne workflows.",
+  "phaseHeading": "Planlagt byggeraekkefoelge",
+  "phaseSummary": "Admin kommer foerst til at faa tema, derefter dashboard-sider, og senere de egentlige driftsvaerktoejer.",
+  "statusLabel": "Nuvaerende fokus",
+  "statusValue": "Fase 1 - Foundation"
+}
+

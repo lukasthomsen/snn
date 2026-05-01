@@ -1,0 +1,10 @@
+{
+  "eyebrow": "Veloro admin foundation",
+  "title": "The admin runtime is ready for staff, inventory, and operations tooling.",
+  "description": "This app is still foundation-only. It is prepared for shared auth, role-based access, inventory management, and later internal workflows.",
+  "phaseHeading": "Planned delivery order",
+  "phaseSummary": "Admin gets the theme first, then dashboard surfaces, and then the real day-to-day operating tools.",
+  "statusLabel": "Current focus",
+  "statusValue": "Phase 1 - Foundation"
+}
+

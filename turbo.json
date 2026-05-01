@@ -1,0 +1,65 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    ".env.example"
+  ],
+  "globalEnv": [
+    "ADMIN_SUBDOMAIN",
+    "APPLE_CLIENT_ID",
+    "APPLE_CLIENT_SECRET",
+    "APPLE_KEY_ID",
+    "APPLE_PRIVATE_KEY",
+    "APPLE_TEAM_ID",
+    "AUTH_SUBDOMAIN",
+    "BASE_DOMAIN",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "CF_TURNSTILE_SECRET_KEY",
+    "DATABASE_URL",
+    "DATABASE_URL_UNPOOLED",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "LOCAL_ADMIN_ORIGIN",
+    "LOCAL_AUTH_ORIGIN",
+    "LOCAL_STOREFRONT_ORIGIN",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+    "STOREFRONT_SUBDOMAIN",
+    "STRIPE_SECRET_KEY",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_PROJECT_PRODUCTION_URL",
+    "VERCEL_TARGET_ENV",
+    "VERCEL_URL"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": [
+        "^lint"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": [
+        "^typecheck"
+      ]
+    },
+    "db:generate": {
+      "cache": false
+    }
+  }
+}
+

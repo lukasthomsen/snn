@@ -1,0 +1,46 @@
+# Veloro
+
+Veloro is a scalable ecommerce monorepo built on:
+
+- Next.js 16
+- TypeScript
+- Better Auth
+- Neon PostgreSQL
+- Drizzle ORM
+- Cloudflare DNS + Turnstile
+- Zustand
+- Vercel Pro
+- Custom CSS with shared tokens and CSS Modules
+
+## Phase order
+
+1. Foundation
+2. Theme system
+3. Front page
+4. Header and footer
+5. Auth pages
+6. Continue feature delivery
+
+## Workspace
+
+- `apps/storefront`: storefront runtime, health endpoint, and Better Auth API host
+- `apps/admin`: staff/admin runtime
+- `packages/auth`: shared Better Auth server and client setup
+- `packages/commerce`: domain constants and commerce contracts
+- `packages/config`: typed runtime configuration and host derivation
+- `packages/db`: Drizzle schema and Neon database access
+- `packages/eslint-config`: shared ESLint configuration
+- `packages/i18n`: shared locale routing and dictionary loading
+- `packages/tsconfig`: shared TypeScript baselines
+- `packages/ui`: shared CSS token and base-style foundation
+
+## Local commands
+
+```bash
+pnpm install
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+

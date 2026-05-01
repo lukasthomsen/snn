@@ -1,0 +1,50 @@
+import { boolean, index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+
+import { countryCode, createdAt, foreignUuid, primaryUuid, updatedAt } from "./shared";
+import { users } from "./auth";
+
+export const customerProfiles = pgTable(
+  "customer_profile",
+  {
+    id: primaryUuid("id"),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    email: text("email").notNull(),
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    phone: text("phone"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    uniqueIndex("customer_profile_email_unique").on(table.email),
+    uniqueIndex("customer_profile_user_unique").on(table.userId),
+  ],
+);
+
+export const addresses = pgTable(
+  "address",
+  {
+    id: primaryUuid("id"),
+    customerId: foreignUuid("customer_id").references(() => customerProfiles.id, {
+      onDelete: "set null",
+    }),
+    label: text("label"),
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    company: text("company"),
+    line1: text("line_1").notNull(),
+    line2: text("line_2"),
+    postalCode: text("postal_code").notNull(),
+    city: text("city").notNull(),
+    region: text("region"),
+    countryCode: countryCode("country_code").notNull(),
+    phone: text("phone"),
+    isDefaultShipping: boolean("is_default_shipping").notNull().default(false),
+    isDefaultBilling: boolean("is_default_billing").notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("address_customer_idx").on(table.customerId),
+  ],
+);

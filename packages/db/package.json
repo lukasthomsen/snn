@@ -1,0 +1,22 @@
+{
+  "name": "@veloro/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --project tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.1.0",
+    "@veloro/config": "workspace:*",
+    "drizzle-orm": "0.45.2"
+  },
+  "devDependencies": {
+    "@veloro/eslint-config": "workspace:*",
+    "@veloro/tsconfig": "workspace:*"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "eyebrow": "Veloro foundation",
+  "title": "Butiksfundamentet er på plads før tema og forside.",
+  "description": "Dette storefront-miljoe er sat op til fase 1: monorepo, auth, database, i18n, custom CSS og deployment-arkitektur. Naeste store skridt er temasystemet.",
+  "phaseHeading": "Planlagt byggeraekkefoelge",
+  "phaseSummary": "Vi bygger kun grundlaget nu, saa den visuelle retning og funktionaliteten kan lande oven paa en stabil platform.",
+  "statusLabel": "Nuvaerende fokus",
+  "statusValue": "Fase 1 - Foundation"
+}
+

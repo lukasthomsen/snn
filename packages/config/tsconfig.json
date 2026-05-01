@@ -1,0 +1,9 @@
+{
+  "extends": "@veloro/tsconfig/node-library.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true,
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}

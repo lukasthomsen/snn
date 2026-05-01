@@ -1,0 +1,33 @@
+{
+  "name": "@veloro/storefront",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --project tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@veloro/auth": "workspace:*",
+    "@veloro/commerce": "workspace:*",
+    "@veloro/config": "workspace:*",
+    "@veloro/i18n": "workspace:*",
+    "@veloro/ui": "workspace:*",
+    "next": "16.2.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "zustand": "5.0.12"
+  },
+  "devDependencies": {
+    "@veloro/eslint-config": "workspace:*",
+    "@veloro/tsconfig": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "typescript": "^5"
+  }
+}
