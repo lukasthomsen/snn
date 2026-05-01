@@ -5,5 +5,3 @@ export function createSnnAuthClient(baseURL?: string) {
     baseURL,
   });
 }
-
-export const createVeloroAuthClient = createSnnAuthClient;

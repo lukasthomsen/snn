@@ -1,5 +1,5 @@
-import { roadmapPhases } from "@veloro/commerce";
-import { getDictionary, isLocale } from "@veloro/i18n";
+import { roadmapPhases } from "@snn/commerce";
+import { getDictionary, isLocale } from "@snn/i18n";
 
 import styles from "./page.module.css";
 

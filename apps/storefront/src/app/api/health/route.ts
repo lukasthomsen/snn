@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCanonicalAuthOrigin, getDeploymentTarget, getVercelMetadata } from "@veloro/config";
+import { getCanonicalAuthOrigin, getDeploymentTarget, getVercelMetadata } from "@snn/config";
 
 export function GET() {
   return NextResponse.json({

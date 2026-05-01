@@ -1,3 +1,3 @@
-import { createNextAppConfig } from "@veloro/eslint-config/next-app";
+import { createNextAppConfig } from "@snn/eslint-config/next-app";
 
 export default createNextAppConfig();

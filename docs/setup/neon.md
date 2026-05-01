@@ -17,7 +17,7 @@ This means the most stable foundation is:
 1. One Neon project
 2. One production database and role set
 3. Shared environment variables injected into both Vercel projects
-4. A later custom preview-branch automation for both projects together
+4. A custom preview-branch automation that provisions one Neon branch per PR for both projects together
 
 ## Region
 
@@ -113,10 +113,9 @@ For each project, set:
 
 - Development: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`
 - Production: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`
+- Preview: a shared fallback `DATABASE_URL`, `DATABASE_URL_UNPOOLED`
 
-Do not create fake Preview values yet.
-
-For now, Preview deployments can remain database-light until we implement shared preview branch automation for both Vercel projects together.
+Preview should point at the `development` branch by default so non-PR preview deployments still work. Pull request previews should then override those two variables at the Git-branch level.
 
 ## Local Setup
 
@@ -147,12 +146,29 @@ pnpm db:migrate
 
 If migrations succeed, the Neon foundation is connected correctly.
 
-## Future Preview Strategy
+## Preview Automation
 
-Because both storefront and admin are separate Vercel projects, the correct future setup is custom preview automation:
+Because both storefront and admin are separate Vercel projects, the repository uses custom preview automation in [.github/workflows/preview-database.yml](/Users/lukasthomsen/Desktop/snn/.github/workflows/preview-database.yml):
 
-- create one Neon branch per PR
-- write branch-specific preview database URLs to both Vercel projects
-- remove the branch when the PR closes
+- On `pull_request opened`, `reopened`, or `synchronize`:
+  - create or reuse a Neon branch named `pr-<number>`
+  - generate pooled runtime and direct migration URLs for `snn_app` and `snn_migrator`
+  - write those URLs as branch-specific Preview environment variables to both `snn-storefront` and `snn-admin`
+- On `pull_request closed`:
+  - remove the branch-specific Preview environment variable overrides from both Vercel projects
+  - delete the Neon branch
 
-That will be more correct for SNN than using a one-to-one marketplace integration on only one of the apps.
+The workflow relies on these repository variables:
+
+- `NEON_PROJECT_ID`
+- `VERCEL_ORG_ID`
+- `VERCEL_SCOPE`
+- `VERCEL_STOREFRONT_PROJECT_ID`
+- `VERCEL_ADMIN_PROJECT_ID`
+
+And these repository secrets:
+
+- `NEON_API_KEY`
+- `VERCEL_TOKEN`
+
+That is more correct for SNN than using a one-to-one marketplace integration on only one of the apps.

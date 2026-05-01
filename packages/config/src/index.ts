@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export type SnnApp = "storefront" | "admin" | "auth";
-export type VeloroApp = SnnApp;
 export type DeploymentTarget = "local" | "preview" | "production";
 
 const serverEnvSchema = z.object({

@@ -1,5 +1,5 @@
 {
-  "name": "@veloro/db",
+  "name": "@snn/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "1.1.0",
-    "@veloro/config": "workspace:*",
+    "@snn/config": "workspace:*",
     "drizzle-orm": "0.45.2"
   },
   "devDependencies": {
-    "@veloro/eslint-config": "workspace:*",
-    "@veloro/tsconfig": "workspace:*"
+    "@snn/eslint-config": "workspace:*",
+    "@snn/tsconfig": "workspace:*"
   }
 }

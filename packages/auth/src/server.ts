@@ -14,8 +14,8 @@ import {
   getTrustedOrigins,
   hasAppleOAuth,
   hasGoogleOAuth,
-} from "@veloro/config";
-import { getDb, schema } from "@veloro/db";
+} from "@snn/config";
+import { getDb, schema } from "@snn/db";
 
 type BetterAuthOptions = Parameters<typeof betterAuth>[0];
 

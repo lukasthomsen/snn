@@ -1,4 +1,4 @@
-import { createPackageConfig } from "@veloro/eslint-config/package";
+import { createPackageConfig } from "@snn/eslint-config/package";
 
 export default createPackageConfig();
 

@@ -1,5 +1,5 @@
-import { roadmapPhases, staffPermissionGroups } from "@veloro/commerce";
-import { getDictionary, isLocale } from "@veloro/i18n";
+import { roadmapPhases, staffPermissionGroups } from "@snn/commerce";
+import { getDictionary, isLocale } from "@snn/i18n";
 
 import styles from "./page.module.css";
 

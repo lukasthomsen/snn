@@ -1,5 +1,5 @@
 {
-  "extends": "@veloro/tsconfig/react-library.json",
+  "extends": "@snn/tsconfig/react-library.json",
   "compilerOptions": {
     "incremental": false,
     "noEmit": true,

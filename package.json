@@ -8,9 +8,9 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --parallel --filter=@veloro/storefront --filter=@veloro/admin",
-    "dev:storefront": "pnpm --filter @veloro/storefront dev",
-    "dev:admin": "pnpm --filter @veloro/admin dev",
+    "dev": "turbo run dev --parallel --filter=@snn/storefront --filter=@snn/admin",
+    "dev:storefront": "pnpm --filter @snn/storefront dev",
+    "dev:admin": "pnpm --filter @snn/admin dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",

@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    "@veloro/auth",
-    "@veloro/commerce",
-    "@veloro/config",
-    "@veloro/db",
-    "@veloro/i18n",
-    "@veloro/ui",
+    "@snn/auth",
+    "@snn/commerce",
+    "@snn/config",
+    "@snn/db",
+    "@snn/i18n",
+    "@snn/ui",
   ],
   typedRoutes: true,
 };

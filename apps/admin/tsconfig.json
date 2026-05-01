@@ -1,5 +1,5 @@
 {
-  "extends": "@veloro/tsconfig/nextjs.json",
+  "extends": "@snn/tsconfig/nextjs.json",
   "compilerOptions": {
     "baseUrl": ".",
     "incremental": false,

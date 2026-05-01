@@ -1,2 +1,2 @@
-export { createSnnAuthClient, createVeloroAuthClient } from "./client";
+export { createSnnAuthClient } from "./client";
 export { auth } from "./server";

@@ -1,5 +1,5 @@
 {
-  "name": "@veloro/config",
+  "name": "@snn/config",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@veloro/eslint-config": "workspace:*",
-    "@veloro/tsconfig": "workspace:*"
+    "@snn/eslint-config": "workspace:*",
+    "@snn/tsconfig": "workspace:*"
   }
 }

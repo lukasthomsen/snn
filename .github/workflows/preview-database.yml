@@ -1,0 +1,191 @@
+name: Preview Database
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-database-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  NEON_BRANCH_NAME: pr-${{ github.event.pull_request.number }}
+  NEON_PARENT_BRANCH: production
+  PREVIEW_GIT_BRANCH: ${{ github.event.pull_request.head.ref }}
+  VERCEL_CLI_VERSION: 52.2.1
+
+jobs:
+  provision:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set preview branch expiration
+        id: expires-at
+        run: echo "value=$(date -u -d '+14 days' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Create Neon preview runtime branch
+        id: runtime-db
+        uses: neondatabase/create-branch-action@v6
+        with:
+          api_key: ${{ secrets.NEON_API_KEY }}
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: ${{ env.NEON_BRANCH_NAME }}
+          parent_branch: ${{ env.NEON_PARENT_BRANCH }}
+          database: snn
+          role: snn_app
+          ssl: verify-full
+          expires_at: ${{ steps.expires-at.outputs.value }}
+
+      - name: Create Neon preview migration branch
+        id: migrator-db
+        uses: neondatabase/create-branch-action@v6
+        with:
+          api_key: ${{ secrets.NEON_API_KEY }}
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: ${{ env.NEON_BRANCH_NAME }}
+          parent_branch: ${{ env.NEON_PARENT_BRANCH }}
+          database: snn
+          role: snn_migrator
+          ssl: verify-full
+          expires_at: ${{ steps.expires-at.outputs.value }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
+
+      - name: Apply branch-scoped preview database URLs
+        env:
+          DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
+          VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
+          VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+          VERCEL_STOREFRONT_PROJECT_ID: ${{ vars.VERCEL_STOREFRONT_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          upsert_branch_envs() {
+            local project_id="$1"
+            export VERCEL_ORG_ID="$VERCEL_ORG_ID_VALUE"
+            export VERCEL_PROJECT_ID="$project_id"
+
+            vercel env add DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
+              --value "$DATABASE_URL" \
+              --yes \
+              --force \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_SCOPE"
+
+            vercel env add DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
+              --value "$DATABASE_URL_UNPOOLED" \
+              --yes \
+              --force \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_SCOPE"
+          }
+
+          upsert_branch_envs "$VERCEL_STOREFRONT_PROJECT_ID"
+          upsert_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
+
+      - name: Redeploy first PR previews after env bootstrap
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        env:
+          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          redeploy_branch_preview() {
+            local project_name="$1"
+            local deployment_url=""
+
+            for attempt in $(seq 1 8); do
+              deployment_url="$(
+                vercel list "$project_name" \
+                  --scope "$VERCEL_SCOPE" \
+                  --token "$VERCEL_TOKEN" \
+                  --environment=preview \
+                  --meta "githubCommitRef=$PREVIEW_GIT_BRANCH" \
+                  --format json \
+                | python3 -c 'import json,sys; data=json.load(sys.stdin); deployments=data.get("deployments") or []; print(deployments[0]["url"] if deployments else "")'
+              )"
+
+              if [ -n "$deployment_url" ]; then
+                vercel redeploy "$deployment_url" \
+                  --target preview \
+                  --scope "$VERCEL_SCOPE" \
+                  --token "$VERCEL_TOKEN" \
+                  --no-wait
+                return 0
+              fi
+
+              sleep 15
+            done
+
+            echo "No preview deployment found for $project_name on branch $PREVIEW_GIT_BRANCH."
+          }
+
+          redeploy_branch_preview "snn-storefront"
+          redeploy_branch_preview "snn-admin"
+
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
+
+      - name: Remove branch-scoped preview database URLs
+        env:
+          VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
+          VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+          VERCEL_STOREFRONT_PROJECT_ID: ${{ vars.VERCEL_STOREFRONT_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          remove_branch_envs() {
+            local project_id="$1"
+            export VERCEL_ORG_ID="$VERCEL_ORG_ID_VALUE"
+            export VERCEL_PROJECT_ID="$project_id"
+
+            vercel env remove DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
+              --yes \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_SCOPE" || true
+
+            vercel env remove DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
+              --yes \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_SCOPE" || true
+          }
+
+          remove_branch_envs "$VERCEL_STOREFRONT_PROJECT_ID"
+          remove_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
+
+      - name: Delete Neon preview branch
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          api_key: ${{ secrets.NEON_API_KEY }}
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: ${{ env.NEON_BRANCH_NAME }}

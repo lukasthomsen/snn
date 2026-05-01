@@ -1,5 +1,5 @@
 {
-  "name": "@veloro/eslint-config",
+  "name": "@snn/eslint-config",
   "version": "0.1.0",
   "private": true,
   "type": "module",

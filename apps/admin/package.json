@@ -1,5 +1,5 @@
 {
-  "name": "@veloro/admin",
+  "name": "@snn/admin",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.28.0",
@@ -14,19 +14,19 @@
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },
   "dependencies": {
-    "@veloro/auth": "workspace:*",
-    "@veloro/commerce": "workspace:*",
-    "@veloro/config": "workspace:*",
-    "@veloro/i18n": "workspace:*",
-    "@veloro/ui": "workspace:*",
+    "@snn/auth": "workspace:*",
+    "@snn/commerce": "workspace:*",
+    "@snn/config": "workspace:*",
+    "@snn/i18n": "workspace:*",
+    "@snn/ui": "workspace:*",
     "next": "16.2.4",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "zustand": "5.0.12"
   },
   "devDependencies": {
-    "@veloro/eslint-config": "workspace:*",
-    "@veloro/tsconfig": "workspace:*",
+    "@snn/eslint-config": "workspace:*",
+    "@snn/tsconfig": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

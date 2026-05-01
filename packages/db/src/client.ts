@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
-import { getDatabaseUrl } from "@veloro/config";
+import { getDatabaseUrl } from "@snn/config";
 
 import * as schema from "./schema/index";
 

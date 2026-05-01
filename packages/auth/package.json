@@ -1,5 +1,5 @@
 {
-  "name": "@veloro/auth",
+  "name": "@snn/auth",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.9",
-    "@veloro/config": "workspace:*",
-    "@veloro/db": "workspace:*",
+    "@snn/config": "workspace:*",
+    "@snn/db": "workspace:*",
     "better-auth": "1.6.9",
     "jose": "^6.1.2"
   },
   "devDependencies": {
-    "@veloro/eslint-config": "workspace:*",
-    "@veloro/tsconfig": "workspace:*"
+    "@snn/eslint-config": "workspace:*",
+    "@snn/tsconfig": "workspace:*"
   }
 }

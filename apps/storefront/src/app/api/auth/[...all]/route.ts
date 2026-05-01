@@ -1,4 +1,4 @@
-import { auth } from "@veloro/auth/server";
+import { auth } from "@snn/auth/server";
 
 const handler = auth.handler;
 

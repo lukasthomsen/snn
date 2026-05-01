@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { isLocale, locales, type Locale } from "@veloro/i18n";
-import "@veloro/ui/styles/base.css";
+import { isLocale, locales, type Locale } from "@snn/i18n";
+import "@snn/ui/styles/base.css";
 
 type LocaleLayoutProps = Readonly<{
   children: React.ReactNode;
