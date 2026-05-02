@@ -1,0 +1,176 @@
+.hero {
+  position: relative;
+  overflow: clip;
+  min-height: var(--ui-layout-hero-min-height);
+  border-radius: calc(var(--ui-radius-xl) + 0.5rem);
+  background:
+    linear-gradient(135deg, var(--ui-color-hero-overlay-start), var(--ui-color-hero-overlay-end)),
+    linear-gradient(180deg, var(--ui-color-surface) 0%, color-mix(in srgb, var(--ui-color-canvas) 76%, white) 100%);
+  box-shadow: var(--ui-shadow-raised);
+}
+
+.heroGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  align-items: stretch;
+  min-height: inherit;
+}
+
+.heroCopy {
+  display: grid;
+  gap: var(--ui-space-md);
+  align-content: end;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.heroAlignCenter .heroCopy {
+  align-content: center;
+}
+
+.heroEyebrow {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-typography-label);
+  font-weight: var(--ui-typography-weight-semibold);
+  letter-spacing: var(--ui-typography-letter-spacing-caps);
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  max-width: 9ch;
+  margin: 0;
+  color: var(--hero-title-color, var(--ui-color-text-primary));
+  font-family: var(--ui-typography-display-family);
+  font-size: var(--ui-typography-hero);
+  line-height: var(--ui-typography-line-height-tight);
+  text-transform: uppercase;
+}
+
+.heroDescription {
+  max-width: 40rem;
+  color: var(--hero-description-color, var(--ui-color-text-secondary));
+  font-size: var(--ui-typography-size-lg);
+  line-height: var(--ui-typography-line-height-base);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-sm);
+  margin-top: var(--ui-space-sm);
+}
+
+.heroMedia {
+  position: relative;
+  display: grid;
+  align-items: stretch;
+  min-height: 100%;
+}
+
+.heroBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 30%, rgb(255 255 255 / 0.88), transparent 42%),
+    linear-gradient(130deg, rgb(0 0 0 / 0), rgb(0 0 0 / 0.06));
+}
+
+.productTile {
+  overflow: clip;
+  padding: 0;
+}
+
+.productVisual {
+  position: relative;
+  min-height: 18rem;
+  background:
+    radial-gradient(circle at 50% 20%, rgb(255 255 255 / 0.9), transparent 40%),
+    linear-gradient(180deg, var(--ui-color-surface) 0%, var(--ui-color-surface-muted) 100%);
+}
+
+.productVisualInner {
+  position: absolute;
+  inset: 1.25rem 1.25rem 0;
+  border-radius: calc(var(--ui-radius-lg) * 0.8);
+  background:
+    linear-gradient(155deg, rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.08)),
+    var(--product-visual-color, linear-gradient(135deg, #d8d8d2, #bcbcb4));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+
+.productBody {
+  display: grid;
+  gap: var(--ui-space-xs);
+  padding: 1.25rem;
+}
+
+.productCategory {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-typography-size-xs);
+  letter-spacing: var(--ui-typography-letter-spacing-caps);
+  text-transform: uppercase;
+}
+
+.productName {
+  font-size: var(--ui-typography-size-xl);
+  font-weight: var(--ui-typography-weight-semibold);
+}
+
+.productPrice {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-typography-size-sm);
+}
+
+.productActions {
+  margin-top: var(--ui-space-sm);
+}
+
+.formFrame {
+  gap: var(--ui-space-lg);
+  padding: clamp(1.25rem, 2vw, 2rem);
+}
+
+.formKicker {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-typography-label);
+  letter-spacing: var(--ui-typography-letter-spacing-caps);
+  text-transform: uppercase;
+}
+
+.formTitle {
+  margin: 0;
+  font-size: clamp(2.25rem, 4vw, 4rem);
+  line-height: var(--ui-typography-line-height-tight);
+}
+
+.formDescription {
+  max-width: 34rem;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-typography-size-lg);
+}
+
+.formContent {
+  display: grid;
+  gap: var(--ui-space-md);
+}
+
+.formFooter {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-typography-size-sm);
+}
+
+@media (max-width: 64rem) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroMedia {
+    min-height: 16rem;
+  }
+
+  .heroTitle {
+    max-width: 11ch;
+    font-size: clamp(3.2rem, 18vw, 5.5rem);
+  }
+}

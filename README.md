@@ -31,8 +31,10 @@ SNN is a scalable ecommerce monorepo built on:
 - `packages/db`: Drizzle schema and Neon database access
 - `packages/eslint-config`: shared ESLint configuration
 - `packages/i18n`: shared locale routing and dictionary loading
+- `packages/media`: Cloudflare Images contracts, direct-upload helpers, and delivery URL utilities
+- `packages/payments`: Stripe foundation, webhook verification, and payment event mapping
 - `packages/tsconfig`: shared TypeScript baselines
-- `packages/ui`: shared CSS token and base-style foundation
+- `packages/ui`: shared theme runtime, CSS token surface, and reusable UI components
 
 ## Local commands
 

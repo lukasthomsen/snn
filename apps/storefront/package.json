@@ -18,6 +18,8 @@
     "@snn/commerce": "workspace:*",
     "@snn/config": "workspace:*",
     "@snn/i18n": "workspace:*",
+    "@snn/media": "workspace:*",
+    "@snn/payments": "workspace:*",
     "@snn/ui": "workspace:*",
     "next": "16.2.4",
     "react": "19.2.5",

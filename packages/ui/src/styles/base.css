@@ -10,17 +10,18 @@ html {
   min-height: 100%;
   font-size: 16px;
   scroll-behavior: smooth;
+  background: var(--ui-color-canvas);
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at top, rgb(255 255 255 / 0.9), transparent 40%),
-    linear-gradient(180deg, #fbf7f1 0%, var(--color-background) 55%);
-  color: var(--color-text);
-  font-family: var(--font-family-sans);
-  line-height: var(--line-height-normal);
+    radial-gradient(circle at top, rgb(255 255 255 / 0.86), transparent 32%),
+    linear-gradient(180deg, var(--ui-color-surface) 0%, var(--ui-color-canvas) 58%);
+  color: var(--ui-color-text-primary);
+  font-family: var(--ui-typography-body-family);
+  line-height: var(--ui-typography-line-height-base);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -51,6 +52,18 @@ a {
   text-underline-offset: 0.18em;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--ui-typography-display-family);
+  font-weight: var(--ui-typography-weight-bold);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
 p,
 h1,
 h2,
@@ -72,7 +85,7 @@ main {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--ui-color-focus-ring);
   outline-offset: 3px;
 }
 
@@ -92,3 +105,7 @@ main {
   border: 0;
 }
 
+::selection {
+  background: color-mix(in srgb, var(--ui-color-accentSoft) 72%, white);
+  color: var(--ui-color-text-primary);
+}

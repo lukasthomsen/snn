@@ -7,11 +7,13 @@
     "node": "24.x"
   },
   "scripts": {
+    "audit": "pnpm audit",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel --filter=@snn/storefront --filter=@snn/admin",
     "dev:storefront": "pnpm --filter @snn/storefront dev",
     "dev:admin": "pnpm --filter @snn/admin dev",
     "lint": "turbo run lint",
+    "media:ensure-variants": "tsx scripts/media/ensure-cloudflare-image-variants.ts",
     "typecheck": "turbo run typecheck",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "tsx scripts/db/migrate.ts",

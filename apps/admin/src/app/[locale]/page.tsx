@@ -1,5 +1,6 @@
 import { roadmapPhases, staffPermissionGroups } from "@snn/commerce";
 import { getDictionary, isLocale } from "@snn/i18n";
+import { Badge, Card, Container, FormFrame, Grid, HeroFrame, Stack } from "@snn/ui";
 
 import styles from "./page.module.css";
 
@@ -16,17 +17,35 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   return (
     <main className={styles.page}>
-      <div className={styles.shell}>
-        <section className={styles.hero}>
-          <p className={styles.eyebrow}>{copy.eyebrow}</p>
-          <h1 className={styles.title}>{copy.title}</h1>
-          <p className={styles.description}>{copy.description}</p>
-        </section>
+      <Container className={styles.shell} size="page">
+        <HeroFrame
+          description={copy.description}
+          eyebrow={copy.eyebrow}
+          media={
+            <div aria-hidden="true" className={styles.heroVisual}>
+              <div className={styles.heroPanel} />
+            </div>
+          }
+          title="Admin runtime ready for catalog and staff tools."
+        />
 
-        <section className={styles.grid}>
-          <article className={styles.card}>
-            <h2 className={styles.cardTitle}>{copy.phaseHeading}</h2>
-            <p className={styles.cardText}>{copy.phaseSummary}</p>
+        <Stack gap="var(--ui-space-lg)">
+          <h2 className={styles.sectionHeading}>{copy.phaseHeading}</h2>
+          <p className={styles.sectionCopy}>{copy.phaseSummary}</p>
+        </Stack>
+
+        <Grid minItemWidth="18rem">
+          <Card className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>{copy.statusLabel}</span>
+            <strong>{copy.statusValue}</strong>
+            <Badge tone="accent">Prepared permission domains</Badge>
+            <p className={styles.sectionCopy}>
+              {Object.keys(staffPermissionGroups).join(", ")}
+            </p>
+          </Card>
+
+          <Card className={styles.summaryCard} tone="muted">
+            <span className={styles.summaryLabel}>Delivery order</span>
             <ol className={styles.phaseList}>
               {roadmapPhases.map((phase, index) => (
                 <li key={phase} className={styles.phaseItem}>
@@ -35,18 +54,20 @@ export default async function AdminPage({ params }: AdminPageProps) {
                 </li>
               ))}
             </ol>
-          </article>
+          </Card>
+        </Grid>
 
-          <article className={styles.card}>
-            <h2 className={styles.cardTitle}>{copy.statusLabel}</h2>
-            <p className={styles.statusValue}>{copy.statusValue}</p>
-            <p className={styles.cardText}>
-              Prepared permission domains: {Object.keys(staffPermissionGroups).join(", ")}.
-            </p>
-          </article>
-        </section>
-      </div>
+        <FormFrame
+          description="The admin UI itself comes later. For now this shell confirms the shared design system, form primitives, and permission boundaries are ready."
+          kicker="Internal shell"
+          title="Staff tooling will land on the same token system."
+        >
+          <p className={styles.sectionCopy}>
+            Catalog, inventory, orders, and settings will all reuse the same size, tone, and
+            surface primitives as the storefront instead of introducing a second visual system.
+          </p>
+        </FormFrame>
+      </Container>
     </main>
   );
 }
-

@@ -1,0 +1,63 @@
+.container {
+  width: min(100%, var(--container-max-width, var(--ui-layout-page-max-width)));
+  margin-inline: auto;
+}
+
+.container[data-size="page"] {
+  --container-max-width: var(--ui-layout-page-max-width);
+}
+
+.container[data-size="wide"] {
+  --container-max-width: calc(var(--ui-layout-page-max-width) + 8rem);
+}
+
+.container[data-size="content"] {
+  --container-max-width: var(--ui-layout-content-max-width);
+}
+
+.container[data-padded="true"] {
+  padding-inline: clamp(1rem, 2vw, 2rem);
+}
+
+.stack {
+  display: grid;
+  gap: var(--stack-gap, var(--ui-space-md));
+  justify-items: var(--stack-align, stretch);
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cluster-gap, var(--ui-space-sm));
+  align-items: var(--cluster-align, center);
+  justify-content: var(--cluster-justify, flex-start);
+}
+
+.grid {
+  display: grid;
+  gap: var(--grid-gap, var(--ui-space-md));
+  grid-template-columns: repeat(auto-fit, minmax(var(--grid-min-width, 18rem), 1fr));
+}
+
+.card {
+  display: grid;
+  gap: var(--ui-space-sm);
+  padding: var(--card-padding, 1.5rem);
+  border: var(--ui-border-subtle) solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-surface);
+  box-shadow: var(--ui-shadow-soft);
+}
+
+.card[data-tone="muted"] {
+  background: var(--ui-color-surface-muted);
+}
+
+.card[data-tone="strong"] {
+  background: var(--ui-color-surface-strong);
+}
+
+.card[data-tone="inverse"] {
+  background: var(--ui-color-action-primary-bg);
+  color: var(--ui-color-text-inverse);
+}

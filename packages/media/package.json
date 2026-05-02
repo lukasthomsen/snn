@@ -1,0 +1,21 @@
+{
+  "name": "@snn/media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --project tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@snn/config": "workspace:*",
+    "@snn/db": "workspace:*",
+    "drizzle-orm": "0.45.2"
+  },
+  "devDependencies": {
+    "@snn/eslint-config": "workspace:*",
+    "@snn/tsconfig": "workspace:*"
+  }
+}

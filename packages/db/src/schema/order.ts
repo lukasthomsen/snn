@@ -139,6 +139,7 @@ export const payments = pgTable(
   },
   (table) => [
     index("payment_order_idx").on(table.orderId),
+    uniqueIndex("payment_provider_external_reference_unique").on(table.provider, table.externalReference),
   ],
 );
 

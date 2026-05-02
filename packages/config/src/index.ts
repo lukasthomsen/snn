@@ -17,9 +17,14 @@ const serverEnvSchema = z.object({
   BASE_DOMAIN: z.string().default("snn.com"),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
+  CLOUDFLARE_IMAGES_ACCOUNT_ID: z.string().optional(),
+  CLOUDFLARE_IMAGES_API_TOKEN: z.string().optional(),
+  CLOUDFLARE_IMAGES_DELIVERY_HASH: z.string().optional(),
   CF_TURNSTILE_SECRET_KEY: z.string().optional(),
   DATABASE_URL: z.string().default("postgresql://postgres:postgres@127.0.0.1:5432/snn"),
   DATABASE_URL_UNPOOLED: z.string().optional(),
+  ENABLE_MEDIA_MANAGEMENT_IN_PRODUCTION: z.string().optional(),
+  ENABLE_THEME_LAB_IN_PRODUCTION: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   LOCAL_ADMIN_ORIGIN: z.string().url().default("http://localhost:3001"),
@@ -29,6 +34,7 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
   STOREFRONT_SUBDOMAIN: z.string().default("www"),
   STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   VERCEL: z.string().optional(),
   VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
@@ -158,12 +164,49 @@ export function getTurnstileSecretKey() {
   return cachedEnv.CF_TURNSTILE_SECRET_KEY;
 }
 
+export function getCloudflareImagesConfig() {
+  return {
+    accountId: cachedEnv.CLOUDFLARE_IMAGES_ACCOUNT_ID,
+    apiToken: cachedEnv.CLOUDFLARE_IMAGES_API_TOKEN,
+    deliveryHash: cachedEnv.CLOUDFLARE_IMAGES_DELIVERY_HASH,
+    enabled: Boolean(
+      cachedEnv.CLOUDFLARE_IMAGES_ACCOUNT_ID &&
+        cachedEnv.CLOUDFLARE_IMAGES_API_TOKEN &&
+        cachedEnv.CLOUDFLARE_IMAGES_DELIVERY_HASH,
+    ),
+  };
+}
+
+function isEnabledFlag(value: string | undefined) {
+  return value === "1" || value === "true";
+}
+
+export function isMediaManagementEnabled() {
+  if (getDeploymentTarget() !== "production") {
+    return true;
+  }
+
+  return isEnabledFlag(cachedEnv.ENABLE_MEDIA_MANAGEMENT_IN_PRODUCTION);
+}
+
+export function isThemeLabEnabled() {
+  if (getDeploymentTarget() !== "production") {
+    return true;
+  }
+
+  return isEnabledFlag(cachedEnv.ENABLE_THEME_LAB_IN_PRODUCTION);
+}
+
 export function getStripePublishableKey() {
   return cachedEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 }
 
 export function getStripeSecretKey() {
   return cachedEnv.STRIPE_SECRET_KEY;
+}
+
+export function getStripeWebhookSecret() {
+  return cachedEnv.STRIPE_WEBHOOK_SECRET;
 }
 
 export function hasGoogleOAuth() {

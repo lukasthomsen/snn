@@ -15,10 +15,14 @@
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },
   "dependencies": {
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
     "zustand": "5.0.12"
   },
   "devDependencies": {
     "@snn/eslint-config": "workspace:*",
-    "@snn/tsconfig": "workspace:*"
+    "@snn/tsconfig": "workspace:*",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   }
 }

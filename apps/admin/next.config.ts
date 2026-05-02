@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
     "@snn/config",
     "@snn/db",
     "@snn/i18n",
+    "@snn/media",
+    "@snn/payments",
     "@snn/ui",
   ],
   typedRoutes: true,

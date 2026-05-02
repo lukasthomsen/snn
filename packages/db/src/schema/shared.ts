@@ -27,6 +27,19 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "refunded",
   "partially_refunded",
 ]);
+export const mediaAssetStatusEnum = pgEnum("media_asset_status", [
+  "draft",
+  "ready",
+  "failed",
+  "archived",
+]);
+export const mediaProviderEnum = pgEnum("media_provider", ["cloudflare_images"]);
+export const productMediaRoleEnum = pgEnum("product_media_role", [
+  "featured",
+  "gallery",
+  "swatch",
+  "hero",
+]);
 export const productStatusEnum = pgEnum("product_status", ["draft", "active", "archived"]);
 export const cartStatusEnum = pgEnum("cart_status", ["open", "converted", "expired", "abandoned"]);
 export const staffAssignmentStatusEnum = pgEnum("staff_assignment_status", ["active", "suspended"]);
