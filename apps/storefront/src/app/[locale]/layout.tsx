@@ -4,7 +4,7 @@ import { Archivo, Public_Sans } from "next/font/google";
 import type { CSSProperties } from "react";
 
 import { isLocale, locales, type Locale } from "@snn/i18n";
-import { ThemeScope, nikeAppleBlendTheme, themeToCssVariables } from "@snn/ui";
+import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
 
 import { StorefrontFooter } from "./components/storefront-footer";
@@ -50,9 +50,9 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <html className={`${bodyFont.variable} ${displayFont.variable}`} lang={locale as Locale}>
       <body
         data-theme="mono"
-        style={themeToCssVariables(nikeAppleBlendTheme) as CSSProperties}
+        style={themeToCssVariables(monoTheme) as CSSProperties}
       >
-        <ThemeScope theme={nikeAppleBlendTheme}>
+        <ThemeScope theme={monoTheme}>
           <StorefrontHeader locale={locale as Locale} />
           {children}
           <StorefrontFooter locale={locale as Locale} />

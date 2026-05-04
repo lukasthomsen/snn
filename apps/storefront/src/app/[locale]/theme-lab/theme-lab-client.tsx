@@ -33,7 +33,7 @@ import {
   Textarea,
   ThemeScope,
   mergeThemeDefinition,
-  nikeAppleBlendTheme,
+  monoTheme,
   serializeThemeDefinition,
   type ThemeDefinition,
 } from "@snn/ui";
@@ -62,6 +62,7 @@ const colorFields = [
   ["actionTertiaryText", "Ghost/outline text", "color"],
   ["accent", "Accent", "color"],
   ["accentSoft", "Accent soft", "color"],
+  ["warning", "Warning", "color"],
   ["danger", "Danger", "color"],
   ["focusRing", "Focus ring", "color"],
   ["heroOverlayStart", "Hero overlay start", "text"],
@@ -109,19 +110,19 @@ const spacingFields = [
 
 function getInitialTheme() {
   if (typeof window === "undefined") {
-    return nikeAppleBlendTheme;
+    return monoTheme;
   }
 
   const storedTheme = window.localStorage.getItem(themeStorageKey);
 
   if (!storedTheme) {
-    return nikeAppleBlendTheme;
+    return monoTheme;
   }
 
   try {
     return mergeThemeDefinition(JSON.parse(storedTheme));
   } catch {
-    return nikeAppleBlendTheme;
+    return monoTheme;
   }
 }
 
@@ -225,8 +226,8 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
 
   function resetTheme() {
     startTransition(() => {
-      setTheme(nikeAppleBlendTheme);
-      setImportDraft(serializeThemeDefinition(nikeAppleBlendTheme));
+      setTheme(monoTheme);
+      setImportDraft(serializeThemeDefinition(monoTheme));
     });
 
     setStatusMessage("Reset to the default monochrome preset.");

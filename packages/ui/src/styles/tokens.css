@@ -4,8 +4,7 @@
   radius, controls, motion, elevation, and a few component defaults.
 */
 :root,
-[data-theme="mono"],
-[data-theme="snn-modern"] {
+[data-theme="mono"] {
   color-scheme: light;
 
   /* Fonts */
@@ -111,9 +110,25 @@
   --color-accent-border-strong: var(--color-neutral-900);
   --color-accent-foreground: var(--color-text-primary);
 
+  --color-action-primary-bg: var(--color-accent-solid);
+  --color-action-primary-bg-hover: var(--color-accent-solid-hover);
+  --color-action-primary-border: var(--color-accent-solid);
+  --color-action-primary-border-hover: var(--color-accent-solid-hover);
+  --color-action-primary-text: var(--color-accent-contrast);
+  --color-action-secondary-bg: var(--color-page);
+  --color-action-secondary-bg-hover: var(--color-page-soft);
+  --color-action-secondary-border: var(--color-border-primary);
+  --color-action-secondary-border-hover: var(--color-border-secondary);
+  --color-action-secondary-text: var(--color-text-primary);
+  --color-action-tertiary-text: var(--color-text-primary);
+
   --color-success-surface: #eef6ec;
   --color-success-border: #bdd1b9;
   --color-success-foreground: #355d36;
+
+  --color-warning-surface: var(--color-page-muted);
+  --color-warning-border: var(--color-border-secondary);
+  --color-warning-foreground: var(--color-neutral-500);
 
   --color-danger-solid: #b5443c;
   --color-danger-solid-hover: #9e3730;
@@ -149,8 +164,8 @@
   --space-xs: var(--space-50);
   --space-sm: var(--space-75);
   --space-md: var(--space-100);
-  --space-lg: var(--space-200);
-  --space-xl: var(--space-150);
+  --space-lg: var(--space-150);
+  --space-xl: var(--space-200);
   --space-2xl: var(--space-300);
   --space-3xl: var(--space-400);
   --space-4xl: var(--space-600);
@@ -232,8 +247,7 @@
 
 @media (min-width: 64rem) {
   :root,
-  [data-theme="mono"],
-  [data-theme="snn-modern"] {
+  [data-theme="mono"] {
     --layout-page-padding: var(--layout-page-padding-desktop);
   }
 }

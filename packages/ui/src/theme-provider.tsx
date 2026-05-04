@@ -4,12 +4,12 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { CSSProperties } from "react";
 
 import {
-  nikeAppleBlendTheme,
+  monoTheme,
   themeToCssVariables,
   type ThemeDefinition,
 } from "./theme-definition";
 
-const ThemeDefinitionContext = createContext<ThemeDefinition>(nikeAppleBlendTheme);
+const ThemeDefinitionContext = createContext<ThemeDefinition>(monoTheme);
 
 type ThemeScopeProps = {
   children: ReactNode;

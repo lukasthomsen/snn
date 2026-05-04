@@ -39,7 +39,7 @@ export { FormFrame, HeroFrame, ProductTileFrame } from "./components/shells";
 export * from "./state/interface-store";
 export {
   mergeThemeDefinition,
-  nikeAppleBlendTheme,
+  monoTheme,
   serializeThemeDefinition,
   themeToCssVariables,
   type ThemeDefinition,

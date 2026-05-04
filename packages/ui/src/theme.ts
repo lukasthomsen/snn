@@ -1,6 +1,6 @@
 export {
   mergeThemeDefinition,
-  nikeAppleBlendTheme,
+  monoTheme,
   serializeThemeDefinition,
   themeToCssVariables,
   type ThemeDefinition,
