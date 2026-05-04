@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Manrope, Oswald } from "next/font/google";
+import { Archivo, Public_Sans } from "next/font/google";
 import type { CSSProperties } from "react";
 
 import { isLocale, locales, type Locale } from "@snn/i18n";
 import { ThemeScope, nikeAppleBlendTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
+import "./styles.css";
 
-const bodyFont = Manrope({
+const bodyFont = Public_Sans({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-manrope",
+  variable: "--font-public-sans",
 });
 
-const displayFont = Oswald({
+const displayFont = Archivo({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-oswald",
+  variable: "--font-archivo",
 });
 
 type LocaleLayoutProps = Readonly<{
@@ -44,7 +45,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <html className={`${bodyFont.variable} ${displayFont.variable}`} lang={locale as Locale}>
-      <body style={themeToCssVariables(nikeAppleBlendTheme) as CSSProperties}>
+      <body
+        data-theme="mono"
+        style={themeToCssVariables(nikeAppleBlendTheme) as CSSProperties}
+      >
         <ThemeScope theme={nikeAppleBlendTheme}>{children}</ThemeScope>
       </body>
     </html>

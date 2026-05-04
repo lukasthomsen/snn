@@ -3,8 +3,6 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../cx";
 import type { SurfaceTone } from "../types";
 
-import styles from "./layout.module.css";
-
 type ContainerProps = HTMLAttributes<HTMLDivElement> & {
   padded?: boolean;
   size?: "content" | "page" | "wide";
@@ -20,8 +18,8 @@ export function Container({
   return (
     <div
       {...props}
-      className={cx(styles.container, className)}
-      data-padded={padded ? "true" : undefined}
+      className={cx("container__root__SW0b8", className)}
+      data-padded={padded ? "true" : "false"}
       data-size={size}
     >
       {children}
@@ -38,7 +36,7 @@ export function Stack({ align = "stretch", children, className, gap, style, ...p
   return (
     <div
       {...props}
-      className={cx(styles.stack, className)}
+      className={cx("stack__root__SW0b9", className)}
       style={
         {
           "--stack-align": align,
@@ -70,7 +68,7 @@ export function Cluster({
   return (
     <div
       {...props}
-      className={cx(styles.cluster, className)}
+      className={cx("cluster__root__SW0ba", className)}
       style={
         {
           "--cluster-align": align,
@@ -94,7 +92,7 @@ export function Grid({ children, className, gap, minItemWidth, style, ...props }
   return (
     <div
       {...props}
-      className={cx(styles.grid, className)}
+      className={cx("grid__root__SW0bb", className)}
       style={
         {
           ...(gap ? { "--grid-gap": gap } : {}),
@@ -125,7 +123,7 @@ export function Card({
   return (
     <div
       {...props}
-      className={cx(styles.card, className)}
+      className={cx("card__root__SW0bc", className)}
       data-tone={tone}
       style={
         {

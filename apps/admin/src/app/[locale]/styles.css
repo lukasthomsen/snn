@@ -1,0 +1,80 @@
+/*
+  Admin styles
+  Regular global CSS. Class format: block__part__SW0b1.
+*/
+
+/*
+  Admin home
+*/
+
+.page__root__SW0hc {
+  padding-block: clamp(1rem, 3vw, 2rem) var(--space-600);
+}
+
+.shell__root__SW0hd {
+  display: grid;
+  gap: var(--space-600);
+}
+
+.section__heading__SW0he {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.section__copy__SW0hf {
+  max-width: 42rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-lg);
+}
+
+.summary__card__SW0hg {
+  gap: var(--space-100);
+}
+
+.summary__label__SW0hh {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.phase__list__SW0hi {
+  display: grid;
+  gap: var(--space-75);
+  list-style: none;
+}
+
+.phase__item__SW0hj {
+  display: flex;
+  align-items: center;
+  gap: var(--space-75);
+  padding-bottom: var(--space-75);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-primary) 80%, transparent);
+}
+
+.phase__index__SW0hk {
+  display: inline-grid;
+  width: 2rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-page-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.hero__visual__SW0hl {
+  position: relative;
+  min-height: 100%;
+}
+
+.hero__panel__SW0hm {
+  position: absolute;
+  inset: 18% 8% 18% auto;
+  width: clamp(16rem, 34vw, 24rem);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.55)),
+    linear-gradient(135deg, #e8e8e2, #c9c9c2);
+  box-shadow: var(--shadow-2);
+}

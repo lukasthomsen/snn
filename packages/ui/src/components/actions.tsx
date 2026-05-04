@@ -1,13 +1,13 @@
 import type { ButtonHTMLAttributes, HTMLAttributes } from "react";
 
 import { cx } from "../cx";
-import type { BadgeTone, ControlSize, ControlTone } from "../types";
-
-import styles from "./actions.module.css";
+import type { BadgeTone, ControlShape, ControlSize, ControlTone } from "../types";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
+  iconOnly?: boolean;
   loading?: boolean;
+  shape?: ControlShape;
   size?: ControlSize;
   tone?: ControlTone;
 };
@@ -16,7 +16,9 @@ export function Button({
   children,
   className,
   fullWidth = false,
+  iconOnly = false,
   loading = false,
+  shape = "pill",
   size = "md",
   tone = "primary",
   type = "button",
@@ -25,15 +27,19 @@ export function Button({
   return (
     <button
       {...props}
-      className={cx(styles.button, className)}
+      className={cx("button__root__SW0b3", className)}
       data-full-width={fullWidth ? "true" : undefined}
+      data-icon-only={iconOnly ? "true" : undefined}
+      data-pending={loading ? "true" : undefined}
+      data-shape={shape}
       data-size={size}
       data-tone={tone}
+      data-variant={tone}
       disabled={props.disabled || loading}
       type={type}
     >
-      {loading ? <span aria-hidden="true" className={styles.spinner} /> : null}
-      <span>{children}</span>
+      {loading ? <span aria-hidden="true" className="button__spinner__SW0b6" /> : null}
+      <span className="button__content__SW0b5">{children}</span>
     </button>
   );
 }
@@ -41,7 +47,7 @@ export function Button({
 type IconButtonProps = ButtonProps;
 
 export function IconButton({ className, ...props }: IconButtonProps) {
-  return <Button {...props} className={cx(styles.iconButton, className)} />;
+  return <Button {...props} className={cx("button__icon__SW0b4", className)} iconOnly />;
 }
 
 type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
@@ -50,7 +56,7 @@ type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
 
 export function Badge({ children, className, tone = "default", ...props }: BadgeProps) {
   return (
-    <span {...props} className={cx(styles.badge, className)} data-tone={tone}>
+    <span {...props} className={cx("badge__root__SW0b7", className)} data-tone={tone}>
       {children}
     </span>
   );

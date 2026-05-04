@@ -3,7 +3,6 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../cx";
 
 import { Card, Stack } from "./layout";
-import styles from "./shells.module.css";
 
 type HeroFrameProps = HTMLAttributes<HTMLElement> & {
   actions?: ReactNode;
@@ -30,7 +29,11 @@ export function HeroFrame({
   return (
     <section
       {...props}
-      className={cx(styles.hero, align === "center" && styles.heroAlignCenter, className)}
+      className={cx(
+        "hero__root__SW0dp",
+        align === "center" && "hero__centered__SW0dq",
+        className,
+      )}
       style={
         {
           ...(titleColor ? { "--hero-title-color": titleColor } : {}),
@@ -38,15 +41,15 @@ export function HeroFrame({
         } as CSSProperties
       }
     >
-      <div className={styles.heroGrid}>
-        <div className={styles.heroCopy}>
-          {eyebrow ? <p className={styles.heroEyebrow}>{eyebrow}</p> : null}
-          <h1 className={styles.heroTitle}>{title}</h1>
-          <p className={styles.heroDescription}>{description}</p>
-          {actions ? <div className={styles.heroActions}>{actions}</div> : null}
+      <div className="hero__layout__SW0ds">
+        <div className="hero__copy__SW0dr">
+          {eyebrow ? <p className="hero__eyebrow__SW0dt">{eyebrow}</p> : null}
+          <h1 className="hero__title__SW0du">{title}</h1>
+          <p className="hero__description__SW0dv">{description}</p>
+          {actions ? <div className="hero__actions__SW0dw">{actions}</div> : null}
         </div>
-        <div className={styles.heroMedia}>
-          <div aria-hidden="true" className={styles.heroBackdrop} />
+        <div className="hero__media__SW0dx">
+          <div aria-hidden="true" className="hero__backdrop__SW0dy" />
           {media}
         </div>
       </div>
@@ -79,7 +82,7 @@ export function ProductTileFrame({
   return (
     <Card
       {...props}
-      className={cx(styles.productTile, className)}
+      className={cx("product-tile__root__SW0dz", className)}
       padding="0"
       style={
         {
@@ -88,16 +91,16 @@ export function ProductTileFrame({
         } as CSSProperties
       }
     >
-      <div className={styles.productVisual}>
-        <div aria-hidden="true" className={styles.productVisualInner} />
+      <div className="product-visual__root__SW0e0">
+        <div aria-hidden="true" className="product-visual__frame__SW0e1" />
         {visual}
       </div>
-      <div className={styles.productBody}>
+      <div className="product__body__SW0e2">
         {badge}
-        {category ? <span className={styles.productCategory}>{category}</span> : null}
-        <strong className={styles.productName}>{name}</strong>
-        <span className={styles.productPrice}>{price}</span>
-        {actions ? <div className={styles.productActions}>{actions}</div> : null}
+        {category ? <span className="product__category__SW0e3">{category}</span> : null}
+        <strong className="product__name__SW0e4">{name}</strong>
+        <span className="product__price__SW0e5">{price}</span>
+        {actions ? <div className="product__actions__SW0e6">{actions}</div> : null}
       </div>
     </Card>
   );
@@ -121,14 +124,14 @@ export function FormFrame({
   ...props
 }: FormFrameProps) {
   return (
-    <Card {...props} className={cx(styles.formFrame, className)}>
-      {kicker ? <p className={styles.formKicker}>{kicker}</p> : null}
-      <Stack gap="var(--ui-space-sm)">
-        <h2 className={styles.formTitle}>{title}</h2>
-        {description ? <p className={styles.formDescription}>{description}</p> : null}
+    <Card {...props} className={cx("form-frame__root__SW0e7", className)}>
+      {kicker ? <p className="form__kicker__SW0e8">{kicker}</p> : null}
+      <Stack gap="var(--space-sm)">
+        <h2 className="form__title__SW0e9">{title}</h2>
+        {description ? <p className="form__description__SW0ea">{description}</p> : null}
       </Stack>
-      <div className={styles.formContent}>{children}</div>
-      {footer ? <div className={styles.formFooter}>{footer}</div> : null}
+      <div className="form__content__SW0eb">{children}</div>
+      {footer ? <div className="form__footer__SW0ec">{footer}</div> : null}
     </Card>
   );
 }

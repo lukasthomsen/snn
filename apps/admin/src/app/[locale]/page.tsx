@@ -2,8 +2,6 @@ import { roadmapPhases, staffPermissionGroups } from "@snn/commerce";
 import { getDictionary, isLocale } from "@snn/i18n";
 import { Badge, Card, Container, FormFrame, Grid, HeroFrame, Stack } from "@snn/ui";
 
-import styles from "./page.module.css";
-
 type AdminPageProps = {
   params: Promise<{
     locale: string;
@@ -16,40 +14,40 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const copy = getDictionary("admin", safeLocale);
 
   return (
-    <main className={styles.page}>
-      <Container className={styles.shell} size="page">
+    <main className="page__root__SW0hc">
+      <Container className="shell__root__SW0hd" size="page">
         <HeroFrame
           description={copy.description}
           eyebrow={copy.eyebrow}
           media={
-            <div aria-hidden="true" className={styles.heroVisual}>
-              <div className={styles.heroPanel} />
+            <div aria-hidden="true" className="hero__visual__SW0hl">
+              <div className="hero__panel__SW0hm" />
             </div>
           }
           title="Admin runtime ready for catalog and staff tools."
         />
 
-        <Stack gap="var(--ui-space-lg)">
-          <h2 className={styles.sectionHeading}>{copy.phaseHeading}</h2>
-          <p className={styles.sectionCopy}>{copy.phaseSummary}</p>
+        <Stack gap="var(--space-200)">
+          <h2 className="section__heading__SW0he">{copy.phaseHeading}</h2>
+          <p className="section__copy__SW0hf">{copy.phaseSummary}</p>
         </Stack>
 
         <Grid minItemWidth="18rem">
-          <Card className={styles.summaryCard}>
-            <span className={styles.summaryLabel}>{copy.statusLabel}</span>
+          <Card className="summary__card__SW0hg">
+            <span className="summary__label__SW0hh">{copy.statusLabel}</span>
             <strong>{copy.statusValue}</strong>
             <Badge tone="accent">Prepared permission domains</Badge>
-            <p className={styles.sectionCopy}>
+            <p className="section__copy__SW0hf">
               {Object.keys(staffPermissionGroups).join(", ")}
             </p>
           </Card>
 
-          <Card className={styles.summaryCard} tone="muted">
-            <span className={styles.summaryLabel}>Delivery order</span>
-            <ol className={styles.phaseList}>
+          <Card className="summary__card__SW0hg" tone="muted">
+            <span className="summary__label__SW0hh">Delivery order</span>
+            <ol className="phase__list__SW0hi">
               {roadmapPhases.map((phase, index) => (
-                <li key={phase} className={styles.phaseItem}>
-                  <span className={styles.phaseIndex}>{index + 1}</span>
+                <li key={phase} className="phase__item__SW0hj">
+                  <span className="phase__index__SW0hk">{index + 1}</span>
                   <span>{phase}</span>
                 </li>
               ))}
@@ -62,7 +60,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
           kicker="Internal shell"
           title="Staff tooling will land on the same token system."
         >
-          <p className={styles.sectionCopy}>
+          <p className="section__copy__SW0hf">
             Catalog, inventory, orders, and settings will all reuse the same size, tone, and
             surface primitives as the storefront instead of introducing a second visual system.
           </p>

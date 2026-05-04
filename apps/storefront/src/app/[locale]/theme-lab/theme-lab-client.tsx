@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import {
+  AppleLogoIcon,
   Badge,
   Button,
   Card,
@@ -20,6 +21,7 @@ import {
   Cluster,
   Container,
   FormFrame,
+  GoogleLogoIcon,
   Grid,
   HeroFrame,
   PasswordField,
@@ -35,8 +37,6 @@ import {
   serializeThemeDefinition,
   type ThemeDefinition,
 } from "@snn/ui";
-
-import styles from "./page.module.css";
 
 type ThemeLabClientProps = {
   locale: string;
@@ -55,9 +55,14 @@ const colorFields = [
   ["textSecondary", "Text secondary", "color"],
   ["textMuted", "Text muted", "color"],
   ["actionPrimaryBg", "Primary action", "color"],
+  ["actionPrimaryText", "Primary action text", "color"],
   ["actionSecondaryBg", "Secondary surface", "color"],
   ["actionSecondaryBorder", "Secondary border", "color"],
+  ["actionSecondaryText", "Secondary text", "color"],
+  ["actionTertiaryText", "Ghost/outline text", "color"],
   ["accent", "Accent", "color"],
+  ["accentSoft", "Accent soft", "color"],
+  ["danger", "Danger", "color"],
   ["focusRing", "Focus ring", "color"],
   ["heroOverlayStart", "Hero overlay start", "text"],
   ["heroOverlayEnd", "Hero overlay end", "text"],
@@ -65,9 +70,28 @@ const colorFields = [
 
 const typographyFields = [
   ["hero", "Hero display", "text"],
+  ["h1", "Heading 1", "text"],
+  ["h2", "Heading 2", "text"],
+  ["h3", "Heading 3", "text"],
+  ["size7xl", "Scale 56", "text"],
+  ["size6xl", "Scale 48", "text"],
   ["size5xl", "Display large", "text"],
+  ["size4xl", "Display medium", "text"],
+  ["size3xlPlus", "Section heading plus", "text"],
   ["size3xl", "Section heading", "text"],
-  ["sizeLg", "Body large", "text"],
+  ["size2xlPlus", "Title plus", "text"],
+  ["size2xl", "Title", "text"],
+  ["sizeXlPlus", "Body XL plus", "text"],
+  ["sizeXl", "Body XL", "text"],
+  ["sizeLgPlus", "Large plus", "text"],
+  ["sizeLg", "Large", "text"],
+  ["sizeMdPlus", "Regular plus", "text"],
+  ["sizeMd", "Regular", "text"],
+  ["sizeSmPlus", "Small plus", "text"],
+  ["sizeSm", "Small", "text"],
+  ["sizeXsPlus", "Tiny plus", "text"],
+  ["sizeXs", "Tiny", "text"],
+  ["size2xs", "Micro", "text"],
   ["bodyFamily", "Body family", "text"],
   ["displayFamily", "Display family", "text"],
 ] as const;
@@ -127,8 +151,8 @@ function FieldRow({
   label: string;
 }) {
   return (
-    <label className={styles.fieldRow}>
-      <span className={styles.fieldLabel}>{label}</span>
+    <label className="field__row__SW0gl">
+      <span className="field__label__SW0gm">{label}</span>
       {children}
     </label>
   );
@@ -138,7 +162,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
   const [theme, setTheme] = useState<ThemeDefinition>(() => getInitialTheme());
   const [importDraft, setImportDraft] = useState(() => serializeThemeDefinition(getInitialTheme()));
   const [statusMessage, setStatusMessage] = useState(
-    "Local and preview environments keep the Theme Lab enabled by default.",
+    "Edit tokens on the left, watch the previews update on the right, and use Copy JSON when the preset feels right.",
   );
   const deferredTheme = useDeferredValue(theme);
   const exportJson = useMemo(() => serializeThemeDefinition(theme), [theme]);
@@ -205,33 +229,33 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
       setImportDraft(serializeThemeDefinition(nikeAppleBlendTheme));
     });
 
-    setStatusMessage("Reset to the default Nike-forward preset.");
+    setStatusMessage("Reset to the default monochrome preset.");
   }
 
   return (
-    <main className={styles.page}>
+    <main className="page__root__SW0g9">
       <ThemeScope theme={deferredTheme}>
-        <Container className={styles.shell} size="wide">
-          <section className={styles.intro}>
-            <span className={styles.introMeta}>SNN theme lab</span>
-            <h1 className={styles.introTitle}>Edit the system before we build the pages.</h1>
-            <p className={styles.introCopy}>
-              This route is the control room for the corporate retail preset. It previews tokens,
-              components, and shell-level blocks before we move into the actual homepage, header,
-              footer, and auth page implementation.
+        <Container className="shell__root__SW0ga" size="wide">
+          <section className="intro__root__SW0gb">
+            <span className="intro__meta__SW0gc">SNN theme lab</span>
+            <h1 className="intro__title__SW0gd">Shape the system before we build the storefront.</h1>
+            <p className="intro__copy__SW0ge">
+              This page is the design workshop for the whole site. Change the tokens on the left,
+              study the live previews on the right, and once the system feels right we lock this
+              preset before building the real homepage, header, footer, and auth flows.
             </p>
             <Cluster>
-              <Badge tone="accent">Nike-forward direction</Badge>
-              <Badge>Apple-grade spacing discipline</Badge>
-              <Badge>Local storage persistence</Badge>
+              <Badge tone="accent">Monochrome retail preset</Badge>
+              <Badge>Spacing before decoration</Badge>
+              <Badge>Live token editing</Badge>
             </Cluster>
           </section>
 
-          <div className={styles.layoutGrid}>
-            <aside className={styles.controlRail}>
-              <Card className={styles.editorSection}>
-                <h2 className={styles.editorHeading}>Status</h2>
-                <p className={styles.introCopy}>{statusMessage}</p>
+          <div className="layout__grid__SW0gf">
+            <aside className="control__rail__SW0gg">
+              <Card className="editor__section__SW0gh">
+                <h2 className="editor__heading__SW0gi">Status</h2>
+                <p className="intro__copy__SW0ge">{statusMessage}</p>
                 <Cluster>
                   <Button onClick={resetTheme} size="sm" tone="secondary">
                     Reset preset
@@ -245,15 +269,24 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </Link>
               </Card>
 
-              <Card className={styles.editorSection}>
-                <h2 className={styles.editorHeading}>Color system</h2>
-                <div className={styles.fieldGrid}>
+              <Card className="editor__section__SW0gh" tone="muted">
+                <h2 className="editor__heading__SW0gi">How to use it</h2>
+                <Stack gap="var(--space-50)">
+                  <p className="preview__copy__SW0gv">1. Adjust colors, type, spacing, and radius on the left.</p>
+                  <p className="preview__copy__SW0gv">2. Watch the hero, product, PDP, and auth previews update.</p>
+                  <p className="preview__copy__SW0gv">3. Copy the JSON when the preset feels right, then I lock it into the default theme.</p>
+                </Stack>
+              </Card>
+
+              <Card className="editor__section__SW0gh">
+                <h2 className="editor__heading__SW0gi">Color system</h2>
+                <div className="field__grid__SW0gk">
                   {colorFields.map(([key, label, controlType]) => (
                     <FieldRow key={key} label={label}>
                       {controlType === "color" ? (
-                        <div className={styles.fieldCombo}>
+                        <div className="field__combo__SW0gn">
                           <input
-                            className={styles.swatchInput}
+                            className="swatch__input__SW0go"
                             onChange={(event) => {
                               setColorToken(key, event.target.value);
                             }}
@@ -261,7 +294,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                             value={theme.color[key] as string}
                           />
                           <input
-                            className={styles.textInput}
+                            className="text__input__SW0gp"
                             onChange={(event) => {
                               setColorToken(key, event.target.value);
                             }}
@@ -271,7 +304,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                         </div>
                       ) : (
                         <input
-                          className={styles.textInput}
+                          className="text__input__SW0gp"
                           onChange={(event) => {
                             setColorToken(key, event.target.value);
                           }}
@@ -284,13 +317,13 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </div>
               </Card>
 
-              <Card className={styles.editorSection}>
-                <h2 className={styles.editorHeading}>Typography</h2>
-                <div className={styles.fieldGrid}>
+              <Card className="editor__section__SW0gh">
+                <h2 className="editor__heading__SW0gi">Typography</h2>
+                <div className="field__grid__SW0gk">
                   {typographyFields.map(([key, label]) => (
                     <FieldRow key={key} label={label}>
                       <input
-                        className={styles.textInput}
+                        className="text__input__SW0gp"
                         onChange={(event) => {
                           setTypographyToken(key, event.target.value);
                         }}
@@ -302,9 +335,9 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </div>
               </Card>
 
-              <Card className={styles.editorSection}>
-                <h2 className={styles.editorHeading}>Spacing, radius, layout</h2>
-                <div className={styles.fieldGrid}>
+              <Card className="editor__section__SW0gh">
+                <h2 className="editor__heading__SW0gi">Spacing, radius, layout</h2>
+                <div className="field__grid__SW0gk">
                   {spacingFields.map(([group, key, label]) => {
                     const value =
                       group === "layout"
@@ -316,7 +349,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                     return (
                       <FieldRow key={`${group}-${key}`} label={label}>
                         <input
-                          className={styles.textInput}
+                          className="text__input__SW0gp"
                           onChange={(event) => {
                             setSpacingToken(group, key, event.target.value);
                           }}
@@ -329,7 +362,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
 
                   <FieldRow label="Motion base">
                     <input
-                      className={styles.textInput}
+                      className="text__input__SW0gp"
                       onChange={(event) => {
                         setSpacingToken("motion", "base", event.target.value);
                       }}
@@ -340,16 +373,16 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </div>
               </Card>
 
-              <Card className={styles.editorSection}>
-                <h2 className={styles.editorHeading}>Import JSON</h2>
+              <Card className="editor__section__SW0gh">
+                <h2 className="editor__heading__SW0gi">Import JSON</h2>
                 <textarea
-                  className={styles.textarea}
+                  className="textarea__root__SW0gr"
                   onChange={(event) => {
                     setImportDraft(event.target.value);
                   }}
                   value={importDraft}
                 />
-                <div className={styles.jsonActions}>
+                <div className="json__actions__SW0hb">
                   <Button onClick={applyImportedTheme} size="sm">
                     Apply import
                   </Button>
@@ -366,18 +399,18 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
               </Card>
             </aside>
 
-            <section className={styles.previewRegion}>
-              <Card className={styles.previewShell}>
-                <h2 className={styles.previewHeading}>Theme surface preview</h2>
-                <p className={styles.previewCopy}>
-                  The preview below is intentionally not the final homepage. It is a controlled
-                  environment for making layout, component, and token decisions with the future
-                  Nike-forward visual language already applied.
+            <section className="preview__region__SW0gs">
+              <Card className="preview__shell__SW0gt">
+                <h2 className="preview__heading__SW0gu">Theme surface preview</h2>
+                <p className="preview__copy__SW0gv">
+                  This is not the final homepage. It is a controlled preview where we decide the
+                  rules for tone, spacing, buttons, product framing, and auth styling before real
+                  page building starts.
                 </p>
               </Card>
 
-              <div className={styles.previewBackdrop}>
-                <Stack gap="var(--ui-space-4xl)">
+              <div className="preview__backdrop__SW0gw">
+                <Stack gap="var(--space-600)">
                   <HeroFrame
                     actions={
                       <>
@@ -387,20 +420,20 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                         </Button>
                       </>
                     }
-                    description="Large editorial display moments, quiet chrome, and pill actions sit on top of a calmer Apple-like spacing system."
+                    description="Large editorial display moments, quiet chrome, and pill actions sit on top of a stricter monochrome spacing system."
                     eyebrow="Homepage hero preview"
                     media={
-                      <div aria-hidden="true" className={styles.heroPreviewMedia}>
-                        <div className={styles.heroPreviewEllipse} />
-                        <div className={styles.heroPreviewBlade} />
+                      <div aria-hidden="true" className="hero-preview__media__SW0gx">
+                        <div className="hero-preview__ellipse__SW0gy" />
+                        <div className="hero-preview__blade__SW0gz" />
                       </div>
                     }
                     title="Motion with restraint."
                   />
 
-                  <Stack className={styles.previewRail} gap="var(--ui-space-lg)">
+                  <Stack className="preview__rail__SW0h0" gap="var(--space-200)">
                     <Cluster justify="space-between">
-                      <h2 className={styles.previewHeading}>Buttons and product cards</h2>
+                      <h2 className="preview__heading__SW0gu">Buttons and product cards</h2>
                       <Badge tone="accent">Retail building blocks</Badge>
                     </Cluster>
                     <Grid minItemWidth="15rem">
@@ -418,12 +451,12 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                             <Button size="sm" tone="secondary">
                               Details
                             </Button>
-                            <Button size="sm" tone="tertiary">
+                            <Button size="sm" tone="outline">
                               Favorite
                             </Button>
                           </Cluster>
                         }
-                        badge={<Badge tone="accent">Secondary action</Badge>}
+                        badge={<Badge>Secondary action</Badge>}
                         category="Lifestyle"
                         name="Graphite Flow"
                         price="DKK 999"
@@ -438,28 +471,43 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                         visualColor="linear-gradient(135deg, #e7e7e1, #b8b8b0)"
                       />
                     </Grid>
+                    <Cluster>
+                      <Button size="sm">Primary</Button>
+                      <Button size="sm" tone="secondary">
+                        Secondary
+                      </Button>
+                      <Button size="sm" tone="outline">
+                        Outline
+                      </Button>
+                      <Button size="sm" tone="ghost">
+                        Ghost
+                      </Button>
+                      <Button size="sm" tone="danger">
+                        Danger
+                      </Button>
+                    </Cluster>
                   </Stack>
 
-                  <Stack gap="var(--ui-space-lg)">
+                  <Stack gap="var(--space-200)">
                     <Cluster justify="space-between">
-                      <h2 className={styles.previewHeading}>PDP shell</h2>
+                      <h2 className="preview__heading__SW0gu">PDP shell</h2>
                       <Badge>PDP preview</Badge>
                     </Cluster>
-                    <div className={styles.pdpGrid}>
-                      <div className={styles.pdpGallery}>
-                        <div className={styles.pdpThumbs}>
-                          <div className={styles.pdpThumb} />
-                          <div className={styles.pdpThumb} />
-                          <div className={styles.pdpThumb} />
-                          <div className={styles.pdpThumb} />
+                    <div className="pdp__grid__SW0h5">
+                      <div className="pdp__gallery__SW0h6">
+                        <div className="pdp__thumbs__SW0h7">
+                          <div className="pdp__thumb__SW0h8" />
+                          <div className="pdp__thumb__SW0h8" />
+                          <div className="pdp__thumb__SW0h8" />
+                          <div className="pdp__thumb__SW0h8" />
                         </div>
-                        <div className={styles.pdpHeroVisual} />
+                        <div className="pdp__hero-visual__SW0h9" />
                       </div>
 
-                      <Stack className={styles.pdpSide} gap="var(--ui-space-md)">
-                        <Badge tone="accent">PDP controls</Badge>
-                        <h2 className={styles.previewHeading}>Air Motion 01</h2>
-                        <p className={styles.previewCopy}>
+                      <Stack className="pdp__side__SW0ha" gap="var(--space-100)">
+                        <Badge>PDP controls</Badge>
+                        <h2 className="preview__heading__SW0gu">Air Motion 01</h2>
+                        <p className="preview__copy__SW0gv">
                           Clean product surfaces, structured copy, pill actions, and restrained
                           visual noise are the core rules we will reuse on the real PDP.
                         </p>
@@ -479,39 +527,61 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                     </div>
                   </Stack>
 
-                  <Stack gap="var(--ui-space-lg)">
+                  <Stack gap="var(--space-200)">
                     <Cluster justify="space-between">
-                      <h2 className={styles.previewHeading}>Forms and auth shell</h2>
+                      <h2 className="preview__heading__SW0gu">Forms and auth shell</h2>
                       <Badge>Auth preview</Badge>
                     </Cluster>
                     <Grid minItemWidth="18rem">
                       <FormFrame
-                        description="Simple single-column forms, strong labels, and minimal ornamentation keep account flows premium without becoming decorative."
-                        kicker="Account entry"
-                        title="Sign in faster."
+                        description="Calm entry flows, understated helper text, and precise monochrome surfaces keep the auth layer aligned with the storefront instead of feeling like a separate product."
+                        kicker="Need an account? Create one"
+                        title="Welcome back!"
                       >
-                        <TextField hint="We will continue to the next auth step after validation." label="Email" placeholder="name@example.com" />
+                        <Stack className="auth-provider__stack__SW0h1" gap="var(--space-75)">
+                          <Button fullWidth shape="field" tone="secondary">
+                            <GoogleLogoIcon className="social__mark__SW0h2" />
+                            Continue with Google
+                          </Button>
+                          <Button fullWidth shape="field" tone="secondary">
+                            <AppleLogoIcon className="social__mark__SW0h2" />
+                            Continue with Apple
+                          </Button>
+                        </Stack>
+                        <div className="auth-divider__root__SW0h3">
+                          <span className="auth-divider__label__SW0h4">or continue with</span>
+                        </div>
+                        <TextField
+                          description="We will continue to the next auth step after validation."
+                          label="Email"
+                          placeholder="name@example.com"
+                        />
                         <PasswordField label="Password" placeholder="Enter your password" />
                         <Checkbox
                           description="Keep this browser signed in for the next checkout session."
                           label="Remember me"
                         />
-                        <Cluster>
-                          <Button>Continue</Button>
-                          <Button tone="secondary">Google</Button>
-                        </Cluster>
+                        <Button fullWidth size="lg">
+                          Continue
+                        </Button>
                       </FormFrame>
 
                       <Card>
-                        <Stack gap="var(--ui-space-md)">
-                          <h3 className={styles.previewHeading}>Component gallery</h3>
+                        <Stack gap="var(--space-100)">
+                          <h3 className="preview__heading__SW0gu">Component gallery</h3>
                           <Cluster>
                             <Button size="sm">Primary</Button>
                             <Button size="sm" tone="secondary">
                               Secondary
                             </Button>
-                            <Button size="sm" tone="tertiary">
-                              Tertiary
+                            <Button size="sm" tone="outline">
+                              Outline
+                            </Button>
+                            <Button size="sm" tone="ghost">
+                              Ghost
+                            </Button>
+                            <Button size="sm" tone="danger">
+                              Danger
                             </Button>
                           </Cluster>
                           <Select defaultValue="da" label="Locale">

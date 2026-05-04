@@ -28,6 +28,12 @@ export type ThemeColorTokens = {
 export type ThemeTypographyTokens = {
   bodyFamily: string;
   displayFamily: string;
+  h1: string;
+  h2: string;
+  h3: string;
+  headingLetterSpacingFlat: string;
+  headingLetterSpacingTight: string;
+  headingLineHeight: string;
   hero: string;
   label: string;
   letterSpacingCaps: string;
@@ -35,16 +41,30 @@ export type ThemeTypographyTokens = {
   lineHeightRelaxed: string;
   lineHeightTight: string;
   monoFamily: string;
+  onMediaBold: string;
+  onMediaLetterSpacing: string;
+  onMediaLineHeight: string;
+  size2xs: string;
   size2xl: string;
+  size2xlPlus: string;
   size3xl: string;
+  size3xlPlus: string;
   size4xl: string;
   size5xl: string;
+  size6xl: string;
+  size7xl: string;
   sizeLg: string;
+  sizeLgPlus: string;
   sizeMd: string;
+  sizeMdPlus: string;
   sizeSm: string;
+  sizeSmPlus: string;
   sizeXl: string;
+  sizeXlPlus: string;
   sizeXs: string;
+  sizeXsPlus: string;
   weightBold: string;
+  weightHeavy: string;
   weightMedium: string;
   weightRegular: string;
   weightSemibold: string;
@@ -90,10 +110,11 @@ export type ThemeMotionTokens = {
 };
 
 export type ThemeLayoutTokens = {
-  contentMaxWidth: string;
   heroMinHeight: string;
   navHeight: string;
   pageMaxWidth: string;
+  pagePaddingDesktop: string;
+  pagePaddingMobile: string;
 };
 
 export type ThemeZIndexTokens = {
@@ -117,91 +138,117 @@ export type ThemeDefinition = {
 
 export const nikeAppleBlendTheme: ThemeDefinition = {
   border: {
-    strong: "1.5px",
+    strong: "1px",
     subtle: "1px",
   },
   color: {
-    accent: "#0a59d1",
-    accentSoft: "#dbe9ff",
-    actionPrimaryBg: "#0c0c0b",
-    actionPrimaryText: "#fbfbf8",
+    accent: "#131313",
+    accentSoft: "#f4f4f4",
+    actionPrimaryBg: "#131313",
+    actionPrimaryText: "#ffffff",
     actionSecondaryBg: "#ffffff",
-    actionSecondaryBorder: "#1a1a17",
-    actionSecondaryText: "#11110f",
-    actionTertiaryText: "#11110f",
-    borderStrong: "#1a1a17",
-    borderSubtle: "#d7d7d0",
-    canvas: "#f4f4f1",
-    danger: "#b3261e",
-    focusRing: "#1d68ff",
-    heroOverlayEnd: "rgb(12 12 11 / 0.52)",
-    heroOverlayStart: "rgb(12 12 11 / 0.02)",
-    success: "#0d7a45",
+    actionSecondaryBorder: "#dfdfdf",
+    actionSecondaryText: "#131313",
+    actionTertiaryText: "#131313",
+    borderStrong: "#c7c7c7",
+    borderSubtle: "#dfdfdf",
+    canvas: "#ffffff",
+    danger: "#8f332d",
+    focusRing: "rgba(19, 19, 19, 0.1)",
+    heroOverlayEnd: "rgba(19, 19, 19, 0.2)",
+    heroOverlayStart: "rgba(19, 19, 19, 0.03)",
+    success: "#355d36",
     surface: "#ffffff",
-    surfaceMuted: "#efefea",
-    surfaceStrong: "#ddddd5",
-    textInverse: "#fbfbf8",
-    textMuted: "#71716b",
-    textPrimary: "#10100f",
-    textSecondary: "#4d4d47",
-    warning: "#9b6a00",
+    surfaceMuted: "#fafafa",
+    surfaceStrong: "#f4f4f4",
+    textInverse: "#ffffff",
+    textMuted: "#a1a1a1",
+    textPrimary: "#131313",
+    textSecondary: "#666666",
+    warning: "#666666",
   },
   layout: {
-    contentMaxWidth: "78rem",
-    heroMinHeight: "34rem",
-    navHeight: "5rem",
-    pageMaxWidth: "90rem",
+    heroMinHeight: "41rem",
+    navHeight: "4.75rem",
+    pageMaxWidth: "86rem",
+    pagePaddingDesktop: "1.8rem",
+    pagePaddingMobile: "1rem",
   },
   motion: {
-    base: "180ms",
+    base: "220ms",
     easingStandard: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-    fast: "120ms",
-    slow: "280ms",
+    fast: "140ms",
+    slow: "320ms",
   },
   radius: {
-    lg: "1.5rem",
-    md: "1rem",
-    pill: "999px",
-    sm: "0.75rem",
-    xl: "2rem",
+    lg: "18px",
+    md: "12px",
+    pill: "9999px",
+    sm: "8px",
+    xl: "24px",
   },
   shadow: {
-    overlay: "0 24px 80px rgb(12 12 11 / 0.24)",
-    raised: "0 18px 60px rgb(12 12 11 / 0.12)",
-    soft: "0 10px 30px rgb(12 12 11 / 0.08)",
+    overlay:
+      "0 18px 40px rgba(19, 19, 19, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.64)",
+    raised:
+      "0 24px 52px rgba(19, 19, 19, 0.12), 0 4px 14px rgba(19, 19, 19, 0.06)",
+    soft:
+      "0 18px 40px rgba(19, 19, 19, 0.08), 0 2px 8px rgba(19, 19, 19, 0.04)",
   },
   spacing: {
     "2xl": "2rem",
-    "3xl": "3rem",
-    "4xl": "4rem",
+    "3xl": "2.75rem",
+    "4xl": "4.5rem",
     "5xl": "6rem",
     lg: "1.5rem",
     md: "1rem",
     sm: "0.75rem",
-    xl: "1.75rem",
+    xl: "1.25rem",
     xs: "0.5rem",
     xxs: "0.25rem",
   },
   typography: {
-    bodyFamily: 'var(--font-manrope), "Manrope", "Segoe UI", sans-serif',
-    displayFamily: 'var(--font-oswald), "Oswald", "Arial Narrow", sans-serif',
-    hero: "clamp(4rem, 9vw, 7.5rem)",
+    bodyFamily:
+      'var(--font-public-sans), "Public Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+    displayFamily:
+      'var(--font-archivo), "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif',
+    h1: "3.5rem",
+    h2: "3rem",
+    h3: "2.5rem",
+    headingLetterSpacingFlat: "0em",
+    headingLetterSpacingTight: "-0.005em",
+    headingLineHeight: "1.1",
+    hero: "3.5rem",
     label: "0.75rem",
-    letterSpacingCaps: "0.14em",
-    lineHeightBase: "1.5",
-    lineHeightRelaxed: "1.75",
-    lineHeightTight: "0.94",
-    monoFamily: '"SFMono-Regular", ui-monospace, monospace',
-    size2xl: "1.75rem",
-    size3xl: "2.5rem",
-    size4xl: "3.5rem",
-    size5xl: "5rem",
-    sizeLg: "1.125rem",
-    sizeMd: "1rem",
-    sizeSm: "0.875rem",
-    sizeXl: "1.35rem",
+    letterSpacingCaps: "0.08em",
+    lineHeightBase: "1.55",
+    lineHeightRelaxed: "1.72",
+    lineHeightTight: "1.1",
+    monoFamily: '"Geist Mono", "SFMono-Regular", ui-monospace, monospace',
+    onMediaBold: "clamp(3.5rem, 7vw, 5.5rem)",
+    onMediaLetterSpacing: "-0.03em",
+    onMediaLineHeight: "0.92",
+    size2xs: "0.6875rem",
+    size2xl: "1.375rem",
+    size2xlPlus: "1.5rem",
+    size3xl: "1.75rem",
+    size3xlPlus: "2rem",
+    size4xl: "2.25rem",
+    size5xl: "2.5rem",
+    size6xl: "3rem",
+    size7xl: "3.5rem",
+    sizeLg: "1.0625rem",
+    sizeLgPlus: "1.125rem",
+    sizeMd: "0.9375rem",
+    sizeMdPlus: "1rem",
+    sizeSm: "0.8125rem",
+    sizeSmPlus: "0.875rem",
+    sizeXl: "1.1875rem",
+    sizeXlPlus: "1.25rem",
     sizeXs: "0.75rem",
+    sizeXsPlus: "0.78125rem",
     weightBold: "700",
+    weightHeavy: "800",
     weightMedium: "500",
     weightRegular: "400",
     weightSemibold: "600",
@@ -269,84 +316,119 @@ export function mergeThemeDefinition(candidate: unknown, baseTheme: ThemeDefinit
 
 export function themeToCssVariables(theme: ThemeDefinition) {
   return {
-    "--ui-border-strong": theme.border.strong,
-    "--ui-border-subtle": theme.border.subtle,
-    "--ui-color-accent": theme.color.accent,
-    "--ui-color-accent-soft": theme.color.accentSoft,
-    "--ui-color-action-primary-bg": theme.color.actionPrimaryBg,
-    "--ui-color-action-primary-text": theme.color.actionPrimaryText,
-    "--ui-color-action-secondary-bg": theme.color.actionSecondaryBg,
-    "--ui-color-action-secondary-border": theme.color.actionSecondaryBorder,
-    "--ui-color-action-secondary-text": theme.color.actionSecondaryText,
-    "--ui-color-action-tertiary-text": theme.color.actionTertiaryText,
-    "--ui-color-border-strong": theme.color.borderStrong,
-    "--ui-color-border-subtle": theme.color.borderSubtle,
-    "--ui-color-canvas": theme.color.canvas,
-    "--ui-color-danger": theme.color.danger,
-    "--ui-color-focus-ring": theme.color.focusRing,
-    "--ui-color-hero-overlay-end": theme.color.heroOverlayEnd,
-    "--ui-color-hero-overlay-start": theme.color.heroOverlayStart,
-    "--ui-color-success": theme.color.success,
-    "--ui-color-surface": theme.color.surface,
-    "--ui-color-surface-muted": theme.color.surfaceMuted,
-    "--ui-color-surface-strong": theme.color.surfaceStrong,
-    "--ui-color-text-inverse": theme.color.textInverse,
-    "--ui-color-text-muted": theme.color.textMuted,
-    "--ui-color-text-primary": theme.color.textPrimary,
-    "--ui-color-text-secondary": theme.color.textSecondary,
-    "--ui-color-warning": theme.color.warning,
-    "--ui-layout-content-max-width": theme.layout.contentMaxWidth,
-    "--ui-layout-hero-min-height": theme.layout.heroMinHeight,
-    "--ui-layout-nav-height": theme.layout.navHeight,
-    "--ui-layout-page-max-width": theme.layout.pageMaxWidth,
-    "--ui-motion-base": theme.motion.base,
-    "--ui-motion-easing-standard": theme.motion.easingStandard,
-    "--ui-motion-fast": theme.motion.fast,
-    "--ui-motion-slow": theme.motion.slow,
-    "--ui-radius-lg": theme.radius.lg,
-    "--ui-radius-md": theme.radius.md,
-    "--ui-radius-pill": theme.radius.pill,
-    "--ui-radius-sm": theme.radius.sm,
-    "--ui-radius-xl": theme.radius.xl,
-    "--ui-shadow-overlay": theme.shadow.overlay,
-    "--ui-shadow-raised": theme.shadow.raised,
-    "--ui-shadow-soft": theme.shadow.soft,
-    "--ui-space-2xl": theme.spacing["2xl"],
-    "--ui-space-3xl": theme.spacing["3xl"],
-    "--ui-space-4xl": theme.spacing["4xl"],
-    "--ui-space-5xl": theme.spacing["5xl"],
-    "--ui-space-lg": theme.spacing.lg,
-    "--ui-space-md": theme.spacing.md,
-    "--ui-space-sm": theme.spacing.sm,
-    "--ui-space-xl": theme.spacing.xl,
-    "--ui-space-xs": theme.spacing.xs,
-    "--ui-space-xxs": theme.spacing.xxs,
-    "--ui-typography-body-family": theme.typography.bodyFamily,
-    "--ui-typography-display-family": theme.typography.displayFamily,
-    "--ui-typography-hero": theme.typography.hero,
-    "--ui-typography-label": theme.typography.label,
-    "--ui-typography-letter-spacing-caps": theme.typography.letterSpacingCaps,
-    "--ui-typography-line-height-base": theme.typography.lineHeightBase,
-    "--ui-typography-line-height-relaxed": theme.typography.lineHeightRelaxed,
-    "--ui-typography-line-height-tight": theme.typography.lineHeightTight,
-    "--ui-typography-mono-family": theme.typography.monoFamily,
-    "--ui-typography-size-2xl": theme.typography.size2xl,
-    "--ui-typography-size-3xl": theme.typography.size3xl,
-    "--ui-typography-size-4xl": theme.typography.size4xl,
-    "--ui-typography-size-5xl": theme.typography.size5xl,
-    "--ui-typography-size-lg": theme.typography.sizeLg,
-    "--ui-typography-size-md": theme.typography.sizeMd,
-    "--ui-typography-size-sm": theme.typography.sizeSm,
-    "--ui-typography-size-xl": theme.typography.sizeXl,
-    "--ui-typography-size-xs": theme.typography.sizeXs,
-    "--ui-typography-weight-bold": theme.typography.weightBold,
-    "--ui-typography-weight-medium": theme.typography.weightMedium,
-    "--ui-typography-weight-regular": theme.typography.weightRegular,
-    "--ui-typography-weight-semibold": theme.typography.weightSemibold,
-    "--ui-z-dropdown": String(theme.zIndex.dropdown),
-    "--ui-z-modal": String(theme.zIndex.modal),
-    "--ui-z-overlay": String(theme.zIndex.overlay),
-    "--ui-z-sticky": String(theme.zIndex.sticky),
+    "--font-body": theme.typography.bodyFamily,
+    "--font-display": theme.typography.displayFamily,
+    "--font-mono": theme.typography.monoFamily,
+    "--font-weight-normal": theme.typography.weightRegular,
+    "--font-weight-medium": theme.typography.weightMedium,
+    "--font-weight-semibold": theme.typography.weightSemibold,
+    "--font-weight-bold": theme.typography.weightBold,
+    "--font-weight-heavy": theme.typography.weightHeavy,
+
+    "--text-2xs": theme.typography.size2xs,
+    "--text-xs": theme.typography.sizeXs,
+    "--text-xs-plus": theme.typography.sizeXsPlus,
+    "--text-sm": theme.typography.sizeSm,
+    "--text-sm-plus": theme.typography.sizeSmPlus,
+    "--text-md": theme.typography.sizeMd,
+    "--text-md-plus": theme.typography.sizeMdPlus,
+    "--text-lg": theme.typography.sizeLg,
+    "--text-lg-plus": theme.typography.sizeLgPlus,
+    "--text-xl": theme.typography.sizeXl,
+    "--text-xl-plus": theme.typography.sizeXlPlus,
+    "--text-2xl": theme.typography.size2xl,
+    "--text-2xl-plus": theme.typography.size2xlPlus,
+    "--text-3xl": theme.typography.size3xl,
+    "--text-3xl-plus": theme.typography.size3xlPlus,
+    "--text-4xl": theme.typography.size4xl,
+    "--text-5xl": theme.typography.size5xl,
+    "--text-6xl": theme.typography.size6xl,
+    "--text-7xl": theme.typography.size7xl,
+    "--text-h3": theme.typography.h3,
+    "--text-h2": theme.typography.h2,
+    "--text-h1": theme.typography.h1,
+    "--text-hero": theme.typography.hero,
+    "--text-on-media": theme.typography.onMediaBold,
+    "--text-small": theme.typography.sizeSm,
+    "--text-small-plus": theme.typography.sizeSmPlus,
+    "--text-regular": theme.typography.sizeMd,
+    "--text-regular-plus": theme.typography.sizeMdPlus,
+    "--text-large": theme.typography.sizeLg,
+    "--text-large-plus": theme.typography.sizeLgPlus,
+
+    "--line-tight": theme.typography.lineHeightTight,
+    "--line-base": theme.typography.lineHeightBase,
+    "--line-relaxed": theme.typography.lineHeightRelaxed,
+    "--line-on-media": theme.typography.onMediaLineHeight,
+    "--tracking-tight": theme.typography.headingLetterSpacingTight,
+    "--tracking-flat": theme.typography.headingLetterSpacingFlat,
+    "--tracking-caps": theme.typography.letterSpacingCaps,
+    "--tracking-on-media": theme.typography.onMediaLetterSpacing,
+
+    "--color-page": theme.color.canvas,
+    "--color-page-soft": theme.color.surfaceMuted,
+    "--color-page-muted": theme.color.surfaceStrong,
+    "--color-surface": theme.color.surface,
+    "--color-surface-soft": theme.color.surfaceStrong,
+    "--color-inverse": "#131313",
+    "--color-text-primary": theme.color.textPrimary,
+    "--color-text-secondary": theme.color.textSecondary,
+    "--color-text-tertiary": theme.color.textMuted,
+    "--color-text-inverse": theme.color.textInverse,
+    "--color-border-primary": theme.color.borderSubtle,
+    "--color-border-secondary": theme.color.borderStrong,
+    "--color-border-strong": theme.color.borderStrong,
+    "--color-border-subtle": theme.color.borderSubtle,
+    "--color-border-tertiary": theme.color.borderSubtle,
+    "--color-accent-solid": theme.color.actionPrimaryBg,
+    "--color-accent-solid-hover": theme.color.accent,
+    "--color-accent-contrast": theme.color.actionPrimaryText,
+    "--color-accent-surface": theme.color.accentSoft,
+    "--color-accent-foreground": theme.color.actionTertiaryText,
+    "--color-accent-border-strong": theme.color.actionPrimaryBg,
+    "--color-success-foreground": theme.color.success,
+    "--color-danger-foreground": theme.color.danger,
+    "--color-danger-solid": theme.color.danger,
+    "--color-danger-solid-hover": theme.color.danger,
+    "--color-danger-border-strong": theme.color.danger,
+    "--color-focus-ring": theme.color.focusRing,
+    "--hero-overlay-start": theme.color.heroOverlayStart,
+    "--hero-overlay-end": theme.color.heroOverlayEnd,
+
+    "--space-25": theme.spacing.xxs,
+    "--space-50": theme.spacing.xs,
+    "--space-75": theme.spacing.sm,
+    "--space-100": theme.spacing.md,
+    "--space-150": theme.spacing.xl,
+    "--space-200": theme.spacing.lg,
+    "--space-300": theme.spacing["2xl"],
+    "--space-400": theme.spacing["3xl"],
+    "--space-600": theme.spacing["4xl"],
+    "--space-800": theme.spacing["5xl"],
+
+    "--layout-page-max-width": theme.layout.pageMaxWidth,
+    "--layout-page-padding-mobile": theme.layout.pagePaddingMobile,
+    "--layout-page-padding-desktop": theme.layout.pagePaddingDesktop,
+    "--layout-header-block-size": theme.layout.navHeight,
+    "--layout-header-clearance": theme.layout.navHeight,
+    "--layout-hero-min-height": theme.layout.heroMinHeight,
+
+    "--radius-sm": theme.radius.sm,
+    "--radius-md": theme.radius.md,
+    "--radius-lg": theme.radius.lg,
+    "--radius-xl": theme.radius.xl,
+    "--radius-pill": theme.radius.pill,
+
+    "--duration-fast": theme.motion.fast,
+    "--duration-standard": theme.motion.base,
+    "--duration-slow": theme.motion.slow,
+    "--easing-standard": theme.motion.easingStandard,
+
+    "--shadow-1": theme.shadow.soft,
+    "--shadow-2": theme.shadow.raised,
+    "--shadow-frost": theme.shadow.overlay,
+    "--shadow-floating": theme.shadow.soft,
+    "--shadow-floating-strong": theme.shadow.raised,
   } satisfies Record<string, string>;
 }
 
