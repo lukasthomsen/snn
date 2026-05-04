@@ -22,6 +22,13 @@ import { getDb, schema } from "@snn/db";
 
 type BetterAuthOptions = Parameters<typeof betterAuth>[0];
 
+const authSchema = {
+  user: schema.users,
+  session: schema.sessions,
+  account: schema.accounts,
+  verification: schema.verifications,
+};
+
 async function buildAppleClientSecret() {
   const env = getServerEnv();
 
@@ -105,7 +112,7 @@ export const auth = betterAuth({
   secret: getBetterAuthSecret(),
   database: drizzleAdapter(getDb(), {
     provider: "pg",
-    schema,
+    schema: authSchema,
   }),
   emailAndPassword: {
     enabled: true,
