@@ -1,5 +1,3 @@
-import type { Route } from "next";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Button, TextField } from "@snn/ui";
@@ -19,18 +17,18 @@ type AuthField = {
 };
 
 type AuthPageProps = {
+  appleLabel: string;
   body: string;
   brandFooter: string;
   brandStatements: AuthBrandStatement[];
   brandTitle: string;
+  callbackURL: string;
   dividerText: string;
   fields: AuthField[];
   finePrint: ReactNode;
   googleLabel: string;
-  appleLabel: string;
-  locale: string;
   primaryAction: string;
-  secondaryActionHref: Route;
+  secondaryActionHref: string;
   secondaryActionLabel: string;
   secondaryActionText: string;
   title: string;
@@ -42,11 +40,11 @@ export function AuthPage({
   brandFooter,
   brandStatements,
   brandTitle,
+  callbackURL,
   dividerText,
   fields,
   finePrint,
   googleLabel,
-  locale,
   primaryAction,
   secondaryActionHref,
   secondaryActionLabel,
@@ -69,12 +67,12 @@ export function AuthPage({
             <div className="auth__header__SW0fo">
               <p className="helper__copy__SW0fq">
                 {secondaryActionText}{" "}
-                <Link
+                <a
                   className="inline__link__SW0fw"
                   href={secondaryActionHref}
                 >
                   {secondaryActionLabel}
-                </Link>
+                </a>
               </p>
               <h3 id="auth-title">{title}</h3>
               <p className="auth__copy__SW0fr">{body}</p>
@@ -82,8 +80,8 @@ export function AuthPage({
 
             <AuthProviderButtons
               appleLabel={appleLabel}
+              callbackURL={callbackURL}
               googleLabel={googleLabel}
-              locale={locale}
             />
 
             <div className="auth-divider__root__SW0fv">

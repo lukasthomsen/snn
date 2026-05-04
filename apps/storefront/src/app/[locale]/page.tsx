@@ -1,7 +1,6 @@
-import type { Route } from "next";
-import Link from "next/link";
-
 import { isLocale } from "@snn/i18n";
+
+import { getAccountsHref } from "./auth-links";
 
 type StorefrontPageProps = {
   params: Promise<{
@@ -30,6 +29,7 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = pageContent[safeLocale];
+  const signUpHref = getAccountsHref(safeLocale, "sign-up");
 
   return (
     <main className="home__root__SW0fz">
@@ -41,12 +41,12 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
               <h1 className="hero__title__SW0g5">{copy.title}</h1>
               <p className="hero__body__SW0g6">{copy.body}</p>
               <div className="hero__actions__SW0g7">
-                <Link
+                <a
                   className="hero__primary__SW0g8"
-                  href={`/${safeLocale}/sign-up` as Route}
+                  href={signUpHref}
                 >
                   {copy.ctaPrimary}
-                </Link>
+                </a>
               </div>
             </div>
           </div>

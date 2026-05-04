@@ -2,13 +2,15 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { HeartIcon, ShoppingBagIcon } from "@snn/ui";
 
 type StorefrontHeaderProps = {
+  authOrigin: string;
   locale: "da" | "en";
+  storefrontOrigin: string;
 };
 
 const navigation = {
@@ -51,11 +53,34 @@ function SnnLogo() {
   );
 }
 
-export function StorefrontHeader({ locale }: StorefrontHeaderProps) {
+function getAuthHref(
+  authOrigin: string,
+  locale: "da" | "en",
+  route: "sign-in" | "sign-up",
+  callbackURL: string,
+) {
+  const authURL = new URL(`/${locale}/${route}`, authOrigin);
+
+  authURL.searchParams.set("callbackURL", callbackURL);
+
+  return authURL.toString();
+}
+
+export function StorefrontHeader({
+  authOrigin,
+  locale,
+  storefrontOrigin,
+}: StorefrontHeaderProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [docked, setDocked] = useState(false);
   const isAuthRoute = pathname.endsWith("/sign-in") || pathname.endsWith("/sign-up");
   const navigationItems = navigation[locale];
+  const queryString = searchParams.toString();
+  const callbackPath = queryString ? `${pathname}?${queryString}` : pathname;
+  const callbackURL = new URL(callbackPath, storefrontOrigin).toString();
+  const signInHref = getAuthHref(authOrigin, locale, "sign-in", callbackURL);
+  const signUpHref = getAuthHref(authOrigin, locale, "sign-up", callbackURL);
 
   useEffect(() => {
     if (isAuthRoute) {
@@ -90,33 +115,43 @@ export function StorefrontHeader({ locale }: StorefrontHeaderProps) {
           </Link>
 
           <nav aria-label="Primary" className="header__links__SW0eh">
-            {navigationItems.map((item) => (
-              <Link
-                className="nav__link__SW0ek"
-                href={`/${locale}${item.href}` as Route}
-                key={item.label}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navigationItems.map((item) =>
+              item.href === "/sign-up" ? (
+                <a
+                  className="nav__link__SW0ek"
+                  href={signUpHref}
+                  key={item.label}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  className="nav__link__SW0ek"
+                  href={`/${locale}${item.href}` as Route}
+                  key={item.label}
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
           </nav>
 
           <div className="header__actions__SW0ei">
             <div className="action__links__SW0el">
-              <Link
+              <a
                 aria-label="Favorites"
                 className="action__button__SW0em"
-                href={`/${locale}/sign-in` as Route}
+                href={signInHref}
               >
                 <HeartIcon className="header__icon__SW0en" />
-              </Link>
-              <Link
+              </a>
+              <a
                 aria-label="Bag"
                 className="action__button__SW0em"
-                href={`/${locale}/sign-up` as Route}
+                href={signUpHref}
               >
                 <ShoppingBagIcon className="header__icon__SW0en" />
-              </Link>
+              </a>
             </div>
           </div>
         </div>

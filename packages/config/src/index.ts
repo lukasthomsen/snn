@@ -10,7 +10,7 @@ const serverEnvSchema = z.object({
   APPLE_KEY_ID: z.string().optional(),
   APPLE_PRIVATE_KEY: z.string().optional(),
   APPLE_TEAM_ID: z.string().optional(),
-  AUTH_SUBDOMAIN: z.string().default("auth"),
+  AUTH_SUBDOMAIN: z.string().default("accounts"),
   BETTER_AUTH_API_KEY: z.string().optional(),
   BETTER_AUTH_API_URL: z.string().url().optional(),
   BETTER_AUTH_KV_URL: z.string().url().optional(),
@@ -28,7 +28,7 @@ const serverEnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   LOCAL_ADMIN_ORIGIN: z.string().url().default("http://localhost:3001"),
-  LOCAL_AUTH_ORIGIN: z.string().url().default("http://localhost:3000"),
+  LOCAL_AUTH_ORIGIN: z.string().url().default("http://localhost:3002"),
   LOCAL_STOREFRONT_ORIGIN: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
@@ -97,6 +97,7 @@ export function getTrustedOrigins() {
     getCanonicalAuthOrigin(),
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:3002",
     "https://*.vercel.app",
   ]);
 
@@ -120,6 +121,7 @@ export function getAuthAllowedHosts() {
 
   hosts.add("localhost:3000");
   hosts.add("localhost:3001");
+  hosts.add("localhost:3002");
   hosts.add("*.vercel.app");
 
   return Array.from(hosts);

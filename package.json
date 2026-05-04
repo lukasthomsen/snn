@@ -9,9 +9,10 @@
   "scripts": {
     "audit": "pnpm audit",
     "build": "turbo run build",
-    "dev": "turbo run dev --parallel --filter=@snn/storefront --filter=@snn/admin",
+    "dev": "turbo run dev --parallel --filter=@snn/storefront --filter=@snn/admin --filter=@snn/accounts",
     "dev:storefront": "pnpm --filter @snn/storefront dev",
     "dev:admin": "pnpm --filter @snn/admin dev",
+    "dev:accounts": "pnpm --filter @snn/accounts dev",
     "lint": "turbo run lint",
     "media:ensure-variants": "tsx scripts/media/ensure-cloudflare-image-variants.ts",
     "typecheck": "turbo run typecheck",

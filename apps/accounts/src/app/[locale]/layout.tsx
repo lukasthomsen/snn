@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Archivo, Public_Sans } from "next/font/google";
-import { Suspense, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
-import { getAppOrigin } from "@snn/config";
 import { isLocale, locales, type Locale } from "@snn/i18n";
 import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
 
-import { StorefrontFooter } from "./components/storefront-footer";
-import { StorefrontHeader } from "./components/storefront-header";
 import "./styles.css";
 
 const bodyFont = Public_Sans({
@@ -32,8 +29,8 @@ type LocaleLayoutProps = Readonly<{
 }>;
 
 export const metadata: Metadata = {
-  title: "SNN Storefront",
-  description: "Editorial storefront foundation for the SNN runtime.",
+  title: "SNN Accounts",
+  description: "Central sign-in and account creation for SNN.",
 };
 
 export function generateStaticParams() {
@@ -53,17 +50,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         data-theme="mono"
         style={themeToCssVariables(monoTheme) as CSSProperties}
       >
-        <ThemeScope theme={monoTheme}>
-          <Suspense fallback={null}>
-            <StorefrontHeader
-              authOrigin={getAppOrigin("auth")}
-              locale={locale as Locale}
-              storefrontOrigin={getAppOrigin("storefront")}
-            />
-          </Suspense>
-          {children}
-          <StorefrontFooter locale={locale as Locale} />
-        </ThemeScope>
+        <ThemeScope theme={monoTheme}>{children}</ThemeScope>
       </body>
     </html>
   );

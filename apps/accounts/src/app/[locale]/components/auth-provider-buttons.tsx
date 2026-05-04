@@ -10,8 +10,8 @@ type ProviderAvailability = Record<AuthProvider, boolean>;
 
 type AuthProviderButtonsProps = {
   appleLabel: string;
+  callbackURL: string;
   googleLabel: string;
-  locale: string;
 };
 
 const inactiveAvailability: ProviderAvailability = {
@@ -44,8 +44,8 @@ function parseProviderRedirect(value: unknown) {
 
 export function AuthProviderButtons({
   appleLabel,
+  callbackURL,
   googleLabel,
-  locale,
 }: AuthProviderButtonsProps) {
   const [availability, setAvailability] =
     useState<ProviderAvailability>(inactiveAvailability);
@@ -94,7 +94,6 @@ export function AuthProviderButtons({
     setPendingProvider(provider);
 
     try {
-      const callbackURL = new URL(`/${locale}`, window.location.origin).toString();
       const response = await fetch("/api/auth/sign-in/social", {
         body: JSON.stringify({
           callbackURL,
