@@ -141,7 +141,7 @@ export function StorefrontHeader({
               <a
                 aria-label="Favorites"
                 className="action__button__SW0em"
-                href={signInHref}
+                href={`/${locale}/account/liked`}
               >
                 <HeartIcon className="header__icon__SW0en" />
               </a>

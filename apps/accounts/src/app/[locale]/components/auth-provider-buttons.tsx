@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+import { createSnnAuthClient } from "@snn/auth/client";
 import { AppleLogoIcon, Button, GoogleLogoIcon } from "@snn/ui";
 
 type AuthProvider = "apple" | "google";
+type AuthAction = AuthProvider | "passkey";
 
 type ProviderAvailability = Record<AuthProvider, boolean>;
 
@@ -12,6 +14,7 @@ type AuthProviderButtonsProps = {
   appleLabel: string;
   callbackURL: string;
   googleLabel: string;
+  passkeyLabel?: string | undefined;
 };
 
 const inactiveAvailability: ProviderAvailability = {
@@ -46,11 +49,14 @@ export function AuthProviderButtons({
   appleLabel,
   callbackURL,
   googleLabel,
+  passkeyLabel,
 }: AuthProviderButtonsProps) {
   const [availability, setAvailability] =
     useState<ProviderAvailability>(inactiveAvailability);
   const [isChecking, setIsChecking] = useState(true);
-  const [pendingProvider, setPendingProvider] = useState<AuthProvider | undefined>();
+  const [pendingAction, setPendingAction] = useState<AuthAction | undefined>();
+  const [supportsPasskeys, setSupportsPasskeys] = useState(false);
+  const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -86,33 +92,37 @@ export function AuthProviderButtons({
     };
   }, []);
 
+  useEffect(() => {
+    setSupportsPasskeys(
+      typeof window !== "undefined" &&
+        "PublicKeyCredential" in window &&
+        typeof window.PublicKeyCredential === "function",
+    );
+  }, []);
+
   async function continueWithProvider(provider: AuthProvider) {
-    if (!availability[provider] || pendingProvider) {
+    if (!availability[provider] || pendingAction) {
       return;
     }
 
-    setPendingProvider(provider);
+    setError(undefined);
+    setPendingAction(provider);
 
     try {
-      const response = await fetch("/api/auth/sign-in/social", {
-        body: JSON.stringify({
-          callbackURL,
-          errorCallbackURL: window.location.href,
-          provider,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
+      const result = await createSnnAuthClient().signIn.social({
+        callbackURL,
+        errorCallbackURL: window.location.href,
+        provider,
       });
-      const redirectURL = parseProviderRedirect(await response.json());
+      const redirectURL = parseProviderRedirect(result.data);
 
-      if (!response.ok || !redirectURL) {
+      if (result.error || !redirectURL) {
         setAvailability((current) => ({
           ...current,
           [provider]: false,
         }));
-        setPendingProvider(undefined);
+        setPendingAction(undefined);
+        setError("This provider is not available right now.");
         return;
       }
 
@@ -122,12 +132,39 @@ export function AuthProviderButtons({
         ...current,
         [provider]: false,
       }));
-      setPendingProvider(undefined);
+      setPendingAction(undefined);
+      setError("This provider is not available right now.");
     }
   }
 
-  const isGoogleInactive = isChecking || pendingProvider !== undefined || !availability.google;
-  const isAppleInactive = isChecking || pendingProvider !== undefined || !availability.apple;
+  async function continueWithPasskey() {
+    if (!supportsPasskeys || pendingAction) {
+      return;
+    }
+
+    setError(undefined);
+    setPendingAction("passkey");
+
+    try {
+      const result = await createSnnAuthClient().signIn.passkey();
+
+      if (result.error) {
+        setPendingAction(undefined);
+        setError("Passkey sign-in could not be completed.");
+        return;
+      }
+
+      window.location.assign(callbackURL);
+    } catch {
+      setPendingAction(undefined);
+      setError("Passkey sign-in was cancelled or unavailable.");
+    }
+  }
+
+  const hasPasskeyButton = Boolean(passkeyLabel && supportsPasskeys);
+  const isGoogleInactive = isChecking || pendingAction !== undefined || !availability.google;
+  const isAppleInactive = isChecking || pendingAction !== undefined || !availability.apple;
+  const isPasskeyInactive = pendingAction !== undefined || !supportsPasskeys;
 
   return (
     <div className="provider__buttons__SW0fs">
@@ -135,7 +172,7 @@ export function AuthProviderButtons({
         className="provider__button__SW0ft"
         disabled={isGoogleInactive}
         fullWidth
-        loading={pendingProvider === "google"}
+        loading={pendingAction === "google"}
         onClick={() => void continueWithProvider("google")}
         shape="field"
         size="md"
@@ -151,7 +188,7 @@ export function AuthProviderButtons({
         className="provider__button__SW0ft"
         disabled={isAppleInactive}
         fullWidth
-        loading={pendingProvider === "apple"}
+        loading={pendingAction === "apple"}
         onClick={() => void continueWithProvider("apple")}
         shape="field"
         size="md"
@@ -163,6 +200,26 @@ export function AuthProviderButtons({
         </span>
         <span>{appleLabel}</span>
       </Button>
+      {hasPasskeyButton ? (
+        <Button
+          className="provider__button__SW0ft"
+          disabled={isPasskeyInactive}
+          fullWidth
+          loading={pendingAction === "passkey"}
+          onClick={() => void continueWithPasskey()}
+          shape="field"
+          size="md"
+          tone="secondary"
+          type="button"
+        >
+          <span>{passkeyLabel}</span>
+        </Button>
+      ) : null}
+      {error ? (
+        <p className="form__notice__SW0hq" data-tone="danger">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

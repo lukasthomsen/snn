@@ -17,6 +17,7 @@
     "@snn/auth": "workspace:*",
     "@snn/commerce": "workspace:*",
     "@snn/config": "workspace:*",
+    "@snn/customer": "workspace:*",
     "@snn/i18n": "workspace:*",
     "@snn/media": "workspace:*",
     "@snn/payments": "workspace:*",

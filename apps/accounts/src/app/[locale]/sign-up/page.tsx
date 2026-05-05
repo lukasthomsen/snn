@@ -1,6 +1,7 @@
 import { isLocale } from "@snn/i18n";
 
 import {
+  getAccountAuthURL,
   getAccountAuthPath,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
@@ -38,12 +39,15 @@ const signUpCopy = {
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
     googleLabel: "Fortsæt med Google",
+    passwordConfirmLabel: "Bekræft adgangskode",
+    passwordConfirmPlaceholder: "Gentag adgangskoden",
     passwordLabel: "Adgangskode",
     passwordPlaceholder: "Opret en adgangskode",
     primaryAction: "Opret konto",
     secondaryActionLabel: "Log ind",
     secondaryActionText: "Har du allerede en konto?",
     title: "Join us!",
+    verificationCopy: "Tjek din indbakke for at bekræfte din e-mailadresse.",
   },
   en: {
     appleLabel: "Continue with Apple",
@@ -68,12 +72,15 @@ const signUpCopy = {
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
     googleLabel: "Continue with Google",
+    passwordConfirmLabel: "Confirm password",
+    passwordConfirmPlaceholder: "Repeat password",
     passwordLabel: "Password",
     passwordPlaceholder: "Create a password",
     primaryAction: "Create account",
     secondaryActionLabel: "Sign in",
     secondaryActionText: "Already have an account?",
     title: "Join us!",
+    verificationCopy: "Check your inbox to verify your email address.",
   },
 } as const;
 
@@ -89,6 +96,7 @@ export default async function SignUpPage({
   const copy = signUpCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
+  const verificationCallbackURL = getAccountAuthURL(safeLocale, "verify-email", callbackURL);
 
   return (
     <AuthPage
@@ -110,8 +118,19 @@ export default async function SignUpPage({
         {
           autoComplete: "new-password",
           label: copy.passwordLabel,
+          maxLength: 128,
+          minLength: 15,
           name: "password",
           placeholder: copy.passwordPlaceholder,
+          type: "password",
+        },
+        {
+          autoComplete: "new-password",
+          label: copy.passwordConfirmLabel,
+          maxLength: 128,
+          minLength: 15,
+          name: "confirmPassword",
+          placeholder: copy.passwordConfirmPlaceholder,
           type: "password",
         },
       ]}
@@ -123,7 +142,7 @@ export default async function SignUpPage({
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "vilkår" : "terms"}
           </a>
-          {" and "}
+          {safeLocale === "da" ? " og " : " and "}
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "privatlivspolitik" : "privacy policy"}
           </a>
@@ -131,11 +150,15 @@ export default async function SignUpPage({
         </>
       }
       googleLabel={copy.googleLabel}
+      mode="sign-up"
       primaryAction={copy.primaryAction}
       secondaryActionHref={getAccountAuthPath(safeLocale, "sign-in", callbackURL)}
       secondaryActionLabel={copy.secondaryActionLabel}
       secondaryActionText={copy.secondaryActionText}
       title={copy.title}
+      twoFactorHref={getAccountAuthPath(safeLocale, "two-factor", callbackURL)}
+      verificationCallbackURL={verificationCallbackURL}
+      verificationCopy={copy.verificationCopy}
     />
   );
 }

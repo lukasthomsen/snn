@@ -78,3 +78,33 @@
     linear-gradient(135deg, #e8e8e2, #c9c9c2);
   box-shadow: var(--shadow-2);
 }
+
+.admin__guard__SW1b0 {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: var(--space-200);
+  background: var(--color-page-soft);
+}
+
+.admin__guard-card__SW1b1 {
+  display: flex;
+  width: min(100%, 34rem);
+  flex-direction: column;
+  gap: var(--space-75);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  background: var(--color-page);
+}
+
+.admin__guard-card__SW1b1 p,
+.admin__guard-card__SW1b1 span {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.admin__guard-card__SW1b1 h1 {
+  margin: 0;
+  font-size: var(--text-h3);
+}

@@ -1,16 +1,17 @@
 import type { ReactNode } from "react";
 
-import { Button, TextField } from "@snn/ui";
-
 import {
   AuthBrandCarousel,
   type AuthBrandStatement,
 } from "./auth-brand-carousel";
+import { AuthEmailForm } from "./auth-email-form";
 import { AuthProviderButtons } from "./auth-provider-buttons";
 
-type AuthField = {
+export type AuthField = {
   autoComplete: string;
   label: string;
+  maxLength?: number | undefined;
+  minLength?: number | undefined;
   name: string;
   placeholder: string;
   type?: "email" | "password" | "text";
@@ -26,12 +27,19 @@ type AuthPageProps = {
   dividerText: string;
   fields: AuthField[];
   finePrint: ReactNode;
+  forgotPasswordHref?: string | undefined;
+  forgotPasswordLabel?: string | undefined;
   googleLabel: string;
+  mode: "sign-in" | "sign-up";
+  passkeyLabel?: string | undefined;
   primaryAction: string;
   secondaryActionHref: string;
   secondaryActionLabel: string;
   secondaryActionText: string;
   title: string;
+  twoFactorHref: string;
+  verificationCallbackURL?: string | undefined;
+  verificationCopy: string;
 };
 
 export function AuthPage({
@@ -44,12 +52,19 @@ export function AuthPage({
   dividerText,
   fields,
   finePrint,
+  forgotPasswordHref,
+  forgotPasswordLabel,
   googleLabel,
+  mode,
+  passkeyLabel,
   primaryAction,
   secondaryActionHref,
   secondaryActionLabel,
   secondaryActionText,
   title,
+  twoFactorHref,
+  verificationCallbackURL,
+  verificationCopy,
 }: AuthPageProps) {
   return (
     <main className="auth__shell__SW0fd">
@@ -82,6 +97,7 @@ export function AuthPage({
               appleLabel={appleLabel}
               callbackURL={callbackURL}
               googleLabel={googleLabel}
+              passkeyLabel={passkeyLabel}
             />
 
             <div className="auth-divider__root__SW0fv">
@@ -90,30 +106,17 @@ export function AuthPage({
               <span />
             </div>
 
-            <form className="auth__form__SW0fp" noValidate>
-              {fields.map((field) => (
-                <TextField
-                  autoComplete={field.autoComplete}
-                  fullWidth
-                  key={field.name}
-                  label={field.label}
-                  name={field.name}
-                  placeholder={field.placeholder}
-                  size="md"
-                  type={field.type ?? "text"}
-                />
-              ))}
-
-              <Button
-                className="submit__button__SW0fx"
-                fullWidth
-                size="lg"
-                type="button"
-              >
-                <span>{primaryAction}</span>
-                <span aria-hidden="true">→</span>
-              </Button>
-            </form>
+            <AuthEmailForm
+              callbackURL={callbackURL}
+              fields={fields}
+              forgotPasswordHref={forgotPasswordHref}
+              forgotPasswordLabel={forgotPasswordLabel}
+              mode={mode}
+              primaryAction={primaryAction}
+              twoFactorHref={twoFactorHref}
+              verificationCallbackURL={verificationCallbackURL}
+              verificationCopy={verificationCopy}
+            />
 
             <p className="legal__copy__SW0fy">{finePrint}</p>
           </div>

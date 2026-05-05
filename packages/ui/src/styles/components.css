@@ -525,32 +525,6 @@
   color: var(--color-text-tertiary);
 }
 
-.input__root__SW0be:autofill,
-.textarea__root__SW0bf:autofill,
-.input-group__input__SW0bw:autofill,
-.number-field__input__SW0bx:autofill,
-.search__input__SW0by:autofill {
-  background: var(--color-page);
-  color: var(--color-text-primary);
-}
-
-.input__root__SW0be:-webkit-autofill,
-.textarea__root__SW0bf:-webkit-autofill,
-.input-group__input__SW0bw:-webkit-autofill,
-.number-field__input__SW0bx:-webkit-autofill,
-.search__input__SW0by:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-page) inset;
-  -webkit-text-fill-color: var(--color-text-primary);
-  caret-color: var(--color-text-primary);
-}
-
-.input__root__SW0be[data-control-focused="true"]:-webkit-autofill,
-.textarea__root__SW0bf[data-control-focused="true"]:-webkit-autofill {
-  -webkit-box-shadow:
-    0 0 0 1000px var(--color-page) inset,
-    0 0 0 3px var(--form-ring-color);
-}
-
 .input__root__SW0be[data-full-width="true"],
 .textarea__root__SW0bf[data-full-width="true"],
 .select__control__SW0bv[data-full-width="true"] {

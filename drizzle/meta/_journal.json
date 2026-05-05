@@ -15,6 +15,13 @@
       "when": 1777676681907,
       "tag": "0001_long_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778014554498,
+      "tag": "0002_easy_vampiro",
+      "breakpoints": true
     }
   ]
 }

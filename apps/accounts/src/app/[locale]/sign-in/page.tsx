@@ -38,12 +38,15 @@ const signInCopy = {
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
     googleLabel: "Fortsæt med Google",
+    passkeyLabel: "Log ind med passkey",
+    forgotPasswordLabel: "Glemt adgangskode?",
     passwordLabel: "Adgangskode",
     passwordPlaceholder: "Indtast din adgangskode",
     primaryAction: "Log ind",
     secondaryActionLabel: "Opret en",
     secondaryActionText: "Har du brug for en konto?",
     title: "Welcome back!",
+    verificationCopy: "Vi har sendt et bekræftelseslink, hvis kontoen findes og skal bekræftes.",
   },
   en: {
     appleLabel: "Continue with Apple",
@@ -68,12 +71,15 @@ const signInCopy = {
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
     googleLabel: "Continue with Google",
+    passkeyLabel: "Sign in with passkey",
+    forgotPasswordLabel: "Forgot password?",
     passwordLabel: "Password",
     passwordPlaceholder: "Enter password",
     primaryAction: "Sign in",
     secondaryActionLabel: "Create one",
     secondaryActionText: "Need an account?",
     title: "Welcome back!",
+    verificationCopy: "We sent a verification link if the account exists and needs verification.",
   },
 } as const;
 
@@ -123,7 +129,7 @@ export default async function SignInPage({
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "vilkår" : "terms"}
           </a>
-          {" and "}
+          {safeLocale === "da" ? " og " : " and "}
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "privatlivspolitik" : "privacy policy"}
           </a>
@@ -131,11 +137,17 @@ export default async function SignInPage({
         </>
       }
       googleLabel={copy.googleLabel}
+      forgotPasswordHref={getAccountAuthPath(safeLocale, "forgot-password", callbackURL)}
+      forgotPasswordLabel={copy.forgotPasswordLabel}
+      mode="sign-in"
+      passkeyLabel={copy.passkeyLabel}
       primaryAction={copy.primaryAction}
       secondaryActionHref={getAccountAuthPath(safeLocale, "sign-up", callbackURL)}
       secondaryActionLabel={copy.secondaryActionLabel}
       secondaryActionText={copy.secondaryActionText}
       title={copy.title}
+      twoFactorHref={getAccountAuthPath(safeLocale, "two-factor", callbackURL)}
+      verificationCopy={copy.verificationCopy}
     />
   );
 }

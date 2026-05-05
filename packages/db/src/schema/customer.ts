@@ -2,6 +2,7 @@ import { boolean, index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core"
 
 import { countryCode, createdAt, foreignUuid, primaryUuid, updatedAt } from "./shared";
 import { users } from "./auth";
+import { products } from "./catalog";
 
 export const customerProfiles = pgTable(
   "customer_profile",
@@ -46,5 +47,24 @@ export const addresses = pgTable(
   },
   (table) => [
     index("address_customer_idx").on(table.customerId),
+  ],
+);
+
+export const customerProductLikes = pgTable(
+  "customer_product_like",
+  {
+    id: primaryUuid("id"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: foreignUuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex("customer_product_like_user_product_unique").on(table.userId, table.productId),
+    index("customer_product_like_user_idx").on(table.userId),
+    index("customer_product_like_product_idx").on(table.productId),
   ],
 );
