@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { createSnnAuthClient } from "@snn/auth/client";
 import { HeartIcon, ShoppingBagIcon } from "@snn/ui";
 
 type StorefrontHeaderProps = {
   authOrigin: string;
+  isSignedIn: boolean;
   locale: "da" | "en";
   storefrontOrigin: string;
 };
@@ -74,20 +74,18 @@ function getAuthHref(
 
 export function StorefrontHeader({
   authOrigin,
+  isSignedIn,
   locale,
   storefrontOrigin,
 }: StorefrontHeaderProps) {
   const pathname = usePathname();
-  const [authClient] = useState(() => createSnnAuthClient(authOrigin));
   const [docked, setDocked] = useState(false);
-  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const isAuthRoute = pathname.endsWith("/sign-in") || pathname.endsWith("/sign-up");
   const navigationItems = navigation[locale];
   const accountHref = `/${locale}/account`;
   const accountCallbackURL = new URL(accountHref, storefrontOrigin).toString();
   const signUpHref = getAuthHref(authOrigin, locale, "sign-up", accountCallbackURL);
-  const isSignedIn = Boolean(session?.user);
-  const shouldUseAccountLinks = isSignedIn || isSessionPending;
+  const shouldUseAccountLinks = isSignedIn;
   const likedHref = shouldUseAccountLinks ? `${accountHref}/liked` : signUpHref;
   const ordersHref = shouldUseAccountLinks ? `${accountHref}/orders` : signUpHref;
 
@@ -135,10 +133,6 @@ export function StorefrontHeader({
                     {item.label}
                   </Link>
                 );
-              }
-
-              if (isSessionPending) {
-                return null;
               }
 
               return isSignedIn ? (

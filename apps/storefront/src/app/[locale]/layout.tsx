@@ -9,7 +9,7 @@ import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
 
 import { StorefrontFooter } from "./components/storefront-footer";
-import { StorefrontHeader } from "./components/storefront-header";
+import { StorefrontHeaderShell } from "./components/storefront-header-shell";
 import "./styles.css";
 
 const bodyFont = Public_Sans({
@@ -55,7 +55,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       >
         <ThemeScope theme={monoTheme}>
           <Suspense fallback={null}>
-            <StorefrontHeader
+            <StorefrontHeaderShell
               authOrigin={getAppOrigin("auth")}
               locale={locale as Locale}
               storefrontOrigin={getAppOrigin("storefront")}

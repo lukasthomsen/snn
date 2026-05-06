@@ -2,6 +2,8 @@ import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
+  getAuthCompleteURL,
+  getFirstParam,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
 import { AuthUtilityPage } from "../components/auth-utility-page";
@@ -64,10 +66,6 @@ const copy = {
   },
 } as const;
 
-function getFirstParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
 export default async function VerifyEmailPage({
   params,
   searchParams,
@@ -95,7 +93,7 @@ export default async function VerifyEmailPage({
           href={
             hasError
               ? getAccountAuthPath(safeLocale, "sign-in", callbackURL)
-              : callbackURL
+              : getAuthCompleteURL(safeLocale, callbackURL)
           }
         >
           {hasError ? content.signInLabel : content.continueLabel}

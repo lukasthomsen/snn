@@ -52,6 +52,9 @@ importers:
       '@snn/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@snn/customer':
+        specifier: workspace:*
+        version: link:../../packages/customer
       '@snn/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n

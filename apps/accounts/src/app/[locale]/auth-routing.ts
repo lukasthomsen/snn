@@ -3,6 +3,7 @@ import type { Locale } from "@snn/i18n";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type AccountRoute =
+  | "auth-complete"
   | "forgot-password"
   | "reset-password"
   | "sign-in"
@@ -10,7 +11,7 @@ type AccountRoute =
   | "two-factor"
   | "verify-email";
 
-function getFirstParam(value: string | string[] | undefined) {
+export function getFirstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
@@ -55,10 +56,16 @@ export function getAccountAuthPath(
   locale: Locale,
   route: AccountRoute,
   callbackURL: string,
+  searchParams?: Record<string, string | undefined>,
 ) {
   const authURL = new URL(`/${locale}/${route}`, getAppOrigin("auth"));
 
   authURL.searchParams.set("callbackURL", callbackURL);
+  for (const [key, value] of Object.entries(searchParams ?? {})) {
+    if (value) {
+      authURL.searchParams.set(key, value);
+    }
+  }
 
   return `${authURL.pathname}${authURL.search}`;
 }
@@ -67,10 +74,20 @@ export function getAccountAuthURL(
   locale: Locale,
   route: AccountRoute,
   callbackURL: string,
+  searchParams?: Record<string, string | undefined>,
 ) {
   const authURL = new URL(`/${locale}/${route}`, getAppOrigin("auth"));
 
   authURL.searchParams.set("callbackURL", callbackURL);
+  for (const [key, value] of Object.entries(searchParams ?? {})) {
+    if (value) {
+      authURL.searchParams.set(key, value);
+    }
+  }
 
   return authURL.toString();
+}
+
+export function getAuthCompleteURL(locale: Locale, callbackURL: string) {
+  return getAccountAuthURL(locale, "auth-complete", callbackURL);
 }

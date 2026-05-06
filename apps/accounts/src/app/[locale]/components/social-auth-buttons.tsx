@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
 import { AppleLogoIcon, Button, GoogleLogoIcon } from "@snn/ui";
 
-type AuthProvider = "apple" | "google";
-type AuthAction = AuthProvider | "passkey";
+import { AuthStatusMessage } from "./auth-status-message";
 
+type AuthProvider = "apple" | "google";
 type ProviderAvailability = Record<AuthProvider, boolean>;
 
-type AuthProviderButtonsProps = {
+type SocialAuthButtonsProps = {
   appleLabel: string;
   callbackURL: string;
   googleLabel: string;
-  passkeyLabel?: string | undefined;
 };
 
 const inactiveAvailability: ProviderAvailability = {
@@ -37,7 +36,7 @@ function parseAvailability(value: unknown): ProviderAvailability {
   };
 }
 
-function parseProviderRedirect(value: unknown) {
+function parseRedirectURL(value: unknown) {
   if (!isRecord(value) || typeof value.url !== "string") {
     return undefined;
   }
@@ -45,43 +44,23 @@ function parseProviderRedirect(value: unknown) {
   return value.url;
 }
 
-function getPasskeySupportSnapshot() {
-  return (
-    typeof window !== "undefined" &&
-    "PublicKeyCredential" in window &&
-    typeof window.PublicKeyCredential === "function"
-  );
+function getErrorCallbackURL() {
+  const errorURL = new URL(window.location.href);
+
+  errorURL.searchParams.set("error", "oauth_failed");
+
+  return errorURL.toString();
 }
 
-function getServerPasskeySupportSnapshot() {
-  return false;
-}
-
-function subscribeToPasskeySupport(onStoreChange: () => void) {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-
-  const timeout = window.setTimeout(onStoreChange, 0);
-
-  return () => window.clearTimeout(timeout);
-}
-
-export function AuthProviderButtons({
+export function SocialAuthButtons({
   appleLabel,
   callbackURL,
   googleLabel,
-  passkeyLabel,
-}: AuthProviderButtonsProps) {
+}: SocialAuthButtonsProps) {
   const [availability, setAvailability] =
     useState<ProviderAvailability>(inactiveAvailability);
   const [isChecking, setIsChecking] = useState(true);
-  const [pendingAction, setPendingAction] = useState<AuthAction | undefined>();
-  const supportsPasskeys = useSyncExternalStore(
-    subscribeToPasskeySupport,
-    getPasskeySupportSnapshot,
-    getServerPasskeySupportSnapshot,
-  );
+  const [pendingProvider, setPendingProvider] = useState<AuthProvider | undefined>();
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
@@ -111,7 +90,7 @@ export function AuthProviderButtons({
       }
     }
 
-    checkProviders();
+    void checkProviders();
 
     return () => {
       controller.abort();
@@ -119,27 +98,26 @@ export function AuthProviderButtons({
   }, []);
 
   async function continueWithProvider(provider: AuthProvider) {
-    if (!availability[provider] || pendingAction) {
+    if (!availability[provider] || pendingProvider) {
       return;
     }
 
     setError(undefined);
-    setPendingAction(provider);
+    setPendingProvider(provider);
 
     try {
       const result = await createSnnAuthClient().signIn.social({
         callbackURL,
-        errorCallbackURL: window.location.href,
+        errorCallbackURL: getErrorCallbackURL(),
         provider,
       });
-      const redirectURL = parseProviderRedirect(result.data);
+      const redirectURL = parseRedirectURL(result.data);
 
       if (result.error || !redirectURL) {
         setAvailability((current) => ({
           ...current,
           [provider]: false,
         }));
-        setPendingAction(undefined);
         setError("This provider is not available right now.");
         return;
       }
@@ -150,39 +128,14 @@ export function AuthProviderButtons({
         ...current,
         [provider]: false,
       }));
-      setPendingAction(undefined);
       setError("This provider is not available right now.");
+    } finally {
+      setPendingProvider(undefined);
     }
   }
 
-  async function continueWithPasskey() {
-    if (!supportsPasskeys || pendingAction) {
-      return;
-    }
-
-    setError(undefined);
-    setPendingAction("passkey");
-
-    try {
-      const result = await createSnnAuthClient().signIn.passkey();
-
-      if (result.error) {
-        setPendingAction(undefined);
-        setError("Passkey sign-in could not be completed.");
-        return;
-      }
-
-      window.location.assign(callbackURL);
-    } catch {
-      setPendingAction(undefined);
-      setError("Passkey sign-in was cancelled or unavailable.");
-    }
-  }
-
-  const hasPasskeyButton = Boolean(passkeyLabel && supportsPasskeys);
-  const isGoogleInactive = isChecking || pendingAction !== undefined || !availability.google;
-  const isAppleInactive = isChecking || pendingAction !== undefined || !availability.apple;
-  const isPasskeyInactive = pendingAction !== undefined || !supportsPasskeys;
+  const isGoogleInactive = isChecking || pendingProvider !== undefined || !availability.google;
+  const isAppleInactive = isChecking || pendingProvider !== undefined || !availability.apple;
 
   return (
     <div className="provider__buttons__SW0fs">
@@ -190,7 +143,7 @@ export function AuthProviderButtons({
         className="provider__button__SW0ft"
         disabled={isGoogleInactive}
         fullWidth
-        loading={pendingAction === "google"}
+        loading={pendingProvider === "google"}
         onClick={() => void continueWithProvider("google")}
         shape="field"
         size="md"
@@ -206,7 +159,7 @@ export function AuthProviderButtons({
         className="provider__button__SW0ft"
         disabled={isAppleInactive}
         fullWidth
-        loading={pendingAction === "apple"}
+        loading={pendingProvider === "apple"}
         onClick={() => void continueWithProvider("apple")}
         shape="field"
         size="md"
@@ -218,26 +171,7 @@ export function AuthProviderButtons({
         </span>
         <span>{appleLabel}</span>
       </Button>
-      {hasPasskeyButton ? (
-        <Button
-          className="provider__button__SW0ft"
-          disabled={isPasskeyInactive}
-          fullWidth
-          loading={pendingAction === "passkey"}
-          onClick={() => void continueWithPasskey()}
-          shape="field"
-          size="md"
-          tone="secondary"
-          type="button"
-        >
-          <span>{passkeyLabel}</span>
-        </Button>
-      ) : null}
-      {error ? (
-        <p className="form__notice__SW0hq" data-tone="danger">
-          {error}
-        </p>
-      ) : null}
+      <AuthStatusMessage message={error} tone="danger" />
     </div>
   );
 }

@@ -1,12 +1,19 @@
+import type { Route } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getCustomerSession } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
 import {
-  getAccountAuthURL,
   getAccountAuthPath,
+  getAuthCompleteURL,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
 import { AuthPage } from "../components/auth-page";
+import { SignUpForm } from "../components/sign-up-form";
+import { SocialAuthButtons } from "../components/social-auth-buttons";
 
 type SignUpPageProps = {
   params: Promise<{
@@ -14,6 +21,8 @@ type SignUpPageProps = {
   }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export const dynamic = "force-dynamic";
 
 const signUpCopy = {
   da: {
@@ -38,7 +47,16 @@ const signUpCopy = {
     dividerText: "eller fortsæt med",
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
+    errors: {
+      generic: "Vi kunne ikke oprette kontoen. Tjek oplysningerne og prøv igen.",
+      mismatch: "Adgangskoderne skal være ens.",
+      network: "Vi kunne ikke få forbindelse til login-tjenesten. Prøv igen.",
+      passwordLength: "Adgangskoden skal være mellem 15 og 128 tegn.",
+      required: "Navn, e-mail og adgangskode er påkrævet.",
+    },
     googleLabel: "Fortsæt med Google",
+    nameLabel: "Navn",
+    namePlaceholder: "Dit navn",
     passwordConfirmLabel: "Bekræft adgangskode",
     passwordConfirmPlaceholder: "Gentag adgangskoden",
     passwordLabel: "Adgangskode",
@@ -71,7 +89,16 @@ const signUpCopy = {
     dividerText: "or continue with",
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
+    errors: {
+      generic: "We could not create that account. Check the details and try again.",
+      mismatch: "Passwords must match.",
+      network: "We could not reach the authentication service. Please try again.",
+      passwordLength: "Password must be between 15 and 128 characters.",
+      required: "Name, email, and password are required.",
+    },
     googleLabel: "Continue with Google",
+    nameLabel: "Name",
+    namePlaceholder: "Your name",
     passwordConfirmLabel: "Confirm password",
     passwordConfirmPlaceholder: "Repeat password",
     passwordLabel: "Password",
@@ -88,52 +115,29 @@ export default async function SignUpPage({
   params,
   searchParams,
 }: SignUpPageProps) {
-  const [{ locale }, resolvedSearchParams] = await Promise.all([
+  const [{ locale }, resolvedSearchParams, requestHeaders] = await Promise.all([
     params,
     searchParams,
+    headers(),
   ]);
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = signUpCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
+  const session = await getCustomerSession(requestHeaders).catch(() => null);
+
+  if (session?.user && !session.user.banned) {
+    redirect(callbackURL as Route);
+  }
+
+  const authCompleteURL = getAuthCompleteURL(safeLocale, callbackURL);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
-  const verificationCallbackURL = getAccountAuthURL(safeLocale, "verify-email", callbackURL);
 
   return (
     <AuthPage
-      appleLabel={copy.appleLabel}
       body={copy.body}
       brandFooter={copy.brandFooter}
       brandStatements={[...copy.brandStatements]}
       brandTitle={copy.brandTitle}
-      callbackURL={callbackURL}
-      dividerText={copy.dividerText}
-      fields={[
-        {
-          autoComplete: "email",
-          label: copy.emailLabel,
-          name: "email",
-          placeholder: copy.emailPlaceholder,
-          type: "email",
-        },
-        {
-          autoComplete: "new-password",
-          label: copy.passwordLabel,
-          maxLength: 128,
-          minLength: 15,
-          name: "password",
-          placeholder: copy.passwordPlaceholder,
-          type: "password",
-        },
-        {
-          autoComplete: "new-password",
-          label: copy.passwordConfirmLabel,
-          maxLength: 128,
-          minLength: 15,
-          name: "confirmPassword",
-          placeholder: copy.passwordConfirmPlaceholder,
-          type: "password",
-        },
-      ]}
       finePrint={
         <>
           {safeLocale === "da"
@@ -149,16 +153,43 @@ export default async function SignUpPage({
           .
         </>
       }
-      googleLabel={copy.googleLabel}
-      mode="sign-up"
-      primaryAction={copy.primaryAction}
       secondaryActionHref={getAccountAuthPath(safeLocale, "sign-in", callbackURL)}
       secondaryActionLabel={copy.secondaryActionLabel}
       secondaryActionText={copy.secondaryActionText}
       title={copy.title}
-      twoFactorHref={getAccountAuthPath(safeLocale, "two-factor", callbackURL)}
-      verificationCallbackURL={verificationCallbackURL}
-      verificationCopy={copy.verificationCopy}
-    />
+    >
+      <SocialAuthButtons
+        appleLabel={copy.appleLabel}
+        callbackURL={authCompleteURL}
+        googleLabel={copy.googleLabel}
+      />
+
+      <div className="auth-divider__root__SW0fv">
+        <span />
+        <p>{copy.dividerText}</p>
+        <span />
+      </div>
+
+      <SignUpForm
+        callbackURL={authCompleteURL}
+        confirmPasswordLabel={copy.passwordConfirmLabel}
+        confirmPasswordPlaceholder={copy.passwordConfirmPlaceholder}
+        emailLabel={copy.emailLabel}
+        emailPlaceholder={copy.emailPlaceholder}
+        messages={{
+          genericError: copy.errors.generic,
+          mismatch: copy.errors.mismatch,
+          networkError: copy.errors.network,
+          passwordLength: copy.errors.passwordLength,
+          required: copy.errors.required,
+        }}
+        nameLabel={copy.nameLabel}
+        namePlaceholder={copy.namePlaceholder}
+        passwordLabel={copy.passwordLabel}
+        passwordPlaceholder={copy.passwordPlaceholder}
+        primaryAction={copy.primaryAction}
+        verificationCopy={copy.verificationCopy}
+      />
+    </AuthPage>
   );
 }
