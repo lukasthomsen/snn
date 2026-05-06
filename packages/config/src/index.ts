@@ -28,6 +28,8 @@ const serverEnvSchema = z.object({
   BASE_DOMAIN: z.string().default("veloro.dk"),
   BETTER_AUTH_SECRET: optionalString,
   BETTER_AUTH_URL: optionalUrl,
+  CLOUDFLARE_ACCOUNT_ID: optionalString,
+  CLOUDFLARE_API_TOKEN: optionalString,
   CLOUDFLARE_IMAGES_ACCOUNT_ID: optionalString,
   CLOUDFLARE_IMAGES_API_TOKEN: optionalString,
   CLOUDFLARE_IMAGES_DELIVERY_HASH: optionalString,
@@ -186,16 +188,24 @@ export function getTurnstileSecretKey() {
   return cachedEnv.CF_TURNSTILE_SECRET_KEY;
 }
 
-export function getCloudflareImagesConfig() {
+export function getCloudflareConfig() {
   return {
-    accountId: cachedEnv.CLOUDFLARE_IMAGES_ACCOUNT_ID,
-    apiToken: cachedEnv.CLOUDFLARE_IMAGES_API_TOKEN,
+    accountId: cachedEnv.CLOUDFLARE_ACCOUNT_ID,
+    apiToken: cachedEnv.CLOUDFLARE_API_TOKEN,
+  };
+}
+
+export function getCloudflareImagesConfig() {
+  const accountId =
+    cachedEnv.CLOUDFLARE_IMAGES_ACCOUNT_ID ?? cachedEnv.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken =
+    cachedEnv.CLOUDFLARE_IMAGES_API_TOKEN ?? cachedEnv.CLOUDFLARE_API_TOKEN;
+
+  return {
+    accountId,
+    apiToken,
     deliveryHash: cachedEnv.CLOUDFLARE_IMAGES_DELIVERY_HASH,
-    enabled: Boolean(
-      cachedEnv.CLOUDFLARE_IMAGES_ACCOUNT_ID &&
-        cachedEnv.CLOUDFLARE_IMAGES_API_TOKEN &&
-        cachedEnv.CLOUDFLARE_IMAGES_DELIVERY_HASH,
-    ),
+    enabled: Boolean(accountId && apiToken && cachedEnv.CLOUDFLARE_IMAGES_DELIVERY_HASH),
   };
 }
 

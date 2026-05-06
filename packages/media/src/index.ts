@@ -122,7 +122,8 @@ function ensureCloudflareImagesEnabled() {
 
   if (!config.accountId || !config.apiToken) {
     throw new Error(
-      "Cloudflare Images is not configured. Set CLOUDFLARE_IMAGES_ACCOUNT_ID and CLOUDFLARE_IMAGES_API_TOKEN.",
+      "Cloudflare Images is not configured. Set CLOUDFLARE_IMAGES_ACCOUNT_ID/CLOUDFLARE_IMAGES_API_TOKEN " +
+        "or the shared CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_API_TOKEN fallback.",
     );
   }
 
