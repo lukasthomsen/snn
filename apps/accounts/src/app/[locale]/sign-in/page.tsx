@@ -1,14 +1,7 @@
-import type { Route } from "next";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
-import { getCustomerSession } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
-  getAuthCompleteURL,
-  getFirstParam,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
@@ -48,11 +41,8 @@ const signInCopy = {
     dividerText: "eller fortsæt med",
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
-    errors: {
-      authIncomplete: "Vi kunne ikke færdiggøre log ind. Prøv igen.",
-      generic: "Vi kunne ikke logge dig ind. Tjek dine oplysninger, bekræft din e-mail og prøv igen.",
-      network: "Vi kunne ikke få forbindelse til login-tjenesten. Prøv igen.",
-      oauthFailed: "Google-login kunne ikke færdiggøres. Prøv igen.",
+    messages: {
+      disabled: "Login er midlertidigt slået fra, mens vi bygger autentificeringen op igen.",
       required: "E-mail og adgangskode er påkrævet.",
     },
     forgotPasswordLabel: "Glemt adgangskode?",
@@ -86,11 +76,8 @@ const signInCopy = {
     dividerText: "or continue with",
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
-    errors: {
-      authIncomplete: "We could not finish sign-in. Please try again.",
-      generic: "We could not sign you in. Check your details, verify your email, and try again.",
-      network: "We could not reach the authentication service. Please try again.",
-      oauthFailed: "Google sign-in could not be completed. Please try again.",
+    messages: {
+      disabled: "Sign-in is temporarily disabled while we rebuild authentication.",
       required: "Email and password are required.",
     },
     forgotPasswordLabel: "Forgot password?",
@@ -104,48 +91,17 @@ const signInCopy = {
   },
 } as const;
 
-type SignInErrorCopy = {
-  authIncomplete: string;
-  generic: string;
-  network: string;
-  oauthFailed: string;
-  required: string;
-};
-
-function getInitialError(
-  error: string | undefined,
-  errors: SignInErrorCopy,
-) {
-  if (error === "auth_incomplete") {
-    return errors.authIncomplete;
-  }
-
-  if (error === "oauth_failed") {
-    return errors.oauthFailed;
-  }
-
-  return undefined;
-}
-
 export default async function SignInPage({
   params,
   searchParams,
 }: SignInPageProps) {
-  const [{ locale }, resolvedSearchParams, requestHeaders] = await Promise.all([
+  const [{ locale }, resolvedSearchParams] = await Promise.all([
     params,
     searchParams,
-    headers(),
   ]);
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = signInCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
-  const session = await getCustomerSession(requestHeaders).catch(() => null);
-
-  if (session?.user && !session.user.banned) {
-    redirect(callbackURL as Route);
-  }
-
-  const authCompleteURL = getAuthCompleteURL(safeLocale, callbackURL);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
 
   return (
@@ -176,7 +132,7 @@ export default async function SignInPage({
     >
       <SocialAuthButtons
         appleLabel={copy.appleLabel}
-        callbackURL={authCompleteURL}
+        disabledMessage={copy.messages.disabled}
         googleLabel={copy.googleLabel}
       />
 
@@ -187,24 +143,16 @@ export default async function SignInPage({
       </div>
 
       <SignInForm
-        callbackURL={authCompleteURL}
         emailLabel={copy.emailLabel}
         emailPlaceholder={copy.emailPlaceholder}
-        forgotPasswordHref={getAccountAuthPath(safeLocale, "forgot-password", callbackURL)}
         forgotPasswordLabel={copy.forgotPasswordLabel}
-        initialError={getInitialError(
-          getFirstParam(resolvedSearchParams.error),
-          copy.errors,
-        )}
         messages={{
-          genericError: copy.errors.generic,
-          networkError: copy.errors.network,
-          required: copy.errors.required,
+          disabled: copy.messages.disabled,
+          required: copy.messages.required,
         }}
         passwordLabel={copy.passwordLabel}
         passwordPlaceholder={copy.passwordPlaceholder}
         primaryAction={copy.primaryAction}
-        twoFactorHref={getAccountAuthPath(safeLocale, "two-factor", callbackURL)}
       />
     </AuthPage>
   );

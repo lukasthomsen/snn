@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 
-import { createSnnAuthClient } from "@snn/auth/client";
 import { Button, TextField } from "@snn/ui";
 
 import { AuthStatusMessage } from "./auth-status-message";
@@ -11,15 +10,13 @@ const passwordMinLength = 15;
 const passwordMaxLength = 128;
 
 type SignUpFormMessages = {
-  genericError: string;
+  disabled: string;
   mismatch: string;
-  networkError: string;
   passwordLength: string;
   required: string;
 };
 
 type SignUpFormProps = {
-  callbackURL: string;
   confirmPasswordLabel: string;
   confirmPasswordPlaceholder: string;
   emailLabel: string;
@@ -30,7 +27,6 @@ type SignUpFormProps = {
   passwordLabel: string;
   passwordPlaceholder: string;
   primaryAction: string;
-  verificationCopy: string;
 };
 
 function validatePassword(password: string) {
@@ -38,7 +34,6 @@ function validatePassword(password: string) {
 }
 
 export function SignUpForm({
-  callbackURL,
   confirmPasswordLabel,
   confirmPasswordPlaceholder,
   emailLabel,
@@ -49,16 +44,13 @@ export function SignUpForm({
   passwordLabel,
   passwordPlaceholder,
   primaryAction,
-  verificationCopy,
 }: SignUpFormProps) {
-  const [error, setError] = useState<string | undefined>();
-  const [success, setSuccess] = useState<string | undefined>();
-  const [isPending, setIsPending] = useState(false);
+  const [message, setMessage] = useState<string | undefined>();
+  const [tone, setTone] = useState<"danger" | "success">("danger");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(undefined);
-    setSuccess(undefined);
+    setMessage(undefined);
 
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") ?? "").trim();
@@ -67,48 +59,31 @@ export function SignUpForm({
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
     if (!name || !email || !password || !confirmPassword) {
-      setError(messages.required);
+      setTone("danger");
+      setMessage(messages.required);
       return;
     }
 
     if (!validatePassword(password)) {
-      setError(messages.passwordLength);
+      setTone("danger");
+      setMessage(messages.passwordLength);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError(messages.mismatch);
+      setTone("danger");
+      setMessage(messages.mismatch);
       return;
     }
 
-    setIsPending(true);
-
-    try {
-      const result = await createSnnAuthClient().signUp.email({
-        callbackURL,
-        email,
-        name,
-        password,
-      });
-
-      if (result.error) {
-        setError(messages.genericError);
-        return;
-      }
-
-      setSuccess(verificationCopy);
-    } catch {
-      setError(messages.networkError);
-    } finally {
-      setIsPending(false);
-    }
+    setTone("danger");
+    setMessage(messages.disabled);
   }
 
   return (
-    <form className="auth__form__SW0fp" noValidate onSubmit={(event) => void handleSubmit(event)}>
+    <form className="auth__form__SW0fp" noValidate onSubmit={handleSubmit}>
       <TextField
         autoComplete="name"
-        disabled={isPending}
         fullWidth
         label={nameLabel}
         name="name"
@@ -118,7 +93,6 @@ export function SignUpForm({
       />
       <TextField
         autoComplete="email"
-        disabled={isPending}
         fullWidth
         label={emailLabel}
         name="email"
@@ -129,7 +103,6 @@ export function SignUpForm({
       />
       <TextField
         autoComplete="new-password"
-        disabled={isPending}
         fullWidth
         label={passwordLabel}
         maxLength={passwordMaxLength}
@@ -142,7 +115,6 @@ export function SignUpForm({
       />
       <TextField
         autoComplete="new-password"
-        disabled={isPending}
         fullWidth
         label={confirmPasswordLabel}
         maxLength={passwordMaxLength}
@@ -157,7 +129,6 @@ export function SignUpForm({
       <Button
         className="submit__button__SW0fx"
         fullWidth
-        loading={isPending}
         size="lg"
         type="submit"
       >
@@ -165,8 +136,7 @@ export function SignUpForm({
         <span aria-hidden="true">→</span>
       </Button>
 
-      <AuthStatusMessage message={success} tone="success" />
-      <AuthStatusMessage message={error} tone="danger" />
+      <AuthStatusMessage message={message} tone={tone} />
     </form>
   );
 }

@@ -1,13 +1,7 @@
-import type { Route } from "next";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
-import { getCustomerSession } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
-  getAuthCompleteURL,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
@@ -47,10 +41,9 @@ const signUpCopy = {
     dividerText: "eller fortsæt med",
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
-    errors: {
-      generic: "Vi kunne ikke oprette kontoen. Tjek oplysningerne og prøv igen.",
+    messages: {
+      disabled: "Kontooprettelse er midlertidigt slået fra, mens vi bygger autentificeringen op igen.",
       mismatch: "Adgangskoderne skal være ens.",
-      network: "Vi kunne ikke få forbindelse til login-tjenesten. Prøv igen.",
       passwordLength: "Adgangskoden skal være mellem 15 og 128 tegn.",
       required: "Navn, e-mail og adgangskode er påkrævet.",
     },
@@ -65,7 +58,6 @@ const signUpCopy = {
     secondaryActionLabel: "Log ind",
     secondaryActionText: "Har du allerede en konto?",
     title: "Join us!",
-    verificationCopy: "Tjek din indbakke for at bekræfte din e-mailadresse.",
   },
   en: {
     appleLabel: "Continue with Apple",
@@ -89,10 +81,9 @@ const signUpCopy = {
     dividerText: "or continue with",
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
-    errors: {
-      generic: "We could not create that account. Check the details and try again.",
+    messages: {
+      disabled: "Account creation is temporarily disabled while we rebuild authentication.",
       mismatch: "Passwords must match.",
-      network: "We could not reach the authentication service. Please try again.",
       passwordLength: "Password must be between 15 and 128 characters.",
       required: "Name, email, and password are required.",
     },
@@ -107,7 +98,6 @@ const signUpCopy = {
     secondaryActionLabel: "Sign in",
     secondaryActionText: "Already have an account?",
     title: "Join us!",
-    verificationCopy: "Check your inbox to verify your email address.",
   },
 } as const;
 
@@ -115,21 +105,13 @@ export default async function SignUpPage({
   params,
   searchParams,
 }: SignUpPageProps) {
-  const [{ locale }, resolvedSearchParams, requestHeaders] = await Promise.all([
+  const [{ locale }, resolvedSearchParams] = await Promise.all([
     params,
     searchParams,
-    headers(),
   ]);
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = signUpCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
-  const session = await getCustomerSession(requestHeaders).catch(() => null);
-
-  if (session?.user && !session.user.banned) {
-    redirect(callbackURL as Route);
-  }
-
-  const authCompleteURL = getAuthCompleteURL(safeLocale, callbackURL);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
 
   return (
@@ -160,7 +142,7 @@ export default async function SignUpPage({
     >
       <SocialAuthButtons
         appleLabel={copy.appleLabel}
-        callbackURL={authCompleteURL}
+        disabledMessage={copy.messages.disabled}
         googleLabel={copy.googleLabel}
       />
 
@@ -171,24 +153,21 @@ export default async function SignUpPage({
       </div>
 
       <SignUpForm
-        callbackURL={authCompleteURL}
         confirmPasswordLabel={copy.passwordConfirmLabel}
         confirmPasswordPlaceholder={copy.passwordConfirmPlaceholder}
         emailLabel={copy.emailLabel}
         emailPlaceholder={copy.emailPlaceholder}
         messages={{
-          genericError: copy.errors.generic,
-          mismatch: copy.errors.mismatch,
-          networkError: copy.errors.network,
-          passwordLength: copy.errors.passwordLength,
-          required: copy.errors.required,
+          disabled: copy.messages.disabled,
+          mismatch: copy.messages.mismatch,
+          passwordLength: copy.messages.passwordLength,
+          required: copy.messages.required,
         }}
         nameLabel={copy.nameLabel}
         namePlaceholder={copy.namePlaceholder}
         passwordLabel={copy.passwordLabel}
         passwordPlaceholder={copy.passwordPlaceholder}
         primaryAction={copy.primaryAction}
-        verificationCopy={copy.verificationCopy}
       />
     </AuthPage>
   );
