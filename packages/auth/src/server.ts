@@ -2,7 +2,7 @@ import { SignJWT, importPKCS8 } from "jose";
 
 import { passkey } from "@better-auth/passkey";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { dash, sendEmail } from "@better-auth/infra";
+import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware, freshSessionMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
@@ -23,6 +23,8 @@ import {
   hasGoogleOAuth,
 } from "@snn/config";
 import { getDb, schema } from "@snn/db";
+
+import { sendAuthActionEmail } from "./email";
 
 type BetterAuthOptions = Parameters<typeof betterAuth>[0];
 
@@ -52,35 +54,6 @@ function getPasskeyOrigins() {
     getAppOrigin("storefront"),
     getAppOrigin("admin"),
   ];
-}
-
-function getManagedEmailConfig() {
-  return {
-    ...(betterAuthInfrastructure.apiKey
-      ? { apiKey: betterAuthInfrastructure.apiKey }
-      : {}),
-    ...(betterAuthInfrastructure.apiUrl
-      ? { apiUrl: betterAuthInfrastructure.apiUrl }
-      : {}),
-  };
-}
-
-async function sendManagedEmail(
-  options: Parameters<typeof sendEmail>[0],
-  fallbackURL: string,
-) {
-  if (!betterAuthInfrastructure.apiKey) {
-    globalThis.console.info(
-      `[auth] Better Auth managed email is not configured. Development link: ${fallbackURL}`,
-    );
-    return;
-  }
-
-  const result = await sendEmail(options, getManagedEmailConfig());
-
-  if (!result.success) {
-    throw new Error(result.error ?? "Better Auth managed email failed.");
-  }
 }
 
 async function ensureCustomerProfileForVerifiedUser(user: {
@@ -249,20 +222,14 @@ export const auth = betterAuth({
       };
     },
     async sendResetPassword({ user, url }) {
-      await sendManagedEmail(
-        {
-          template: "reset-password",
-          to: user.email,
-          variables: {
-            appName,
-            expirationMinutes: "60",
-            resetLink: url,
-            userEmail: user.email,
-            userName: user.name,
-          },
-        },
-        url,
-      );
+      await sendAuthActionEmail({
+        actionUrl: url,
+        appName,
+        expirationMinutes: 60,
+        kind: "reset-password",
+        to: user.email,
+        userName: user.name,
+      });
     },
   },
   emailVerification: {
@@ -274,20 +241,14 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     sendOnSignUp: true,
     async sendVerificationEmail({ user, url }) {
-      await sendManagedEmail(
-        {
-          template: "verify-email",
-          to: user.email,
-          variables: {
-            appName,
-            expirationMinutes: "1440",
-            userEmail: user.email,
-            userName: user.name,
-            verificationUrl: url,
-          },
-        },
-        url,
-      );
+      await sendAuthActionEmail({
+        actionUrl: url,
+        appName,
+        expirationMinutes: 1440,
+        kind: "verify-email",
+        to: user.email,
+        userName: user.name,
+      });
     },
   },
   session: {
@@ -317,6 +278,10 @@ export const auth = betterAuth({
         window: 60 * 10,
         max: 5,
       },
+      "/send-verification-email": {
+        window: 60 * 10,
+        max: 3,
+      },
       "/forget-password": {
         window: 60 * 10,
         max: 3,
@@ -324,6 +289,14 @@ export const auth = betterAuth({
       "/request-password-reset": {
         window: 60 * 10,
         max: 3,
+      },
+      "/two-factor/verify-backup-code": {
+        window: 60 * 10,
+        max: 6,
+      },
+      "/two-factor/verify-totp": {
+        window: 60 * 10,
+        max: 6,
       },
     },
   },

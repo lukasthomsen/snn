@@ -3,6 +3,7 @@ import type { Locale } from "@snn/i18n";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type AccountRoute =
+  | "auth-complete"
   | "forgot-password"
   | "reset-password"
   | "sign-in"
@@ -85,4 +86,8 @@ export function getAccountAuthURL(
   }
 
   return authURL.toString();
+}
+
+export function getAuthCompleteURL(locale: Locale, callbackURL: string) {
+  return getAccountAuthURL(locale, "auth-complete", callbackURL);
 }

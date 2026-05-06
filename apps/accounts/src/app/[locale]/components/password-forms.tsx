@@ -71,7 +71,7 @@ export function ForgotPasswordForm({
     setIsPending(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
     try {
       await createSnnAuthClient().requestPasswordReset({

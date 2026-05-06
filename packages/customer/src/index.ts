@@ -57,6 +57,7 @@ export class CustomerAuthError extends Error {
     public readonly code:
       | "AUTH_REQUIRED"
       | "BANNED"
+      | "EMAIL_UNVERIFIED"
       | "FRESH_SESSION_REQUIRED"
       | "STAFF_REQUIRED"
       | "MFA_REQUIRED",
@@ -138,6 +139,13 @@ export async function requireCustomerSession(headers: Headers) {
 
   if (session.user.banned) {
     throw new CustomerAuthError("This customer account is unavailable.", "BANNED");
+  }
+
+  if (!session.user.emailVerified) {
+    throw new CustomerAuthError(
+      "A verified email address is required for customer account access.",
+      "EMAIL_UNVERIFIED",
+    );
   }
 
   return session;

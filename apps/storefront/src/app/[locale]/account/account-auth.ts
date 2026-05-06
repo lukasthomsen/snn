@@ -44,7 +44,9 @@ export async function requireAccountSession(locale: Locale, pathname?: string) {
   } catch (error) {
     if (
       error instanceof CustomerAuthError &&
-      (error.code === "AUTH_REQUIRED" || error.code === "BANNED")
+      (error.code === "AUTH_REQUIRED" ||
+        error.code === "BANNED" ||
+        error.code === "EMAIL_UNVERIFIED")
     ) {
       const signInURL = getAccountSignInURL(
         locale,

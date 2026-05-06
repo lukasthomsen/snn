@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { createSnnAuthClient } from "@snn/auth/client";
 import { Button, TextField } from "@snn/ui";
 
 import { AuthStatusMessage } from "./auth-status-message";
@@ -10,13 +11,15 @@ const passwordMinLength = 15;
 const passwordMaxLength = 128;
 
 type SignUpFormMessages = {
-  disabled: string;
+  genericError: string;
   mismatch: string;
+  networkError: string;
   passwordLength: string;
   required: string;
 };
 
 type SignUpFormProps = {
+  callbackURL: string;
   confirmPasswordLabel: string;
   confirmPasswordPlaceholder: string;
   emailLabel: string;
@@ -27,6 +30,7 @@ type SignUpFormProps = {
   passwordLabel: string;
   passwordPlaceholder: string;
   primaryAction: string;
+  verificationCopy: string;
 };
 
 function validatePassword(password: string) {
@@ -34,6 +38,7 @@ function validatePassword(password: string) {
 }
 
 export function SignUpForm({
+  callbackURL,
   confirmPasswordLabel,
   confirmPasswordPlaceholder,
   emailLabel,
@@ -44,17 +49,19 @@ export function SignUpForm({
   passwordLabel,
   passwordPlaceholder,
   primaryAction,
+  verificationCopy,
 }: SignUpFormProps) {
   const [message, setMessage] = useState<string | undefined>();
   const [tone, setTone] = useState<"danger" | "success">("danger");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(undefined);
 
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
@@ -76,8 +83,30 @@ export function SignUpForm({
       return;
     }
 
-    setTone("danger");
-    setMessage(messages.disabled);
+    setIsSubmitting(true);
+
+    try {
+      const result = await createSnnAuthClient().signUp.email({
+        callbackURL,
+        email,
+        name,
+        password,
+      });
+
+      if (result.error) {
+        setTone("danger");
+        setMessage(messages.genericError);
+        return;
+      }
+
+      setTone("success");
+      setMessage(verificationCopy);
+    } catch {
+      setTone("danger");
+      setMessage(messages.networkError);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -128,11 +157,12 @@ export function SignUpForm({
 
       <Button
         className="submit__button__SW0fx"
+        disabled={isSubmitting}
         fullWidth
         size="lg"
         type="submit"
       >
-        <span>{primaryAction}</span>
+        <span>{isSubmitting ? `${primaryAction}...` : primaryAction}</span>
         <span aria-hidden="true">→</span>
       </Button>
 

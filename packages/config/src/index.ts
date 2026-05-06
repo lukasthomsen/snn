@@ -11,6 +11,8 @@ const serverEnvSchema = z.object({
   APPLE_PRIVATE_KEY: z.string().optional(),
   APPLE_TEAM_ID: z.string().optional(),
   AUTH_SUBDOMAIN: z.string().default("accounts"),
+  AUTH_EMAIL_FROM: z.string().default("Veloro <accounts@veloro.dk>"),
+  AUTH_EMAIL_REPLY_TO: z.string().optional(),
   BETTER_AUTH_API_KEY: z.string().optional(),
   BETTER_AUTH_API_URL: z.string().url().optional(),
   BETTER_AUTH_KV_URL: z.string().url().optional(),
@@ -32,6 +34,7 @@ const serverEnvSchema = z.object({
   LOCAL_STOREFRONT_ORIGIN: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
   STOREFRONT_SUBDOMAIN: z.string().default("www"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
@@ -155,6 +158,14 @@ export function getBetterAuthInfrastructureConfig() {
     apiKey: cachedEnv.BETTER_AUTH_API_KEY,
     apiUrl: cachedEnv.BETTER_AUTH_API_URL,
     kvUrl: cachedEnv.BETTER_AUTH_KV_URL,
+  };
+}
+
+export function getAuthEmailConfig() {
+  return {
+    from: cachedEnv.AUTH_EMAIL_FROM,
+    replyTo: cachedEnv.AUTH_EMAIL_REPLY_TO,
+    resendApiKey: cachedEnv.RESEND_API_KEY,
   };
 }
 

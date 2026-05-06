@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@snn/auth",
     "@snn/config",
+    "@snn/customer",
     "@snn/db",
     "@snn/i18n",
     "@snn/ui",

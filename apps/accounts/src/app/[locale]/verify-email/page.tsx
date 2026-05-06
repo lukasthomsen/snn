@@ -2,6 +2,7 @@ import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
+  getAuthCompleteURL,
   getFirstParam,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
@@ -92,7 +93,7 @@ export default async function VerifyEmailPage({
           href={
             hasError
               ? getAccountAuthPath(safeLocale, "sign-in", callbackURL)
-              : callbackURL
+              : getAuthCompleteURL(safeLocale, callbackURL)
           }
         >
           {hasError ? content.signInLabel : content.continueLabel}

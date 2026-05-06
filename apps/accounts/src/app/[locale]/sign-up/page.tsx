@@ -1,7 +1,15 @@
+import type { Route } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getCustomerSession } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
+  getAccountAuthURL,
+  getAuthCompleteURL,
+  getFirstParam,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
@@ -42,10 +50,14 @@ const signUpCopy = {
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
     messages: {
-      disabled: "Kontooprettelse er midlertidigt slået fra, mens vi bygger autentificeringen op igen.",
+      checkingProviders: "Tjekker...",
+      genericError: "Vi kunne ikke oprette kontoen. Prøv igen, eller log ind hvis kontoen allerede findes.",
       mismatch: "Adgangskoderne skal være ens.",
+      networkError: "Der opstod en forbindelsesfejl. Prøv igen om lidt.",
+      oauthFailed: "Google-login blev ikke gennemført. Prøv igen.",
       passwordLength: "Adgangskoden skal være mellem 15 og 128 tegn.",
       required: "Navn, e-mail og adgangskode er påkrævet.",
+      unavailableProvider: "Denne login-metode er ikke klar endnu.",
     },
     googleLabel: "Fortsæt med Google",
     nameLabel: "Navn",
@@ -58,6 +70,7 @@ const signUpCopy = {
     secondaryActionLabel: "Log ind",
     secondaryActionText: "Har du allerede en konto?",
     title: "Join us!",
+    verificationCopy: "Tjek din e-mail for at bekræfte kontoen.",
   },
   en: {
     appleLabel: "Continue with Apple",
@@ -82,10 +95,14 @@ const signUpCopy = {
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
     messages: {
-      disabled: "Account creation is temporarily disabled while we rebuild authentication.",
+      checkingProviders: "Checking...",
+      genericError: "We could not create the account. Try again, or sign in if the account already exists.",
       mismatch: "Passwords must match.",
+      networkError: "A connection error occurred. Please try again shortly.",
+      oauthFailed: "Google sign-in was not completed. Please try again.",
       passwordLength: "Password must be between 15 and 128 characters.",
       required: "Name, email, and password are required.",
+      unavailableProvider: "This sign-in method is not ready yet.",
     },
     googleLabel: "Continue with Google",
     nameLabel: "Name",
@@ -98,6 +115,7 @@ const signUpCopy = {
     secondaryActionLabel: "Sign in",
     secondaryActionText: "Already have an account?",
     title: "Join us!",
+    verificationCopy: "Check your email to verify your account.",
   },
 } as const;
 
@@ -112,7 +130,13 @@ export default async function SignUpPage({
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = signUpCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
+  const authCompleteURL = getAuthCompleteURL(safeLocale, callbackURL);
+  const session = await getCustomerSession(await headers()).catch(() => null);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
+
+  if (session?.user && !session.user.banned && session.user.emailVerified) {
+    redirect(callbackURL as Route);
+  }
 
   return (
     <AuthPage
@@ -142,8 +166,21 @@ export default async function SignUpPage({
     >
       <SocialAuthButtons
         appleLabel={copy.appleLabel}
-        disabledMessage={copy.messages.disabled}
+        callbackURL={authCompleteURL}
+        errorCallbackURL={getAccountAuthURL(safeLocale, "sign-up", callbackURL, {
+          error: "oauth_failed",
+        })}
         googleLabel={copy.googleLabel}
+        initialMessage={
+          getFirstParam(resolvedSearchParams.error) === "oauth_failed"
+            ? copy.messages.oauthFailed
+            : undefined
+        }
+        messages={{
+          checking: copy.messages.checkingProviders,
+          genericError: copy.messages.oauthFailed,
+          unavailable: copy.messages.unavailableProvider,
+        }}
       />
 
       <div className="auth-divider__root__SW0fv">
@@ -153,13 +190,15 @@ export default async function SignUpPage({
       </div>
 
       <SignUpForm
+        callbackURL={authCompleteURL}
         confirmPasswordLabel={copy.passwordConfirmLabel}
         confirmPasswordPlaceholder={copy.passwordConfirmPlaceholder}
         emailLabel={copy.emailLabel}
         emailPlaceholder={copy.emailPlaceholder}
         messages={{
-          disabled: copy.messages.disabled,
+          genericError: copy.messages.genericError,
           mismatch: copy.messages.mismatch,
+          networkError: copy.messages.networkError,
           passwordLength: copy.messages.passwordLength,
           required: copy.messages.required,
         }}
@@ -168,6 +207,7 @@ export default async function SignUpPage({
         passwordLabel={copy.passwordLabel}
         passwordPlaceholder={copy.passwordPlaceholder}
         primaryAction={copy.primaryAction}
+        verificationCopy={copy.verificationCopy}
       />
     </AuthPage>
   );

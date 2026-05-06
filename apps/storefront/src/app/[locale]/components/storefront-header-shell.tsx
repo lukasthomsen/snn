@@ -16,7 +16,9 @@ export async function StorefrontHeaderShell({
   storefrontOrigin,
 }: StorefrontHeaderShellProps) {
   const session = await getCustomerSession(await headers()).catch(() => null);
-  const isSignedIn = Boolean(session?.user && !session.user.banned);
+  const isSignedIn = Boolean(
+    session?.user && !session.user.banned && session.user.emailVerified,
+  );
 
   return (
     <StorefrontHeader
