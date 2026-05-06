@@ -175,4 +175,10 @@ And these repository secrets:
 - `NEON_API_KEY`
 - `VERCEL_TOKEN`
 
+The workflow preflights Vercel access before creating a Neon branch. If `VERCEL_TOKEN`
+cannot access `VERCEL_ORG_ID`, the preview database bootstrap is skipped with a
+GitHub Actions warning and PR previews keep using their shared Preview
+`DATABASE_URL` fallback. Fix the token when isolated branch databases are needed;
+do not let a bad preview token block production app validation.
+
 That is more correct for SNN than using a one-to-one marketplace integration on only one of the apps.

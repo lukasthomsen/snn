@@ -27,11 +27,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
+
+      - name: Check Vercel preview environment access
+        id: vercel-access
+        env:
+          VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
+          VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if vercel project inspect "$VERCEL_ACCOUNTS_PROJECT_ID" \
+            --scope "$VERCEL_ORG_ID_VALUE" \
+            --token "$VERCEL_TOKEN" >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          {
+            echo "enabled=false"
+            echo "reason=VERCEL_TOKEN cannot access VERCEL_ORG_ID."
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::warning::Skipping branch-scoped preview database bootstrap because VERCEL_TOKEN cannot access VERCEL_ORG_ID. App builds still run, and previews will use their shared Preview DATABASE_URL fallback. Update the GitHub VERCEL_TOKEN secret to enable isolated PR database branches."
+
       - name: Set preview branch expiration
+        if: steps.vercel-access.outputs.enabled == 'true'
         id: expires-at
         run: echo "value=$(date -u -d '+14 days' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Create Neon preview runtime branch
+        if: steps.vercel-access.outputs.enabled == 'true'
         id: runtime-db
         uses: neondatabase/create-branch-action@v6
         with:
@@ -45,6 +78,7 @@ jobs:
           expires_at: ${{ steps.expires-at.outputs.value }}
 
       - name: Create Neon preview migration branch
+        if: steps.vercel-access.outputs.enabled == 'true'
         id: migrator-db
         uses: neondatabase/create-branch-action@v6
         with:
@@ -56,16 +90,8 @@ jobs:
           role: snn_migrator
           ssl: verify-full
           expires_at: ${{ steps.expires-at.outputs.value }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
-
       - name: Apply branch-scoped preview database URLs
+        if: steps.vercel-access.outputs.enabled == 'true'
         env:
           DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
           DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
@@ -102,7 +128,7 @@ jobs:
           upsert_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
 
       - name: Redeploy first PR previews after env bootstrap
-        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        if: steps.vercel-access.outputs.enabled == 'true' && (github.event.action == 'opened' || github.event.action == 'reopened')
         env:
           VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
