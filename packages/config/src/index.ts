@@ -14,7 +14,7 @@ const serverEnvSchema = z.object({
   BETTER_AUTH_API_KEY: z.string().optional(),
   BETTER_AUTH_API_URL: z.string().url().optional(),
   BETTER_AUTH_KV_URL: z.string().url().optional(),
-  BASE_DOMAIN: z.string().default("snn.com"),
+  BASE_DOMAIN: z.string().default("veloro.dk"),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   CLOUDFLARE_IMAGES_ACCOUNT_ID: z.string().optional(),

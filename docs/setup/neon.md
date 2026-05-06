@@ -2,13 +2,13 @@
 
 ## Decision
 
-SNN uses one shared Neon project for both the storefront and admin applications.
+SNN uses one shared Neon project for the storefront, accounts, and admin applications.
 
 We are **not** using Neon's one-click Vercel preview integration as the primary setup right now.
 
 Reason:
 
-- SNN has two separate Vercel projects: `snn-storefront` and `snn-admin`
+- SNN has three separate Vercel projects: `snn-storefront`, `snn-accounts`, and `snn-admin`
 - Neon-managed Vercel integration is one Neon project to one Vercel project
 - We want one shared commerce database estate, not two unrelated databases
 
@@ -16,8 +16,8 @@ This means the most stable foundation is:
 
 1. One Neon project
 2. One production database and role set
-3. Shared environment variables injected into both Vercel projects
-4. A custom preview-branch automation that provisions one Neon branch per PR for both projects together
+3. Shared environment variables injected into all three Vercel projects
+4. A custom preview-branch automation that provisions one Neon branch per PR for all projects together
 
 ## Region
 
@@ -104,9 +104,10 @@ Why:
 
 ## Vercel Setup
 
-Add the same database variables to both Vercel projects:
+Add the same database variables to all Vercel projects:
 
 - `snn-storefront`
+- `snn-accounts`
 - `snn-admin`
 
 For each project, set:
@@ -122,12 +123,15 @@ Preview should point at the `development` branch by default so non-PR preview de
 The repository uses two local env layers:
 
 - Root `.env.local` for shared repo tooling such as `pnpm db:generate`, `pnpm db:migrate`, and Drizzle config
-- App-local `.env.local` files for the Next.js runtimes in `apps/storefront` and `apps/admin`
+- App-local `.env.local` files for the Next.js runtimes in `apps/storefront`, `apps/accounts`, and `apps/admin`
 
 After the Vercel variables are added, pull them locally:
 
 ```bash
 cd /Users/lukasthomsen/Desktop/snn/apps/storefront
+vercel env pull .env.local --environment=development
+
+cd /Users/lukasthomsen/Desktop/snn/apps/accounts
 vercel env pull .env.local --environment=development
 
 cd /Users/lukasthomsen/Desktop/snn/apps/admin
@@ -148,22 +152,22 @@ If migrations succeed, the Neon foundation is connected correctly.
 
 ## Preview Automation
 
-Because both storefront and admin are separate Vercel projects, the repository uses custom preview automation in [.github/workflows/preview-database.yml](/Users/lukasthomsen/Desktop/snn/.github/workflows/preview-database.yml):
+Because storefront, accounts, and admin are separate Vercel projects, the repository uses custom preview automation in [.github/workflows/preview-database.yml](/Users/lukasthomsen/Desktop/snn/.github/workflows/preview-database.yml):
 
 - On `pull_request opened`, `reopened`, or `synchronize`:
   - create or reuse a Neon branch named `pr-<number>`
   - generate pooled runtime and direct migration URLs for `snn_app` and `snn_migrator`
-  - write those URLs as branch-specific Preview environment variables to both `snn-storefront` and `snn-admin`
+  - write those URLs as branch-specific Preview environment variables to `snn-storefront`, `snn-accounts`, and `snn-admin`
 - On `pull_request closed`:
-  - remove the branch-specific Preview environment variable overrides from both Vercel projects
+  - remove the branch-specific Preview environment variable overrides from all three Vercel projects
   - delete the Neon branch
 
 The workflow relies on these repository variables:
 
 - `NEON_PROJECT_ID`
 - `VERCEL_ORG_ID`
-- `VERCEL_SCOPE`
 - `VERCEL_STOREFRONT_PROJECT_ID`
+- `VERCEL_ACCOUNTS_PROJECT_ID`
 - `VERCEL_ADMIN_PROJECT_ID`
 
 And these repository secrets:

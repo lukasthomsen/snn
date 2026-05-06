@@ -69,9 +69,9 @@ jobs:
         env:
           DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
           DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
+          VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
           VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
           VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
           VERCEL_STOREFRONT_PROJECT_ID: ${{ vars.VERCEL_STOREFRONT_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -87,23 +87,24 @@ jobs:
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE"
+              --scope "$VERCEL_ORG_ID_VALUE"
 
             vercel env add DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --value "$DATABASE_URL_UNPOOLED" \
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE"
+              --scope "$VERCEL_ORG_ID_VALUE"
           }
 
+          upsert_branch_envs "$VERCEL_ACCOUNTS_PROJECT_ID"
           upsert_branch_envs "$VERCEL_STOREFRONT_PROJECT_ID"
           upsert_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
 
       - name: Redeploy first PR previews after env bootstrap
         if: github.event.action == 'opened' || github.event.action == 'reopened'
         env:
-          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+          VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
@@ -115,7 +116,7 @@ jobs:
             for attempt in $(seq 1 8); do
               deployment_url="$(
                 vercel list "$project_name" \
-                  --scope "$VERCEL_SCOPE" \
+                  --scope "$VERCEL_ORG_ID_VALUE" \
                   --token "$VERCEL_TOKEN" \
                   --environment=preview \
                   --meta "githubCommitRef=$PREVIEW_GIT_BRANCH" \
@@ -126,7 +127,7 @@ jobs:
               if [ -n "$deployment_url" ]; then
                 vercel redeploy "$deployment_url" \
                   --target preview \
-                  --scope "$VERCEL_SCOPE" \
+                  --scope "$VERCEL_ORG_ID_VALUE" \
                   --token "$VERCEL_TOKEN" \
                   --no-wait
                 return 0
@@ -156,9 +157,9 @@ jobs:
 
       - name: Remove branch-scoped preview database URLs
         env:
+          VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
           VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
           VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
           VERCEL_STOREFRONT_PROJECT_ID: ${{ vars.VERCEL_STOREFRONT_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -172,14 +173,15 @@ jobs:
             vercel env remove DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" || true
 
             vercel env remove DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" || true
           }
 
+          remove_branch_envs "$VERCEL_ACCOUNTS_PROJECT_ID"
           remove_branch_envs "$VERCEL_STOREFRONT_PROJECT_ID"
           remove_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
 
