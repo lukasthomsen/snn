@@ -1140,6 +1140,7 @@ min-height: 33rem;
 
 .account__product-media__SW1ai {
   display: flex;
+  position: relative;
   min-height: 11rem;
   align-items: center;
   justify-content: center;

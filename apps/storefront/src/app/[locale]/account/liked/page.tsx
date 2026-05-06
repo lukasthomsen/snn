@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { isLocale } from "@snn/i18n";
 import { getCustomerLikedProducts } from "@snn/customer";
 
@@ -29,7 +31,15 @@ export default async function LikedPage({ params }: LikedPageProps) {
             {likedProducts.map((product) => (
               <article className="account__product__SW1ah" key={product.likeId}>
                 <div className="account__product-media__SW1ai">
-                  {product.imageUrl ? <img alt="" src={product.imageUrl} /> : null}
+                  {product.imageUrl ? (
+                    <Image
+                      alt=""
+                      fill
+                      sizes="(max-width: 760px) 100vw, 16rem"
+                      src={product.imageUrl}
+                      unoptimized
+                    />
+                  ) : null}
                 </div>
                 <strong>{product.name ?? product.slug}</strong>
                 <form action={unlikeProductAction.bind(null, safeLocale, product.productId)}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
 import { AppleLogoIcon, Button, GoogleLogoIcon } from "@snn/ui";
@@ -45,6 +45,28 @@ function parseProviderRedirect(value: unknown) {
   return value.url;
 }
 
+function getPasskeySupportSnapshot() {
+  return (
+    typeof window !== "undefined" &&
+    "PublicKeyCredential" in window &&
+    typeof window.PublicKeyCredential === "function"
+  );
+}
+
+function getServerPasskeySupportSnapshot() {
+  return false;
+}
+
+function subscribeToPasskeySupport(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const timeout = window.setTimeout(onStoreChange, 0);
+
+  return () => window.clearTimeout(timeout);
+}
+
 export function AuthProviderButtons({
   appleLabel,
   callbackURL,
@@ -55,7 +77,11 @@ export function AuthProviderButtons({
     useState<ProviderAvailability>(inactiveAvailability);
   const [isChecking, setIsChecking] = useState(true);
   const [pendingAction, setPendingAction] = useState<AuthAction | undefined>();
-  const [supportsPasskeys, setSupportsPasskeys] = useState(false);
+  const supportsPasskeys = useSyncExternalStore(
+    subscribeToPasskeySupport,
+    getPasskeySupportSnapshot,
+    getServerPasskeySupportSnapshot,
+  );
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
@@ -90,14 +116,6 @@ export function AuthProviderButtons({
     return () => {
       controller.abort();
     };
-  }, []);
-
-  useEffect(() => {
-    setSupportsPasskeys(
-      typeof window !== "undefined" &&
-        "PublicKeyCredential" in window &&
-        typeof window.PublicKeyCredential === "function",
-    );
   }, []);
 
   async function continueWithProvider(provider: AuthProvider) {
