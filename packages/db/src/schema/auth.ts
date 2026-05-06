@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createdAt, textId, updatedAt } from "./shared";
 
@@ -85,10 +85,13 @@ export const verifications = pgTable(
 );
 
 export const rateLimits = pgTable("rate_limit", {
-  key: text("key").primaryKey(),
+  id: textId("id"),
+  key: text("key").notNull(),
   count: integer("count").notNull().default(0),
-  lastRequest: integer("last_request").notNull().default(0),
-});
+  lastRequest: bigint("last_request", { mode: "number" }).notNull().default(0),
+}, (table) => [
+  uniqueIndex("rate_limit_key_unique").on(table.key),
+]);
 
 export const twoFactors = pgTable(
   "two_factor",

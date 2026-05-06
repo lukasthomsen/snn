@@ -1,6 +1,11 @@
 import { Resend } from "resend";
+import { sendEmail } from "@better-auth/infra";
 
-import { getAuthEmailConfig, getDeploymentTarget } from "@snn/config";
+import {
+  getAuthEmailConfig,
+  getBetterAuthInfrastructureConfig,
+  getDeploymentTarget,
+} from "@snn/config";
 
 type AuthActionEmailKind = "reset-password" | "verify-email";
 
@@ -116,6 +121,42 @@ function renderTextEmail(input: AuthActionEmailInput, copy: EmailCopy) {
   ].join("\n");
 }
 
+async function sendBetterAuthInfrastructureEmail(input: AuthActionEmailInput) {
+  const infrastructureConfig = getBetterAuthInfrastructureConfig();
+
+  if (!infrastructureConfig.apiKey) {
+    return false;
+  }
+
+  const result = await sendEmail(
+    {
+      template:
+        input.kind === "reset-password" ? "reset-password" : "verify-email",
+      to: input.to,
+      variables: {
+        appName: input.appName,
+        expirationMinutes: String(input.expirationMinutes),
+        resetLink: input.actionUrl,
+        userEmail: input.to,
+        userName: input.userName,
+        verificationUrl: input.actionUrl,
+      },
+    },
+    {
+      apiKey: infrastructureConfig.apiKey,
+      ...(infrastructureConfig.apiUrl
+        ? { apiUrl: infrastructureConfig.apiUrl }
+        : {}),
+    },
+  );
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Better Auth Infrastructure email failed.");
+  }
+
+  return true;
+}
+
 export async function sendAuthActionEmail(input: AuthActionEmailInput) {
   const emailConfig = getAuthEmailConfig();
   const copy = getEmailCopy(input.kind, input.appName, input.expirationMinutes);
@@ -128,7 +169,13 @@ export async function sendAuthActionEmail(input: AuthActionEmailInput) {
       return;
     }
 
-    throw new Error("RESEND_API_KEY is required to send auth emails.");
+    if (await sendBetterAuthInfrastructureEmail(input)) {
+      return;
+    }
+
+    throw new Error(
+      "RESEND_API_KEY or BETTER_AUTH_API_KEY is required to send auth emails.",
+    );
   }
 
   const response = await getResendClient(emailConfig.resendApiKey).emails.send({

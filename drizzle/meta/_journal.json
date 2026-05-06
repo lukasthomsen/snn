@@ -22,6 +22,20 @@
       "when": 1778014554498,
       "tag": "0002_easy_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778066232393,
+      "tag": "0003_silly_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778066333081,
+      "tag": "0004_rare_firestar",
+      "breakpoints": true
     }
   ]
 }
