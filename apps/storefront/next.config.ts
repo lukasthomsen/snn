@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
     "@snn/auth",
     "@snn/commerce",
     "@snn/config",
+    "@snn/customer",
     "@snn/db",
     "@snn/i18n",
     "@snn/media",

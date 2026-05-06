@@ -94,6 +94,9 @@ export const orders = pgTable(
   (table) => [
     uniqueIndex("order_number_unique").on(table.orderNumber),
     uniqueIndex("order_cart_unique").on(table.cartId),
+    index("order_customer_idx").on(table.customerId),
+    index("order_email_idx").on(table.email),
+    index("order_placed_at_idx").on(table.placedAt),
   ],
 );
 

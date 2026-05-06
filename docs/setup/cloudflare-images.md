@@ -14,6 +14,12 @@ SNN uses Cloudflare Images as the product-media system of record.
 Add these to the `snn-storefront` Vercel project and to local development when you are ready to activate image uploads:
 
 ```env
+# Shared Cloudflare credentials. Images can use these as fallbacks.
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+
+# Optional Images-specific overrides. Use these when you want a narrower token
+# for product media than the shared Cloudflare token above.
 CLOUDFLARE_IMAGES_ACCOUNT_ID=
 CLOUDFLARE_IMAGES_API_TOKEN=
 CLOUDFLARE_IMAGES_DELIVERY_HASH=
@@ -22,7 +28,10 @@ ENABLE_MEDIA_MANAGEMENT_IN_PRODUCTION=false
 
 ## Recommended Cloudflare token
 
-Create a dedicated API token for Images, not the earlier Turnstile setup token.
+Create a dedicated API token for Images when possible, not the earlier Turnstile setup token.
+If you use the shared `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` pair locally,
+the app will use those as fallbacks unless `CLOUDFLARE_IMAGES_ACCOUNT_ID` /
+`CLOUDFLARE_IMAGES_API_TOKEN` are also present.
 
 Recommended permissions:
 

@@ -2,13 +2,14 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { HeartIcon, ShoppingBagIcon } from "@snn/ui";
 
 type StorefrontHeaderProps = {
   authOrigin: string;
+  isSignedIn: boolean;
   locale: "da" | "en";
   storefrontOrigin: string;
 };
@@ -26,6 +27,11 @@ const navigation = {
     { href: "/sign-up", label: "Membership" },
     { href: "/#footer", label: "Support" },
   ],
+} as const;
+
+const accountLabels = {
+  da: "Konto",
+  en: "Account",
 } as const;
 
 function SnnLogo() {
@@ -68,19 +74,20 @@ function getAuthHref(
 
 export function StorefrontHeader({
   authOrigin,
+  isSignedIn,
   locale,
   storefrontOrigin,
 }: StorefrontHeaderProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [docked, setDocked] = useState(false);
   const isAuthRoute = pathname.endsWith("/sign-in") || pathname.endsWith("/sign-up");
   const navigationItems = navigation[locale];
-  const queryString = searchParams.toString();
-  const callbackPath = queryString ? `${pathname}?${queryString}` : pathname;
-  const callbackURL = new URL(callbackPath, storefrontOrigin).toString();
-  const signInHref = getAuthHref(authOrigin, locale, "sign-in", callbackURL);
-  const signUpHref = getAuthHref(authOrigin, locale, "sign-up", callbackURL);
+  const accountHref = `/${locale}/account`;
+  const accountCallbackURL = new URL(accountHref, storefrontOrigin).toString();
+  const signUpHref = getAuthHref(authOrigin, locale, "sign-up", accountCallbackURL);
+  const shouldUseAccountLinks = isSignedIn;
+  const likedHref = shouldUseAccountLinks ? `${accountHref}/liked` : signUpHref;
+  const ordersHref = shouldUseAccountLinks ? `${accountHref}/orders` : signUpHref;
 
   useEffect(() => {
     if (isAuthRoute) {
@@ -115,8 +122,28 @@ export function StorefrontHeader({
           </Link>
 
           <nav aria-label="Primary" className="header__links__SW0eh">
-            {navigationItems.map((item) =>
-              item.href === "/sign-up" ? (
+            {navigationItems.map((item) => {
+              if (item.href !== "/sign-up") {
+                return (
+                  <Link
+                    className="nav__link__SW0ek"
+                    href={`/${locale}${item.href}` as Route}
+                    key={item.label}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+
+              return isSignedIn ? (
+                <Link
+                  className="nav__link__SW0ek"
+                  href={accountHref as Route}
+                  key={item.label}
+                >
+                  {accountLabels[locale]}
+                </Link>
+              ) : (
                 <a
                   className="nav__link__SW0ek"
                   href={signUpHref}
@@ -124,16 +151,8 @@ export function StorefrontHeader({
                 >
                   {item.label}
                 </a>
-              ) : (
-                <Link
-                  className="nav__link__SW0ek"
-                  href={`/${locale}${item.href}` as Route}
-                  key={item.label}
-                >
-                  {item.label}
-                </Link>
-              ),
-            )}
+              );
+            })}
           </nav>
 
           <div className="header__actions__SW0ei">
@@ -141,14 +160,14 @@ export function StorefrontHeader({
               <a
                 aria-label="Favorites"
                 className="action__button__SW0em"
-                href={signInHref}
+                href={likedHref}
               >
                 <HeartIcon className="header__icon__SW0en" />
               </a>
               <a
                 aria-label="Bag"
                 className="action__button__SW0em"
-                href={signUpHref}
+                href={ordersHref}
               >
                 <ShoppingBagIcon className="header__icon__SW0en" />
               </a>

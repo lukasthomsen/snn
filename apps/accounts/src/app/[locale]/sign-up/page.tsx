@@ -1,11 +1,21 @@
+import type { Route } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getCustomerSession } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
+  getAccountAuthURL,
+  getAuthCompleteURL,
+  getFirstParam,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
 import { AuthPage } from "../components/auth-page";
+import { SignUpForm } from "../components/sign-up-form";
+import { SocialAuthButtons } from "../components/social-auth-buttons";
 
 type SignUpPageProps = {
   params: Promise<{
@@ -13,6 +23,8 @@ type SignUpPageProps = {
   }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export const dynamic = "force-dynamic";
 
 const signUpCopy = {
   da: {
@@ -37,13 +49,28 @@ const signUpCopy = {
     dividerText: "eller fortsæt med",
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
+    messages: {
+      checkingProviders: "Tjekker...",
+      genericError: "Vi kunne ikke oprette kontoen. Prøv igen, eller log ind hvis kontoen allerede findes.",
+      mismatch: "Adgangskoderne skal være ens.",
+      networkError: "Der opstod en forbindelsesfejl. Prøv igen om lidt.",
+      oauthFailed: "Google-login blev ikke gennemført. Prøv igen.",
+      passwordLength: "Adgangskoden skal være mellem 15 og 128 tegn.",
+      required: "Navn, e-mail og adgangskode er påkrævet.",
+      unavailableProvider: "Denne login-metode er ikke klar endnu.",
+    },
     googleLabel: "Fortsæt med Google",
+    nameLabel: "Navn",
+    namePlaceholder: "Dit navn",
+    passwordConfirmLabel: "Bekræft adgangskode",
+    passwordConfirmPlaceholder: "Gentag adgangskoden",
     passwordLabel: "Adgangskode",
     passwordPlaceholder: "Opret en adgangskode",
     primaryAction: "Opret konto",
     secondaryActionLabel: "Log ind",
     secondaryActionText: "Har du allerede en konto?",
     title: "Join us!",
+    verificationCopy: "Tjek din e-mail for at bekræfte kontoen.",
   },
   en: {
     appleLabel: "Continue with Apple",
@@ -67,13 +94,28 @@ const signUpCopy = {
     dividerText: "or continue with",
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
+    messages: {
+      checkingProviders: "Checking...",
+      genericError: "We could not create the account. Try again, or sign in if the account already exists.",
+      mismatch: "Passwords must match.",
+      networkError: "A connection error occurred. Please try again shortly.",
+      oauthFailed: "Google sign-in was not completed. Please try again.",
+      passwordLength: "Password must be between 15 and 128 characters.",
+      required: "Name, email, and password are required.",
+      unavailableProvider: "This sign-in method is not ready yet.",
+    },
     googleLabel: "Continue with Google",
+    nameLabel: "Name",
+    namePlaceholder: "Your name",
+    passwordConfirmLabel: "Confirm password",
+    passwordConfirmPlaceholder: "Repeat password",
     passwordLabel: "Password",
     passwordPlaceholder: "Create a password",
     primaryAction: "Create account",
     secondaryActionLabel: "Sign in",
     secondaryActionText: "Already have an account?",
     title: "Join us!",
+    verificationCopy: "Check your email to verify your account.",
   },
 } as const;
 
@@ -88,33 +130,20 @@ export default async function SignUpPage({
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = signUpCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
+  const authCompleteURL = getAuthCompleteURL(safeLocale, callbackURL);
+  const session = await getCustomerSession(await headers()).catch(() => null);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
+
+  if (session?.user && !session.user.banned && session.user.emailVerified) {
+    redirect(callbackURL as Route);
+  }
 
   return (
     <AuthPage
-      appleLabel={copy.appleLabel}
       body={copy.body}
       brandFooter={copy.brandFooter}
       brandStatements={[...copy.brandStatements]}
       brandTitle={copy.brandTitle}
-      callbackURL={callbackURL}
-      dividerText={copy.dividerText}
-      fields={[
-        {
-          autoComplete: "email",
-          label: copy.emailLabel,
-          name: "email",
-          placeholder: copy.emailPlaceholder,
-          type: "email",
-        },
-        {
-          autoComplete: "new-password",
-          label: copy.passwordLabel,
-          name: "password",
-          placeholder: copy.passwordPlaceholder,
-          type: "password",
-        },
-      ]}
       finePrint={
         <>
           {safeLocale === "da"
@@ -123,19 +152,63 @@ export default async function SignUpPage({
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "vilkår" : "terms"}
           </a>
-          {" and "}
+          {safeLocale === "da" ? " og " : " and "}
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "privatlivspolitik" : "privacy policy"}
           </a>
           .
         </>
       }
-      googleLabel={copy.googleLabel}
-      primaryAction={copy.primaryAction}
       secondaryActionHref={getAccountAuthPath(safeLocale, "sign-in", callbackURL)}
       secondaryActionLabel={copy.secondaryActionLabel}
       secondaryActionText={copy.secondaryActionText}
       title={copy.title}
-    />
+    >
+      <SocialAuthButtons
+        appleLabel={copy.appleLabel}
+        callbackURL={authCompleteURL}
+        errorCallbackURL={getAccountAuthURL(safeLocale, "sign-up", callbackURL, {
+          error: "oauth_failed",
+        })}
+        googleLabel={copy.googleLabel}
+        initialMessage={
+          getFirstParam(resolvedSearchParams.error) === "oauth_failed"
+            ? copy.messages.oauthFailed
+            : undefined
+        }
+        messages={{
+          checking: copy.messages.checkingProviders,
+          genericError: copy.messages.oauthFailed,
+          unavailable: copy.messages.unavailableProvider,
+        }}
+      />
+
+      <div className="auth-divider__root__SW0fv">
+        <span />
+        <p>{copy.dividerText}</p>
+        <span />
+      </div>
+
+      <SignUpForm
+        callbackURL={authCompleteURL}
+        confirmPasswordLabel={copy.passwordConfirmLabel}
+        confirmPasswordPlaceholder={copy.passwordConfirmPlaceholder}
+        emailLabel={copy.emailLabel}
+        emailPlaceholder={copy.emailPlaceholder}
+        messages={{
+          genericError: copy.messages.genericError,
+          mismatch: copy.messages.mismatch,
+          networkError: copy.messages.networkError,
+          passwordLength: copy.messages.passwordLength,
+          required: copy.messages.required,
+        }}
+        nameLabel={copy.nameLabel}
+        namePlaceholder={copy.namePlaceholder}
+        passwordLabel={copy.passwordLabel}
+        passwordPlaceholder={copy.passwordPlaceholder}
+        primaryAction={copy.primaryAction}
+        verificationCopy={copy.verificationCopy}
+      />
+    </AuthPage>
   );
 }

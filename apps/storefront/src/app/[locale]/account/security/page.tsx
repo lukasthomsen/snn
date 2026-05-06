@@ -1,0 +1,86 @@
+import { getAppOrigin } from "@snn/config";
+import { Button } from "@snn/ui";
+import { isLocale } from "@snn/i18n";
+import { getCustomerSecurityState } from "@snn/customer";
+
+import { revokeSessionAction } from "../actions";
+import { requireAccountSession } from "../account-auth";
+import { SecurityActions } from "./security-actions";
+
+type SecurityPageProps = {
+  params: Promise<{
+    locale: string;
+  }>;
+};
+
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("da-DK", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
+}
+
+export default async function SecurityPage({ params }: SecurityPageProps) {
+  const { locale } = await params;
+  const safeLocale = isLocale(locale) ? locale : "da";
+  const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account/security`);
+  const security = await getCustomerSecurityState(user);
+
+  return (
+    <div className="account__stack__SW1a8">
+      <header className="account__section-header__SW1a9">
+        <h2>Security</h2>
+        <p className="account__muted__SW1aa">
+          Email verification, passkeys, password changes, and session control.
+        </p>
+      </header>
+
+      <div className="account__stats__SW1ab">
+        <article className="account__card__SW1ac">
+          <span>Email verified</span>
+          <strong>{security.emailVerified ? "Yes" : "No"}</strong>
+        </article>
+        <article className="account__card__SW1ac">
+          <span>2FA</span>
+          <strong>{security.twoFactorEnabled ? "On" : "Off"}</strong>
+        </article>
+        <article className="account__card__SW1ac">
+          <span>Passkeys</span>
+          <strong>{security.passkeyCount}</strong>
+        </article>
+      </div>
+
+      <SecurityActions
+        authOrigin={getAppOrigin("auth")}
+        homeHref={`/${safeLocale}`}
+        passkeyCount={security.passkeyCount}
+        twoFactorEnabled={security.twoFactorEnabled}
+      />
+
+      <section className="account__panel__SW1ad">
+        <h3>Active sessions</h3>
+        {security.activeSessions.length > 0 ? (
+          <div className="account__list__SW1ae">
+            {security.activeSessions.map((session) => (
+              <article className="account__row__SW1af" key={session.id}>
+                <div>
+                  <strong>{session.userAgent ?? "Unknown device"}</strong>
+                  <span>
+                    Created {formatDate(session.createdAt)} · Expires {formatDate(session.expiresAt)}
+                  </span>
+                </div>
+                <form action={revokeSessionAction.bind(null, safeLocale, session.token)}>
+                  <Button size="sm" tone="secondary" type="submit">
+                    Revoke
+                  </Button>
+                </form>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="account__muted__SW1aa">No active sessions found.</p>
+        )}
+      </section>
+    </div>
+  );
+}

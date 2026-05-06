@@ -42,6 +42,18 @@ export const productMediaRoleEnum = pgEnum("product_media_role", [
 ]);
 export const productStatusEnum = pgEnum("product_status", ["draft", "active", "archived"]);
 export const cartStatusEnum = pgEnum("cart_status", ["open", "converted", "expired", "abandoned"]);
+export const privacyRequestStatusEnum = pgEnum("privacy_request_status", [
+  "pending",
+  "in_review",
+  "completed",
+  "rejected",
+]);
+export const privacyRequestTypeEnum = pgEnum("privacy_request_type", [
+  "access",
+  "portability",
+  "deletion",
+  "rectification",
+]);
 export const staffAssignmentStatusEnum = pgEnum("staff_assignment_status", ["active", "suspended"]);
 
 export function primaryUuid(name: string) {

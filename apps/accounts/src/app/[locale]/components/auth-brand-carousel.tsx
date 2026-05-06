@@ -81,11 +81,20 @@ export function AuthBrandCarousel({
     }
 
     const timeout = window.setTimeout(() => {
-      showStatement(activeIndex + 1);
+      const normalizedIndex = (activeIndex + 1) % safeStatements.length;
+
+      window.clearTimeout(swapTimeoutRef.current);
+      setTransitionState("exiting");
+      swapTimeoutRef.current = window.setTimeout(() => {
+        startTransition(() => {
+          setActiveIndex(normalizedIndex);
+          setTransitionState("entered");
+        });
+      }, textTransitionDelay);
     }, rotationDelay);
 
     return () => window.clearTimeout(timeout);
-  }, [activeIndex, prefersReducedMotion, safeStatements.length, shouldRotate]);
+  }, [activeIndex, safeStatements.length, shouldRotate]);
 
   return (
     <div className="brand__copy__SW0fg">

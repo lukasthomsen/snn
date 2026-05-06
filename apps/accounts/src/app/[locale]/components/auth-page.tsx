@@ -1,33 +1,17 @@
 import type { ReactNode } from "react";
 
-import { Button, TextField } from "@snn/ui";
-
 import {
   AuthBrandCarousel,
   type AuthBrandStatement,
 } from "./auth-brand-carousel";
-import { AuthProviderButtons } from "./auth-provider-buttons";
-
-type AuthField = {
-  autoComplete: string;
-  label: string;
-  name: string;
-  placeholder: string;
-  type?: "email" | "password" | "text";
-};
 
 type AuthPageProps = {
-  appleLabel: string;
   body: string;
   brandFooter: string;
   brandStatements: AuthBrandStatement[];
   brandTitle: string;
-  callbackURL: string;
-  dividerText: string;
-  fields: AuthField[];
+  children: ReactNode;
   finePrint: ReactNode;
-  googleLabel: string;
-  primaryAction: string;
   secondaryActionHref: string;
   secondaryActionLabel: string;
   secondaryActionText: string;
@@ -35,17 +19,12 @@ type AuthPageProps = {
 };
 
 export function AuthPage({
-  appleLabel,
   body,
   brandFooter,
   brandStatements,
   brandTitle,
-  callbackURL,
-  dividerText,
-  fields,
+  children,
   finePrint,
-  googleLabel,
-  primaryAction,
   secondaryActionHref,
   secondaryActionLabel,
   secondaryActionText,
@@ -78,43 +57,7 @@ export function AuthPage({
               <p className="auth__copy__SW0fr">{body}</p>
             </div>
 
-            <AuthProviderButtons
-              appleLabel={appleLabel}
-              callbackURL={callbackURL}
-              googleLabel={googleLabel}
-            />
-
-            <div className="auth-divider__root__SW0fv">
-              <span />
-              <p>{dividerText}</p>
-              <span />
-            </div>
-
-            <form className="auth__form__SW0fp" noValidate>
-              {fields.map((field) => (
-                <TextField
-                  autoComplete={field.autoComplete}
-                  fullWidth
-                  key={field.name}
-                  label={field.label}
-                  name={field.name}
-                  placeholder={field.placeholder}
-                  size="md"
-                  type={field.type ?? "text"}
-                />
-              ))}
-
-              <Button
-                className="submit__button__SW0fx"
-                fullWidth
-                size="lg"
-                type="button"
-              >
-                <span>{primaryAction}</span>
-                <span aria-hidden="true">→</span>
-              </Button>
-            </form>
-
+            {children}
             <p className="legal__copy__SW0fy">{finePrint}</p>
           </div>
         </div>
