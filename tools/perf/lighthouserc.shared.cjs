@@ -2,6 +2,14 @@ const locale = process.env.PERF_LOCALE || "da";
 const baseUrl = (process.env.PERF_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 const productSlug = process.env.PERF_PRODUCT_SLUG || "essential-creatine-monohydrate";
 const runs = Number(process.env.PERF_LHCI_RUNS || "3");
+const vercelBypassToken = process.env.PERF_VERCEL_BYPASS_TOKEN || process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
+const extraHeaders = vercelBypassToken
+  ? {
+      "x-vercel-protection-bypass": vercelBypassToken,
+      "x-vercel-set-bypass-cookie": "true",
+    }
+  : undefined;
 
 const urls = [
   `${baseUrl}/${locale}`,
@@ -26,6 +34,7 @@ const assertions = {
 module.exports = {
   assertions,
   baseUrl,
+  extraHeaders,
   locale,
   productSlug,
   runs,

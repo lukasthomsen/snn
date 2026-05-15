@@ -1,6 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PERF_BASE_URL ?? "http://localhost:3000";
+const vercelBypassToken = process.env.PERF_VERCEL_BYPASS_TOKEN ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const extraHTTPHeaders = vercelBypassToken
+  ? {
+      "x-vercel-protection-bypass": vercelBypassToken,
+      "x-vercel-set-bypass-cookie": "true",
+    }
+  : undefined;
 
 export default defineConfig({
   expect: {
@@ -36,6 +43,7 @@ export default defineConfig({
   timeout: 90_000,
   use: {
     baseURL,
+    extraHTTPHeaders,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "retain-on-failure",

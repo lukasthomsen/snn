@@ -12,6 +12,12 @@ export PERF_PRODUCT_SLUG="essential-creatine-monohydrate"
 export PERF_LOCALE="da"
 ```
 
+For protected Vercel previews, add the project automation bypass secret. Lighthouse and Playwright send it as an HTTP header and request a bypass cookie for browser follow-up requests:
+
+```bash
+export PERF_VERCEL_BYPASS_TOKEN="<vercel-automation-bypass-secret>"
+```
+
 Signed-in flows are optional and require a disposable verified preview customer:
 
 ```bash
