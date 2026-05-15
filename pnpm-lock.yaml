@@ -22,9 +22,15 @@ importers:
       '@snn/commerce':
         specifier: workspace:*
         version: link:packages/commerce
+      '@snn/config':
+        specifier: workspace:*
+        version: link:packages/config
       '@snn/db':
         specifier: workspace:*
         version: link:packages/db
+      '@snn/media':
+        specifier: workspace:*
+        version: link:packages/media
       '@types/node':
         specifier: ^24.10.1
         version: 24.12.2

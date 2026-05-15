@@ -58,6 +58,24 @@ pnpm media:ensure-variants
 
 That script uses the definitions in `/Users/lukasthomsen/Desktop/snn/packages/media/src/index.ts`.
 
+## Demo seed media
+
+`pnpm db:seed:commerce -- --apply` uses Cloudflare Images for demo product media when these values are available:
+
+- `CLOUDFLARE_IMAGES_ACCOUNT_ID`
+- `CLOUDFLARE_IMAGES_API_TOKEN`
+- `CLOUDFLARE_IMAGES_DELIVERY_HASH`
+
+The seed uploads deterministic SVG demo assets with stable Cloudflare custom IDs, then stores Cloudflare delivery URLs in `media_asset.delivery_url`. This makes local and preview benchmarks exercise the same image-delivery path as production. If the variables are absent, the seed keeps the old inline SVG fallback so local setup still works without Cloudflare access.
+
+For GitHub preview-database runs, keep the account ID and API token as repository secrets and the delivery hash as a repository variable:
+
+```bash
+gh secret set CLOUDFLARE_IMAGES_ACCOUNT_ID
+gh secret set CLOUDFLARE_IMAGES_API_TOKEN
+gh variable set CLOUDFLARE_IMAGES_DELIVERY_HASH --body "..."
+```
+
 ## Upload flow foundation
 
 The base layer now exposes two internal routes on the storefront runtime:

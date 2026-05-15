@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 
-import { and, eq, inArray, isNull, like, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, or, sql } from "drizzle-orm";
 
 if (existsSync(".env.local")) {
   process.loadEnvFile(".env.local");
@@ -11,27 +12,39 @@ const isProduction =
   process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 
 type CommerceModule = typeof import("@snn/commerce");
+type ConfigModule = typeof import("@snn/config");
 type DbModule = typeof import("@snn/db");
+type MediaModule = typeof import("@snn/media");
 type CommerceDb = ReturnType<DbModule["getDb"]>;
 type ProductStatus = DbModule["schema"]["products"]["$inferInsert"]["status"];
 
+let buildCloudflareImageUrl: MediaModule["buildCloudflareImageUrl"];
 let getCatalogHealthReport: CommerceModule["getCatalogHealthReport"];
+let getCloudflareImageDetails: MediaModule["getCloudflareImageDetails"];
+let getCloudflareImagesConfig: ConfigModule["getCloudflareImagesConfig"];
 let recordCommerceAuditEvent: CommerceModule["recordCommerceAuditEvent"];
 let closeDb: DbModule["closeDb"] | undefined;
 let getDb: DbModule["getDb"];
 let schema: DbModule["schema"];
+let uploadCloudflareImage: MediaModule["uploadCloudflareImage"];
 
 async function loadRuntimeModules() {
-  const [commerceModule, dbModule] = await Promise.all([
+  const [commerceModule, configModule, dbModule, mediaModule] = await Promise.all([
     import("@snn/commerce"),
+    import("@snn/config"),
     import("@snn/db"),
+    import("@snn/media"),
   ]);
 
+  buildCloudflareImageUrl = mediaModule.buildCloudflareImageUrl;
   getCatalogHealthReport = commerceModule.getCatalogHealthReport;
+  getCloudflareImageDetails = mediaModule.getCloudflareImageDetails;
+  getCloudflareImagesConfig = configModule.getCloudflareImagesConfig;
   recordCommerceAuditEvent = commerceModule.recordCommerceAuditEvent;
   closeDb = dbModule.closeDb;
   getDb = dbModule.getDb;
   schema = dbModule.schema;
+  uploadCloudflareImage = mediaModule.uploadCloudflareImage;
 }
 
 type VariantSeed = {
@@ -1062,8 +1075,12 @@ function getSlotLabel(slot: number, mediaType: "image" | "video") {
   ][slot] ?? `MEDIA ${slot + 1}`;
 }
 
-function getSvgDataUrl(title: string, tone: string, slotLabel?: string) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1400">
+function encodeSvgDataUrl(svg: string) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function getImageSvg(title: string, tone: string, slotLabel?: string) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1400">
     <rect width="1200" height="1400" fill="${tone}"/>
     <circle cx="600" cy="620" r="310" fill="rgba(255,255,255,.45)"/>
     <rect x="430" y="390" width="340" height="520" rx="48" fill="rgba(255,255,255,.72)"/>
@@ -1072,12 +1089,14 @@ function getSvgDataUrl(title: string, tone: string, slotLabel?: string) {
     ${slotLabel ? `<text x="600" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="8" fill="rgba(19,19,19,.38)">${slotLabel}</text>` : ""}
     <text x="600" y="1040" text-anchor="middle" font-family="Arial, sans-serif" font-size="58" font-weight="700" fill="rgba(19,19,19,.72)">${title}</text>
   </svg>`;
-
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-function getVideoPosterDataUrl(title: string, tone: string, slotLabel = "VIDEO") {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1400">
+function getSvgDataUrl(title: string, tone: string, slotLabel?: string) {
+  return encodeSvgDataUrl(getImageSvg(title, tone, slotLabel));
+}
+
+function getVideoPosterSvg(title: string, tone: string, slotLabel = "VIDEO") {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1400">
     <rect width="1200" height="1400" fill="${tone}"/>
     <circle cx="600" cy="620" r="350" fill="rgba(255,255,255,.42)"/>
     <circle cx="600" cy="620" r="155" fill="rgba(19,19,19,.84)"/>
@@ -1085,8 +1104,10 @@ function getVideoPosterDataUrl(title: string, tone: string, slotLabel = "VIDEO")
     <text x="600" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="8" fill="rgba(19,19,19,.42)">${slotLabel}</text>
     <text x="600" y="1040" text-anchor="middle" font-family="Arial, sans-serif" font-size="58" font-weight="700" fill="rgba(19,19,19,.72)">${title}</text>
   </svg>`;
+}
 
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+function getVideoPosterDataUrl(title: string, tone: string, slotLabel = "VIDEO") {
+  return encodeSvgDataUrl(getVideoPosterSvg(title, tone, slotLabel));
 }
 
 function getMediaKey(seed: ProductSeed, variant: VariantSeed | undefined, slot: number) {
@@ -1103,6 +1124,81 @@ function getMediaKey(seed: ProductSeed, variant: VariantSeed | undefined, slot: 
   }
 
   return slot === 0 ? seed.slug : `${seed.slug}-shared-${slot + 1}`;
+}
+
+function getLegacyDemoProviderAssetId(key: string) {
+  return `commerce-demo-${key}`;
+}
+
+function getCloudflareDemoProviderAssetId(key: string) {
+  const digest = createHash("sha256").update(`snn-commerce-demo-media-v1:${key}`).digest("hex");
+
+  return `snn-${digest.slice(0, 28)}`;
+}
+
+function getCloudflareDeliveryVariant(slot: number) {
+  return slot === 0 ? "productcard" : "pdpgallery";
+}
+
+async function getCloudflareDemoMedia(input: {
+  key: string;
+  mediaType: "image" | "video";
+  slot: number;
+  slotLabel: string;
+  title: string;
+  tone: string;
+  variant?: VariantSeed | undefined;
+}) {
+  const config = getCloudflareImagesConfig();
+
+  if (!config.enabled) {
+    return null;
+  }
+
+  const providerAssetId = getCloudflareDemoProviderAssetId(input.key);
+  const svg = input.mediaType === "video"
+    ? getVideoPosterSvg(input.title, input.tone, input.slotLabel)
+    : getImageSvg(input.title, input.tone, input.slotLabel);
+  const deliveryVariant = getCloudflareDeliveryVariant(input.slot);
+  const filename = input.mediaType === "video"
+    ? `${input.key}-video-poster.svg`
+    : `${input.key}.svg`;
+  const metadata = {
+    cloudflareDemoMedia: true,
+    deliveryVariant,
+    demoMediaKey: input.key,
+    mediaType: input.mediaType,
+    slot: input.slot,
+    ...(input.mediaType === "video" ? { demoPlaceholderVideo: true } : {}),
+  };
+
+  let uploadedAt: string | undefined;
+
+  try {
+    const details = await getCloudflareImageDetails(providerAssetId);
+    uploadedAt = details.uploadedAt;
+  } catch {
+    const details = await uploadCloudflareImage({
+      bytes: svg,
+      contentType: "image/svg+xml",
+      customId: providerAssetId,
+      filename,
+      metadata,
+      requireSignedUrls: false,
+    });
+    uploadedAt = details.uploadedAt;
+  }
+
+  return {
+    byteSize: Buffer.byteLength(svg, "utf8"),
+    deliveryUrl: buildCloudflareImageUrl(providerAssetId, deliveryVariant),
+    filename,
+    height: 1400,
+    metadata,
+    providerAssetId,
+    uploadedAt: uploadedAt ?? new Date().toISOString(),
+    width: 1200,
+  };
 }
 
 function isVideoSlot(slots: number[] | undefined, slot: number) {
@@ -1791,38 +1887,59 @@ async function ensureMedia(
   mediaType: "image" | "video" = "image",
 ) {
   const key = getMediaKey(seed, variant, slot);
-  const providerAssetId = `commerce-demo-${key}`;
   const title = variant?.title ?? seed.translations.en.name;
   const tone = variant ? getVariantTone(seed, variant, slot) : getSharedTone(seed, slot);
   const slotLabel = getSlotLabel(slot, mediaType);
-  const deliveryUrl = mediaType === "video"
-    ? getVideoPosterDataUrl(title, tone, slotLabel)
-    : getSvgDataUrl(title, tone, slotLabel);
+  const cloudflareMedia = await getCloudflareDemoMedia({
+    key,
+    mediaType,
+    slot,
+    slotLabel,
+    title,
+    tone,
+  });
+  const deliveryUrl = cloudflareMedia?.deliveryUrl ?? (
+    mediaType === "video"
+      ? getVideoPosterDataUrl(title, tone, slotLabel)
+      : getSvgDataUrl(title, tone, slotLabel)
+  );
   const mimeType = mediaType === "video" ? "video/mp4" : "image/svg+xml";
-  const filename = `${key}.${mediaType === "video" ? "mp4" : "svg"}`;
+  const filename = cloudflareMedia?.filename ?? `${key}.${mediaType === "video" ? "mp4" : "svg"}`;
+  const metadata = cloudflareMedia?.metadata ?? (
+    mediaType === "video" ? { demoPlaceholderVideo: true } : {}
+  );
+  const providerAssetId = cloudflareMedia?.providerAssetId ?? getLegacyDemoProviderAssetId(key);
+  const uploadedAt = cloudflareMedia?.uploadedAt ?? new Date().toISOString();
 
   await db
     .insert(schema.mediaAssets)
     .values({
       altText: title,
+      ...(cloudflareMedia?.byteSize ? { byteSize: cloudflareMedia.byteSize } : {}),
       deliveryUrl,
       filename,
-      metadata: mediaType === "video" ? { demoPlaceholderVideo: true } : {},
+      ...(cloudflareMedia?.height ? { height: cloudflareMedia.height } : {}),
+      metadata,
       mimeType,
       providerAssetId,
       status: "ready",
-      uploadedAt: new Date().toISOString(),
+      uploadedAt,
+      ...(cloudflareMedia?.width ? { width: cloudflareMedia.width } : {}),
     })
     .onConflictDoUpdate({
       target: [schema.mediaAssets.provider, schema.mediaAssets.providerAssetId],
       set: {
         altText: title,
+        ...(cloudflareMedia?.byteSize ? { byteSize: cloudflareMedia.byteSize } : {}),
         deliveryUrl,
         filename,
-        metadata: mediaType === "video" ? { demoPlaceholderVideo: true } : {},
+        ...(cloudflareMedia?.height ? { height: cloudflareMedia.height } : {}),
+        metadata,
         mimeType,
         status: "ready",
         updatedAt: new Date(),
+        uploadedAt,
+        ...(cloudflareMedia?.width ? { width: cloudflareMedia.width } : {}),
       },
     });
 
@@ -1858,11 +1975,38 @@ async function ensureMedia(
   return asset;
 }
 
+function getDemoMediaProviderAssetIds(seed: ProductSeed) {
+  const providerAssetIds = new Set<string>();
+
+  function add(key: string) {
+    providerAssetIds.add(getLegacyDemoProviderAssetId(key));
+    providerAssetIds.add(getCloudflareDemoProviderAssetId(key));
+  }
+
+  for (let slot = 0; slot < (seed.media?.sharedSlots ?? 1); slot += 1) {
+    add(getMediaKey(seed, undefined, slot));
+  }
+
+  for (const variantSeed of seed.variants) {
+    for (let slot = 0; slot < (seed.media?.variantSlots ?? 2); slot += 1) {
+      add(getMediaKey(seed, variantSeed, slot));
+    }
+  }
+
+  return [...providerAssetIds];
+}
+
 async function clearDemoMediaForProduct(db: CommerceDb, productId: string, seed: ProductSeed) {
+  const providerAssetIds = getDemoMediaProviderAssetIds(seed);
   const assets = await db
     .select({ id: schema.mediaAssets.id })
     .from(schema.mediaAssets)
-    .where(like(schema.mediaAssets.providerAssetId, `commerce-demo-${seed.slug}%`));
+    .where(
+      or(
+        like(schema.mediaAssets.providerAssetId, `commerce-demo-${seed.slug}%`),
+        inArray(schema.mediaAssets.providerAssetId, providerAssetIds),
+      ),
+    );
   const assetIds = assets.map((asset) => asset.id);
 
   if (assetIds.length === 0) {

@@ -77,6 +77,7 @@ type CloudflareImageRecord = {
   draft?: boolean;
   filename?: string;
   id?: string;
+  metadata?: Record<string, unknown>;
   meta?: Record<string, unknown>;
   requireSignedURLs?: boolean;
   uploaded?: string;
@@ -103,6 +104,15 @@ export type CreateDirectUploadInput = {
   customId?: string;
   expiry?: string;
   filename?: string;
+  metadata?: Record<string, unknown>;
+  requireSignedUrls?: boolean;
+};
+
+export type UploadCloudflareImageInput = {
+  bytes: string;
+  contentType: string;
+  customId?: string;
+  filename: string;
   metadata?: Record<string, unknown>;
   requireSignedUrls?: boolean;
 };
@@ -186,7 +196,7 @@ function normalizeImageResult(result: CloudflareImageRecord): CloudflareImagesDe
     draft: Boolean(result.draft),
     ...(result.filename ? { filename: result.filename } : {}),
     id: result.id,
-    metadata: result.meta ?? {},
+    metadata: result.meta ?? result.metadata ?? {},
     requireSignedURLs: Boolean(result.requireSignedURLs),
     ...(result.uploaded ? { uploadedAt: result.uploaded } : {}),
     variants: result.variants ?? [],
@@ -252,6 +262,28 @@ export async function createCloudflareDirectUpload(input: CreateDirectUploadInpu
   }
 
   return result;
+}
+
+export async function uploadCloudflareImage(input: UploadCloudflareImageInput) {
+  const body = new FormData();
+
+  if (input.customId) {
+    body.set("id", input.customId);
+  }
+
+  body.set("file", new File([input.bytes], input.filename, { type: input.contentType }));
+  body.set("requireSignedURLs", input.requireSignedUrls ? "true" : "false");
+
+  if (input.metadata) {
+    body.set("metadata", JSON.stringify(input.metadata));
+  }
+
+  const result = await requestCloudflare<CloudflareImageRecord>("/images/v1", {
+    body,
+    method: "POST",
+  });
+
+  return normalizeImageResult(result);
 }
 
 export async function getCloudflareImageDetails(imageId: string) {
