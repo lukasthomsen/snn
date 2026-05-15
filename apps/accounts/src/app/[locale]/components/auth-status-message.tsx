@@ -1,3 +1,5 @@
+import { Alert } from "@snn/ui";
+
 type AuthStatusMessageProps = {
   message?: string | undefined;
   tone: "danger" | "success";
@@ -8,9 +10,5 @@ export function AuthStatusMessage({ message, tone }: AuthStatusMessageProps) {
     return null;
   }
 
-  return (
-    <p className="form__notice__SW0hq" data-tone={tone}>
-      {message}
-    </p>
-  );
+  return <Alert status={tone}>{message}</Alert>;
 }

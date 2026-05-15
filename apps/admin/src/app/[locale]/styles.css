@@ -27,29 +27,11 @@
   font-size: var(--text-lg);
 }
 
-.summary__card__SW0hg {
-  gap: var(--space-100);
-}
-
 .summary__label__SW0hh {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-}
-
-.phase__list__SW0hi {
-  display: grid;
-  gap: var(--space-75);
-  list-style: none;
-}
-
-.phase__item__SW0hj {
-  display: flex;
-  align-items: center;
-  gap: var(--space-75);
-  padding-bottom: var(--space-75);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border-primary) 80%, transparent);
 }
 
 .phase__index__SW0hk {

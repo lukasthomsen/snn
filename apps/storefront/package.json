@@ -22,7 +22,9 @@
     "@snn/media": "workspace:*",
     "@snn/payments": "workspace:*",
     "@snn/ui": "workspace:*",
-    "next": "16.2.4",
+    "@stripe/react-stripe-js": "^6.3.0",
+    "@stripe/stripe-js": "^9.5.0",
+    "next": "16.2.6",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "zustand": "5.0.12"
@@ -34,7 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.2.6",
     "typescript": "^5"
   }
 }

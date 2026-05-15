@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import type Stripe from "stripe";
 
 import { getStripeWebhookSecret } from "@snn/config";
 
@@ -22,6 +22,43 @@ function readOrderId(metadata: Stripe.Metadata | null | undefined) {
   return metadata?.orderId ?? metadata?.order_id ?? null;
 }
 
+function getProjectedPaymentIntentStatus(intent: Stripe.PaymentIntent) {
+  if (intent.status === "succeeded") {
+    return "captured";
+  }
+
+  if (intent.status === "canceled" || intent.last_payment_error) {
+    return "failed";
+  }
+
+  return "pending";
+}
+
+export function projectStripePaymentIntent(
+  intent: Stripe.PaymentIntent,
+  metadata: Record<string, unknown> = {},
+) {
+  const orderId = readOrderId(intent.metadata);
+
+  if (!orderId) {
+    return null;
+  }
+
+  return {
+    amount: intent.amount,
+    capturedAmount: intent.amount_received ?? 0,
+    currencyCode: intent.currency.toUpperCase(),
+    externalReference: intent.id,
+    metadata: {
+      ...metadata,
+      lastPaymentError: intent.last_payment_error?.message ?? null,
+      paymentIntentStatus: intent.status,
+    },
+    orderId,
+    status: getProjectedPaymentIntentStatus(intent),
+  } as const;
+}
+
 export function projectStripePaymentEvent(event: Stripe.Event) {
   const baseMetadata = {
     eventId: event.id,
@@ -34,7 +71,7 @@ export function projectStripePaymentEvent(event: Stripe.Event) {
     case "checkout.session.async_payment_succeeded":
     case "checkout.session.completed":
     case "checkout.session.expired": {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       const orderId = readOrderId(session.metadata);
 
       if (!orderId) {
@@ -68,33 +105,12 @@ export function projectStripePaymentEvent(event: Stripe.Event) {
     case "payment_intent.canceled":
     case "payment_intent.payment_failed":
     case "payment_intent.succeeded": {
-      const intent = event.data.object as Stripe.PaymentIntent;
-      const orderId = readOrderId(intent.metadata);
+      const intent = event.data.object;
 
-      if (!orderId) {
-        return null;
-      }
-
-      return {
-        amount: intent.amount,
-        capturedAmount: intent.amount_received ?? 0,
-        currencyCode: intent.currency.toUpperCase(),
-        externalReference: intent.id,
-        metadata: {
-          ...baseMetadata,
-          paymentIntentStatus: intent.status,
-        },
-        orderId,
-        status:
-          event.type === "payment_intent.succeeded"
-            ? "captured"
-            : event.type === "payment_intent.canceled" || event.type === "payment_intent.payment_failed"
-              ? "failed"
-              : "pending",
-      } as const;
+      return projectStripePaymentIntent(intent, baseMetadata);
     }
     case "charge.refunded": {
-      const charge = event.data.object as Stripe.Charge;
+      const charge = event.data.object;
       const orderId = readOrderId(charge.metadata);
 
       if (!orderId || !charge.payment_intent) {

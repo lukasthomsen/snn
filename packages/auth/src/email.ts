@@ -91,13 +91,13 @@ function renderHtmlEmail(input: AuthActionEmailInput, copy: EmailCopy) {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:24px;padding:40px;">
             <tr>
               <td>
-                <p style="margin:0 0 28px;color:#666666;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">${safeAppName}</p>
+                <p style="margin:0 0 28px;color:#333333;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">${safeAppName}</p>
                 <h1 style="margin:0 0 16px;color:#131313;font-size:32px;line-height:1.05;letter-spacing:-.02em;">${safeHeading}</h1>
-                <p style="margin:0 0 24px;color:#666666;font-size:16px;line-height:1.6;">Hi ${safeName},<br>${safeBody}</p>
+                <p style="margin:0 0 24px;color:#333333;font-size:16px;line-height:1.6;">Hi ${safeName},<br>${safeBody}</p>
                 <p style="margin:0 0 28px;">
                   <a href="${safeActionUrl}" style="display:inline-block;border-radius:999px;background:#131313;color:#ffffff;font-size:15px;font-weight:700;line-height:1;padding:16px 24px;text-decoration:none;">${safeActionLabel}</a>
                 </p>
-                <p style="margin:0;color:#a1a1a1;font-size:13px;line-height:1.55;">If the button does not work, copy this link into your browser:<br><a href="${safeActionUrl}" style="color:#666666;word-break:break-all;">${safeActionUrl}</a></p>
+                <p style="margin:0;color:#a1a1a1;font-size:13px;line-height:1.55;">If the button does not work, copy this link into your browser:<br><a href="${safeActionUrl}" style="color:#333333;word-break:break-all;">${safeActionUrl}</a></p>
               </td>
             </tr>
           </table>

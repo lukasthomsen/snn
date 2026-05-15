@@ -2,12 +2,15 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
+import { auth } from "@snn/auth/server";
 import {
   createPrivacyRequest,
   deleteCustomerAddress,
   requireFreshCustomerSession,
   revokeCustomerSession,
+  setCustomerMainAddress,
   unlikeCustomerProduct,
   updateCustomerProfile,
   upsertCustomerAddress,
@@ -74,6 +77,25 @@ export async function deleteAddressAction(locale: Locale, addressId: string) {
   revalidatePath(`/${locale}/account`);
 }
 
+export async function setMainAddressAction(locale: Locale, addressId: string) {
+  const { user } = await getActionSession();
+
+  await setCustomerMainAddress(user, addressId);
+
+  revalidatePath(`/${locale}/account/addresses`);
+  revalidatePath(`/${locale}/account`);
+}
+
+export async function unlikeProductAction(locale: Locale, productId: string, variantId: string) {
+  const { user } = await getActionSession();
+
+  await unlikeCustomerProduct(user, productId, variantId);
+
+  revalidatePath(`/${locale}/account/liked`);
+  revalidatePath(`/${locale}/account`);
+  revalidatePath(`/${locale}/wishlist`);
+}
+
 export async function createPrivacyRequestAction(locale: Locale, formData: FormData) {
   const { user } = await getActionSession();
   const type = getText(formData, "type");
@@ -99,11 +121,17 @@ export async function revokeSessionAction(locale: Locale, token: string) {
   revalidatePath(`/${locale}/account/security`);
 }
 
-export async function unlikeProductAction(locale: Locale, productId: string) {
-  const { user } = await getActionSession();
+export async function signOutCustomerAction(locale: Locale) {
+  try {
+    await auth.api.signOut({
+      headers: await headers(),
+    });
+  } catch {
+    return {
+      message: "We could not sign you out. Please try again.",
+      ok: false,
+    } as const;
+  }
 
-  await unlikeCustomerProduct(user, productId);
-
-  revalidatePath(`/${locale}/account/liked`);
-  revalidatePath(`/${locale}/account`);
+  redirect(`/${locale}`);
 }

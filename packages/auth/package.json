@@ -9,6 +9,7 @@
     "./server": "./src/server.ts"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },
   "dependencies": {

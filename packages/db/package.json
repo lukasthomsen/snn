@@ -8,15 +8,18 @@
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.1.0",
     "@snn/config": "workspace:*",
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "0.45.2",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@snn/eslint-config": "workspace:*",
-    "@snn/tsconfig": "workspace:*"
+    "@snn/tsconfig": "workspace:*",
+    "@types/pg": "^8.20.0"
   }
 }

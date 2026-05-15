@@ -1,3 +1,15 @@
+import type {
+  ThemeBorderTokens,
+  ThemeColorTokens,
+  ThemeLayoutTokens,
+  ThemeMotionTokens,
+  ThemeRadiusTokens,
+  ThemeShadowTokens,
+  ThemeSpacingTokens,
+  ThemeTypographyTokens,
+  ThemeZIndexTokens,
+} from "./theme-definition";
+
 export {
   mergeThemeDefinition,
   monoTheme,
@@ -16,13 +28,13 @@ export {
 } from "./theme-definition";
 
 export type ThemeTokenGroups = {
-  border: import("./theme-definition").ThemeBorderTokens;
-  color: import("./theme-definition").ThemeColorTokens;
-  layout: import("./theme-definition").ThemeLayoutTokens;
-  motion: import("./theme-definition").ThemeMotionTokens;
-  radius: import("./theme-definition").ThemeRadiusTokens;
-  shadow: import("./theme-definition").ThemeShadowTokens;
-  spacing: import("./theme-definition").ThemeSpacingTokens;
-  typography: import("./theme-definition").ThemeTypographyTokens;
-  zIndex: import("./theme-definition").ThemeZIndexTokens;
+  border: ThemeBorderTokens;
+  color: ThemeColorTokens;
+  layout: ThemeLayoutTokens;
+  motion: ThemeMotionTokens;
+  radius: ThemeRadiusTokens;
+  shadow: ThemeShadowTokens;
+  spacing: ThemeSpacingTokens;
+  typography: ThemeTypographyTokens;
+  zIndex: ThemeZIndexTokens;
 };

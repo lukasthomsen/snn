@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Archivo, Public_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Suspense, type CSSProperties } from "react";
 
 import { getAppOrigin } from "@snn/config";
@@ -8,20 +8,18 @@ import { isLocale, locales, type Locale } from "@snn/i18n";
 import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
 
+import { createEmptyCartSnapshot, loadExistingCartSnapshot } from "./cart-data";
+import { CartDrawerProvider } from "./components/cart-drawer";
+import { NewsletterSignupProvider } from "./components/newsletter-signup";
+import { StorefrontChrome } from "./components/storefront-chrome";
 import { StorefrontFooter } from "./components/storefront-footer";
 import { StorefrontHeaderShell } from "./components/storefront-header-shell";
 import "./styles.css";
 
-const bodyFont = Public_Sans({
+const interFont = Inter({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-public-sans",
-});
-
-const displayFont = Archivo({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
+  variable: "--font-inter",
 });
 
 type LocaleLayoutProps = Readonly<{
@@ -47,22 +45,37 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     notFound();
   }
 
+  const safeLocale = locale as Locale;
+  const initialCart = await loadExistingCartSnapshot(safeLocale).catch(() => (
+    createEmptyCartSnapshot()
+  ));
+
   return (
-    <html className={`${bodyFont.variable} ${displayFont.variable}`} lang={locale as Locale}>
+    <html className={interFont.variable} lang={safeLocale}>
       <body
         data-theme="mono"
         style={themeToCssVariables(monoTheme) as CSSProperties}
       >
         <ThemeScope theme={monoTheme}>
-          <Suspense fallback={null}>
-            <StorefrontHeaderShell
-              authOrigin={getAppOrigin("auth")}
-              locale={locale as Locale}
-              storefrontOrigin={getAppOrigin("storefront")}
-            />
-          </Suspense>
-          {children}
-          <StorefrontFooter locale={locale as Locale} />
+          <NewsletterSignupProvider locale={safeLocale}>
+            <CartDrawerProvider initialCart={initialCart} locale={safeLocale}>
+              <StorefrontChrome
+                footer={<StorefrontFooter locale={safeLocale} />}
+                header={(
+                  <Suspense fallback={null}>
+                    <StorefrontHeaderShell
+                      authOrigin={getAppOrigin("auth")}
+                      locale={safeLocale}
+                      storefrontOrigin={getAppOrigin("storefront")}
+                    />
+                  </Suspense>
+                )}
+                locale={safeLocale}
+              >
+                {children}
+              </StorefrontChrome>
+            </CartDrawerProvider>
+          </NewsletterSignupProvider>
         </ThemeScope>
       </body>
     </html>

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gt, isNull, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { auth } from "@snn/auth/server";
 import { getDb, schema } from "@snn/db";
@@ -13,6 +13,56 @@ type CustomerUser = {
   image?: string | null | undefined;
   twoFactorEnabled?: boolean | undefined;
   banned?: boolean | undefined;
+};
+
+type CustomerOrderSummary = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  currencyCode: string | null;
+  email: string;
+  totalAmount: number;
+  placedAt: Date;
+};
+
+type CustomerProfileRecord = typeof schema.customerProfiles.$inferSelect;
+type CustomerAddressRecord = typeof schema.addresses.$inferSelect;
+
+export type CustomerRewardTier = {
+  id: string;
+  label: string;
+  threshold: number;
+  benefits: string[];
+};
+
+export type CustomerPointsHistoryItem = {
+  id: string;
+  label: string;
+  description: string;
+  points: number;
+  occurredAt: Date;
+};
+
+export type CustomerRewardsPreview = {
+  benefits: string[];
+  currentTier: CustomerRewardTier;
+  currentXp: number;
+  history: CustomerPointsHistoryItem[];
+  isLocked: boolean;
+  nextTier: CustomerRewardTier | null;
+  progressPercent: number;
+  tiers: CustomerRewardTier[];
+  xpToNextTier: number;
+};
+
+export type CustomerOrderCard = CustomerOrderSummary & {
+  itemCount: number;
+  items: Array<{
+    id: string;
+    imageUrl: string | null;
+    title: string;
+  }>;
+  overflowItemCount: number;
 };
 
 type CustomerSessionData = {
@@ -68,6 +118,38 @@ export class CustomerAuthError extends Error {
 }
 
 const freshSessionMaxAgeMs = 15 * 60 * 1000;
+const previewRewardTiers: CustomerRewardTier[] = [
+  {
+    id: "starter",
+    label: "Starter",
+    threshold: 0,
+    benefits: ["Unlock XP & rewards", "Track points history", "Access member-only drops"],
+  },
+  {
+    id: "tier-1",
+    label: "Tier 1",
+    threshold: 500,
+    benefits: ["10% birthday reward", "Anniversary reward", "Exclusive offers"],
+  },
+  {
+    id: "tier-2",
+    label: "Tier 2",
+    threshold: 1250,
+    benefits: ["15% birthday reward", "Early product access", "Double XP moments"],
+  },
+  {
+    id: "tier-3",
+    label: "Tier 3",
+    threshold: 2500,
+    benefits: ["20% seasonal reward", "Priority restock access", "Free returns windows"],
+  },
+  {
+    id: "elite",
+    label: "Elite",
+    threshold: 5000,
+    benefits: ["Top-tier rewards", "VIP product previews", "Highest bonus events"],
+  },
+];
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -81,6 +163,20 @@ function splitName(name: string) {
     firstName: firstName ?? null,
     lastName: rest.length > 0 ? rest.join(" ") : null,
   };
+}
+
+function getFallbackNameFromEmail(email: string) {
+  return email.split("@")[0]?.replace(/[._-]+/g, " ").trim() || "Member";
+}
+
+export function getCustomerDisplayName(
+  user: CustomerUser,
+  profile?: Pick<CustomerProfileRecord, "firstName" | "lastName"> | null,
+) {
+  const profileName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ").trim();
+  const userName = user.name?.trim();
+
+  return profileName || userName || getFallbackNameFromEmail(user.email);
 }
 
 function nullableText(value: string | null | undefined) {
@@ -266,6 +362,147 @@ export async function getCustomerOrders(user: CustomerUser) {
     .limit(50);
 }
 
+async function getOrderCardsFromSummaries(orders: CustomerOrderSummary[]) {
+  const orderIds = orders.map((order) => order.id);
+
+  if (orderIds.length === 0) {
+    return [];
+  }
+
+  const items = await getDb()
+    .select({
+      id: schema.orderItems.id,
+      orderId: schema.orderItems.orderId,
+      title: schema.orderItems.titleSnapshot,
+      imageUrl: schema.products.featuredImageUrl,
+      createdAt: schema.orderItems.createdAt,
+    })
+    .from(schema.orderItems)
+    .leftJoin(schema.productVariants, eq(schema.orderItems.variantId, schema.productVariants.id))
+    .leftJoin(schema.products, eq(schema.productVariants.productId, schema.products.id))
+    .where(inArray(schema.orderItems.orderId, orderIds))
+    .orderBy(schema.orderItems.createdAt);
+  const itemsByOrder = new Map<string, typeof items>();
+
+  for (const item of items) {
+    const currentItems = itemsByOrder.get(item.orderId) ?? [];
+
+    currentItems.push(item);
+    itemsByOrder.set(item.orderId, currentItems);
+  }
+
+  return orders.map<CustomerOrderCard>((order) => {
+    const orderItems = itemsByOrder.get(order.id) ?? [];
+    const visibleItems = orderItems.slice(0, 3);
+
+    return {
+      ...order,
+      itemCount: orderItems.length,
+      items: visibleItems.map((item) => ({
+        id: item.id,
+        imageUrl: item.imageUrl,
+        title: item.title,
+      })),
+      overflowItemCount: Math.max(0, orderItems.length - visibleItems.length),
+    };
+  });
+}
+
+export async function getCustomerOrderCards(user: CustomerUser, limit = 50) {
+  const orders = await getCustomerOrders(user);
+
+  return getOrderCardsFromSummaries(orders.slice(0, limit));
+}
+
+function buildCustomerRewardsPreview(input: {
+  addresses: CustomerAddressRecord[];
+  likedProducts: Array<{ likedAt: Date }>;
+  orderCards: CustomerOrderCard[];
+  profile: CustomerProfileRecord;
+  security: {
+    passkeyCount: number;
+    twoFactorEnabled: boolean;
+  };
+}) {
+  const totalOrderAmount = input.orderCards.reduce(
+    (sum, order) => sum + order.totalAmount,
+    0,
+  );
+  const orderXp = input.orderCards.length > 0
+    ? input.orderCards.length * 280 + Math.floor(totalOrderAmount / 100)
+    : 0;
+  const profileXp = 100;
+  const addressXp = Math.min(input.addresses.length * 50, 150);
+  const likedXp = Math.min(input.likedProducts.length * 20, 200);
+  const securityXp =
+    (input.security.passkeyCount > 0 ? 80 : 0) +
+    (input.security.twoFactorEnabled ? 120 : 0);
+  const currentXp = profileXp + orderXp + addressXp + likedXp + securityXp;
+  const currentTier = [...previewRewardTiers]
+    .reverse()
+    .find((tier) => currentXp >= tier.threshold) ?? previewRewardTiers[0]!;
+  const nextTier =
+    previewRewardTiers.find((tier) => tier.threshold > currentXp) ?? null;
+  const xpToNextTier = nextTier ? Math.max(0, nextTier.threshold - currentXp) : 0;
+  const tierRange = nextTier
+    ? Math.max(1, nextTier.threshold - currentTier.threshold)
+    : 1;
+  const progressPercent = nextTier
+    ? Math.min(100, Math.max(0, ((currentXp - currentTier.threshold) / tierRange) * 100))
+    : 100;
+  const orderHistory = input.orderCards.slice(0, 6).map((order) => ({
+    id: `order-${order.id}`,
+    label: `Order ${order.orderNumber}`,
+    description: "Purchase activity",
+    points: 280 + Math.floor(order.totalAmount / 100),
+    occurredAt: order.placedAt,
+  }));
+  const history: CustomerPointsHistoryItem[] = [
+    {
+      id: "welcome",
+      label: "Welcome XP",
+      description: "Account created",
+      points: profileXp,
+      occurredAt: input.profile.createdAt,
+    },
+    ...orderHistory,
+    ...(addressXp > 0
+      ? [
+          {
+            id: "addresses",
+            label: "Address book",
+            description: "Saved checkout details",
+            points: addressXp,
+            occurredAt: input.addresses[0]?.updatedAt ?? input.profile.updatedAt,
+          },
+        ]
+      : []),
+    ...(likedXp > 0
+      ? [
+          {
+            id: "liked-products",
+            label: "Liked items",
+            description: "Saved products for later",
+            points: likedXp,
+            occurredAt: input.likedProducts[0]?.likedAt ?? input.profile.updatedAt,
+          },
+        ]
+      : []),
+  ].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
+
+  return {
+    benefits: currentTier.benefits,
+    currentTier,
+    currentXp,
+    history,
+    isLocked: currentXp < previewRewardTiers[1]!.threshold,
+    nextTier,
+    progressPercent,
+    tiers: previewRewardTiers,
+    xpToNextTier,
+  } satisfies CustomerRewardsPreview;
+}
+
 export async function getCustomerAddresses(user: CustomerUser) {
   const db = getDb();
   const profile = await ensureCustomerProfile(user);
@@ -307,7 +544,7 @@ async function clearDefaultAddressFlags(
 export async function upsertCustomerAddress(
   user: CustomerUser,
   input: AddressInput,
-  addressId?: string | undefined,
+  addressId?: string,
 ) {
   const db = getDb();
   const profile = await ensureCustomerProfile(user);
@@ -382,6 +619,30 @@ export async function deleteCustomerAddress(user: CustomerUser, addressId: strin
     .where(and(eq(schema.addresses.id, addressId), eq(schema.addresses.customerId, profile.id)));
 }
 
+export async function setCustomerMainAddress(user: CustomerUser, addressId: string) {
+  const db = getDb();
+  const profile = await ensureCustomerProfile(user);
+
+  await db
+    .update(schema.addresses)
+    .set({
+      isDefaultBilling: false,
+      isDefaultShipping: false,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.addresses.customerId, profile.id));
+
+  return db
+    .update(schema.addresses)
+    .set({
+      isDefaultBilling: true,
+      isDefaultShipping: true,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(schema.addresses.id, addressId), eq(schema.addresses.customerId, profile.id)))
+    .returning();
+}
+
 export async function updateCustomerProfile(user: CustomerUser, input: ProfileInput) {
   const db = getDb();
   const profile = await ensureCustomerProfile(user);
@@ -406,6 +667,8 @@ export async function getCustomerLikedProducts(user: CustomerUser, locale: strin
     .select({
       likeId: schema.customerProductLikes.id,
       productId: schema.products.id,
+      variantId: schema.productVariants.id,
+      variantTitle: schema.productVariants.title,
       slug: schema.products.slug,
       name: schema.productTranslations.name,
       imageUrl: schema.products.featuredImageUrl,
@@ -413,6 +676,7 @@ export async function getCustomerLikedProducts(user: CustomerUser, locale: strin
     })
     .from(schema.customerProductLikes)
     .innerJoin(schema.products, eq(schema.customerProductLikes.productId, schema.products.id))
+    .innerJoin(schema.productVariants, eq(schema.customerProductLikes.variantId, schema.productVariants.id))
     .leftJoin(
       schema.productTranslations,
       and(
@@ -425,36 +689,73 @@ export async function getCustomerLikedProducts(user: CustomerUser, locale: strin
     .limit(100);
 }
 
-export async function likeCustomerProduct(user: CustomerUser, productId: string) {
-  await getDb()
-    .insert(schema.customerProductLikes)
-    .values({
-      productId,
-      userId: user.id,
-    })
-    .onConflictDoNothing({
-      target: [
-        schema.customerProductLikes.userId,
-        schema.customerProductLikes.productId,
-      ],
-    });
-}
-
-export async function unlikeCustomerProduct(user: CustomerUser, productId: string) {
-  await getDb()
-    .delete(schema.customerProductLikes)
+export async function getCustomerLikedProductVariantIds(user: CustomerUser, productId: string) {
+  const likes = await getDb()
+    .select({ variantId: schema.customerProductLikes.variantId })
+    .from(schema.customerProductLikes)
     .where(
       and(
         eq(schema.customerProductLikes.userId, user.id),
         eq(schema.customerProductLikes.productId, productId),
       ),
     );
+
+  return likes.map((like) => like.variantId);
+}
+
+export async function likeCustomerProduct(user: CustomerUser, productId: string, variantId: string) {
+  await getDb()
+    .insert(schema.customerProductLikes)
+    .values({
+      productId,
+      userId: user.id,
+      variantId,
+    })
+    .onConflictDoNothing({
+      target: [
+        schema.customerProductLikes.userId,
+        schema.customerProductLikes.variantId,
+      ],
+    });
+}
+
+export async function isCustomerProductLiked(user: CustomerUser, productId: string, variantId: string) {
+  const [like] = await getDb()
+    .select({ id: schema.customerProductLikes.id })
+    .from(schema.customerProductLikes)
+    .where(
+      and(
+        eq(schema.customerProductLikes.userId, user.id),
+        eq(schema.customerProductLikes.productId, productId),
+        eq(schema.customerProductLikes.variantId, variantId),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(like);
+}
+
+export async function unlikeCustomerProduct(user: CustomerUser, productId: string, variantId?: string) {
+  const where = variantId
+    ? and(
+      eq(schema.customerProductLikes.userId, user.id),
+      eq(schema.customerProductLikes.productId, productId),
+      eq(schema.customerProductLikes.variantId, variantId),
+    )
+    : and(
+      eq(schema.customerProductLikes.userId, user.id),
+      eq(schema.customerProductLikes.productId, productId),
+    );
+
+  await getDb()
+    .delete(schema.customerProductLikes)
+    .where(where);
 }
 
 export async function createPrivacyRequest(
   user: CustomerUser,
   type: PrivacyRequestType,
-  notes?: string | null | undefined,
+  notes?: string | null,
 ) {
   const db = getDb();
   const [request] = await db
@@ -523,12 +824,22 @@ export async function getCustomerAccountOverview(user: CustomerUser, locale: str
     getCustomerLikedProducts(user, locale),
     getCustomerSecurityState(user),
   ]);
+  const orderCards = await getOrderCardsFromSummaries(orders);
+  const rewards = buildCustomerRewardsPreview({
+    addresses,
+    likedProducts,
+    orderCards,
+    profile,
+    security,
+  });
 
   return {
     addresses,
     likedProducts,
+    orderCards,
     orders,
     profile,
+    rewards,
     security,
   };
 }

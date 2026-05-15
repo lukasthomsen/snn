@@ -1,5 +1,4 @@
 {
-  "eyebrow": "SNN admin foundation",
   "title": "Adminmiljoeet er klar til staff-, lager- og driftsvaerktoejer.",
   "description": "Denne app er kun et fundament endnu. Den er gjort klar til delt auth, rollebaseret adgang, inventory-styring og kommende interne workflows.",
   "phaseHeading": "Planlagt byggeraekkefoelge",

@@ -2,6 +2,8 @@
 
 import { startTransition, useEffect, useRef, useState } from "react";
 
+import { PaginationDots } from "@snn/ui";
+
 const rotationDelay = 8000;
 const textTransitionDelay = 180;
 
@@ -108,21 +110,12 @@ export function AuthBrandCarousel({
         </div>
 
         {hasMultipleStatements ? (
-          <div className="brand__dots__SW0fj" aria-label="Brand statements">
-            {safeStatements.map((statement, index) => (
-              <button
-                aria-current={index === activeIndex ? "true" : undefined}
-                aria-label={statement.statement}
-                className="brand__dot__SW0fk"
-                data-active={index === activeIndex ? "true" : undefined}
-                key={`${statement.statement}-${index}`}
-                onClick={() => {
-                  showStatement(index);
-                }}
-                type="button"
-              />
-            ))}
-          </div>
+          <PaginationDots
+            count={safeStatements.length}
+            currentIndex={activeIndex}
+            label="Brand statement"
+            onChange={showStatement}
+          />
         ) : null}
       </div>
 

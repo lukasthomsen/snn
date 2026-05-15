@@ -1,7 +1,19 @@
-import { isLocale } from "@snn/i18n";
-import { getCustomerAccountOverview } from "@snn/customer";
+import type { Route } from "next";
 
+import {
+  getCustomerAccountOverview,
+  getCustomerDisplayName,
+} from "@snn/customer";
+import { isLocale } from "@snn/i18n";
+
+import {
+  EmptyOrdersPanel,
+  getAddressSummary,
+  RecentOrdersPanel,
+  RewardsHero,
+} from "./account-components";
 import { requireAccountSession } from "./account-auth";
+import { StorefrontCard } from "../components/storefront-card";
 
 type AccountPageProps = {
   params: Promise<{
@@ -9,72 +21,77 @@ type AccountPageProps = {
   }>;
 };
 
-function formatMoney(amount: number, currencyCode: string | null) {
-  return new Intl.NumberFormat("da-DK", {
-    currency: currencyCode ?? "DKK",
-    style: "currency",
-  }).format(amount / 100);
-}
-
 export default async function AccountPage({ params }: AccountPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account`);
   const overview = await getCustomerAccountOverview(user, safeLocale);
-  const recentOrders = overview.orders.slice(0, 3);
-  const defaultAddress = overview.addresses.find((address) => address.isDefaultShipping);
+  const displayName = getCustomerDisplayName(user, overview.profile);
+  const defaultAddress =
+    overview.addresses.find((address) => address.isDefaultShipping) ??
+    overview.addresses[0];
 
   return (
-    <div className="account__stack__SW1a8">
-      <header className="account__section-header__SW1a9">
-        <p className="account__muted__SW1aa">Signed in as {user.email}</p>
-        <h2>Overview</h2>
-      </header>
+    <div className="accountDashboard__root__SW2i0">
+      <RewardsHero
+        displayName={displayName}
+        locale={safeLocale}
+        rewards={overview.rewards}
+      />
 
-      <div className="account__stats__SW1ab">
-        <article className="account__card__SW1ac">
-          <span>Orders</span>
-          <strong>{overview.orders.length}</strong>
-        </article>
-        <article className="account__card__SW1ac">
-          <span>Liked items</span>
-          <strong>{overview.likedProducts.length}</strong>
-        </article>
-        <article className="account__card__SW1ac">
-          <span>Passkeys</span>
-          <strong>{overview.security.passkeyCount}</strong>
-        </article>
+      <div className="accountDashboard__body__SW2i1">
+        {overview.orderCards.length > 0 ? (
+          <RecentOrdersPanel locale={safeLocale} orders={overview.orderCards} />
+        ) : (
+          <EmptyOrdersPanel locale={safeLocale} />
+        )}
+
+        <aside className="accountDashboard__menu__SW2i2" aria-label="Account menu">
+          <StorefrontCard
+            description={getAddressSummary(defaultAddress)}
+            href={`/${safeLocale}/account/addresses` as Route}
+            size="medium"
+            title="Address book"
+          />
+          <StorefrontCard
+            description="Quick and simple returns from one place."
+            href={`/${safeLocale}/account/returns` as Route}
+            size="medium"
+            title="Returns"
+          />
+          <StorefrontCard
+            description="Give your friends a reward and unlock one for your next order."
+            href={`/${safeLocale}/account/refer` as Route}
+            size="medium"
+            title="Refer a friend"
+          />
+          <StorefrontCard
+            description="Rewards, points history, and tier progress."
+            href={`/${safeLocale}/account/rewards` as Route}
+            icon="XP"
+            size="medium"
+            title="Rewards"
+          />
+          <StorefrontCard
+            description="See how this preview XP total is built."
+            href={`/${safeLocale}/account/points-history` as Route}
+            size="medium"
+            title="Points history"
+          />
+          <StorefrontCard
+            description="Compare tiers, thresholds, and benefits."
+            href={`/${safeLocale}/account/loyalty` as Route}
+            size="medium"
+            title="Loyalty overview"
+          />
+          <StorefrontCard
+            description="Profile, security, privacy, and sign out."
+            href={`/${safeLocale}/account/settings` as Route}
+            size="medium"
+            title="Account settings"
+          />
+        </aside>
       </div>
-
-      <section className="account__panel__SW1ad">
-        <h3>Recent orders</h3>
-        {recentOrders.length > 0 ? (
-          <div className="account__list__SW1ae">
-            {recentOrders.map((order) => (
-              <article className="account__row__SW1af" key={order.id}>
-                <div>
-                  <strong>{order.orderNumber}</strong>
-                  <span>{order.status}</span>
-                </div>
-                <span>{formatMoney(order.totalAmount, order.currencyCode)}</span>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="account__muted__SW1aa">No orders are linked to this account yet.</p>
-        )}
-      </section>
-
-      <section className="account__panel__SW1ad">
-        <h3>Default delivery</h3>
-        {defaultAddress ? (
-          <p className="account__muted__SW1aa">
-            {defaultAddress.line1}, {defaultAddress.postalCode} {defaultAddress.city}
-          </p>
-        ) : (
-          <p className="account__muted__SW1aa">Add an address to speed up checkout later.</p>
-        )}
-      </section>
     </div>
   );
 }

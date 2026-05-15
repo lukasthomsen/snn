@@ -13,11 +13,14 @@
     "./styles/tokens.css": "./src/styles/tokens.css"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },
   "dependencies": {
-    "lucide-react": "^1.14.0",
+    "@react-stately/collections": "^3.13.0",
+    "iconoir-react": "^7.11.0",
     "react": "19.2.5",
+    "react-aria-components": "^1.17.0",
     "react-dom": "19.2.5",
     "zustand": "5.0.12"
   },

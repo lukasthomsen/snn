@@ -2,11 +2,11 @@
 
 import {
   useEffect,
-  useId,
   useRef,
   useState,
   type FieldsetHTMLAttributes,
   type FormHTMLAttributes,
+  type ChangeEvent,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
@@ -209,6 +209,79 @@ export function TextField({
           callEventHandler(onPointerLeave, event);
         }}
       />
+    </Field>
+  );
+}
+
+type ColorFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type"> &
+  SharedFieldProps & {
+    textInputName?: string;
+  };
+
+export function ColorField({
+  className,
+  defaultValue,
+  description,
+  error,
+  fieldClassName,
+  fullWidth = false,
+  invalid = false,
+  label,
+  name,
+  size = "md",
+  textInputName,
+  value,
+  variant = "primary",
+  ...props
+}: ColorFieldProps) {
+  const [internalValue, setInternalValue] = useState(String(defaultValue ?? value ?? "#000000"));
+  const controlled = value !== undefined;
+  const currentValue = String(controlled ? value : internalValue);
+
+  function update(nextValue: string) {
+    if (!controlled) {
+      setInternalValue(nextValue);
+    }
+
+    props.onChange?.({
+      target: {
+        value: nextValue,
+      },
+    } as ChangeEvent<HTMLInputElement>);
+  }
+
+  return (
+    <Field
+      className={fieldClassName}
+      description={description}
+      error={error}
+      fullWidth={fullWidth}
+      label={label}
+    >
+      <span
+        className={cx("color-field__root__SW1r0", className)}
+        data-full-width={fullWidth ? "true" : undefined}
+        data-invalid={invalid || error ? "true" : undefined}
+        data-size={size}
+        data-variant={variant === "secondary" ? "secondary" : undefined}
+      >
+        <input
+          {...props}
+          aria-label={label ? undefined : props["aria-label"]}
+          className="color-field__swatch__SW1r1"
+          name={name}
+          onChange={(event) => update(event.target.value)}
+          type="color"
+          value={currentValue}
+        />
+        <input
+          aria-label={label ? `${label} value` : undefined}
+          className="color-field__input__SW1r2"
+          name={textInputName}
+          onChange={(event) => update(event.target.value)}
+          value={currentValue}
+        />
+      </span>
     </Field>
   );
 }
@@ -809,6 +882,7 @@ type GroupProps = {
   description?: string;
   disabled?: boolean;
   error?: string;
+  hideLabel?: boolean;
   label?: string;
   orientation?: "horizontal" | "vertical";
 };
@@ -819,12 +893,14 @@ export function CheckboxGroup({
   description,
   disabled = false,
   error,
+  hideLabel = false,
   label,
 }: GroupProps) {
   return (
     <fieldset
       className={cx("checkbox-group__root__SW0c8", className)}
       data-disabled={disabled ? "true" : undefined}
+      data-label-hidden={hideLabel ? "true" : undefined}
       disabled={disabled}
     >
       {label ? <legend className="label__root__SW0bl">{label}</legend> : null}
@@ -847,6 +923,7 @@ export function RadioGroup({
   description,
   disabled = false,
   error,
+  hideLabel = false,
   label,
   orientation = "vertical",
 }: GroupProps) {
@@ -854,6 +931,7 @@ export function RadioGroup({
     <fieldset
       className={cx("radio-group__root__SW0c9", className)}
       data-disabled={disabled ? "true" : undefined}
+      data-label-hidden={hideLabel ? "true" : undefined}
       data-orientation={orientation}
       disabled={disabled}
     >
@@ -873,6 +951,7 @@ export function RadioGroup({
 
 type SelectionControlProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type"> & {
   description?: string;
+  fullWidth?: boolean;
   indeterminate?: boolean;
   invalid?: boolean;
   label: string;
@@ -885,6 +964,7 @@ export function Checkbox({
   defaultChecked,
   description,
   disabled = false,
+  fullWidth = false,
   indeterminate = false,
   invalid = false,
   label,
@@ -912,6 +992,7 @@ export function Checkbox({
     <label
       className={cx("checkbox__root__SW0cc", className)}
       data-disabled={disabled ? "true" : undefined}
+      data-full-width={fullWidth ? "true" : undefined}
       data-focused={focused ? "true" : undefined}
       data-hovered={hovered ? "true" : undefined}
       data-indeterminate={indeterminate ? "true" : undefined}
@@ -976,12 +1057,96 @@ export function Checkbox({
   );
 }
 
+type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type"> & {
+  description?: string;
+  invalid?: boolean;
+  label: string;
+  size?: ControlSize;
+  variant?: FormControlVariant;
+};
+
+export function Switch({
+  checked,
+  className,
+  defaultChecked,
+  description,
+  disabled = false,
+  invalid = false,
+  label,
+  onBlur,
+  onChange,
+  onFocus,
+  onPointerEnter,
+  onPointerLeave,
+  size = "md",
+  variant = "primary",
+  ...props
+}: SwitchProps) {
+  const controlled = checked !== undefined;
+  const [internalChecked, setInternalChecked] = useState(Boolean(defaultChecked));
+  const { focused, hovered, interactiveHandlers } = useInteractiveState();
+  const selected = controlled ? Boolean(checked) : internalChecked;
+
+  return (
+    <label
+      className={cx("switch__root__SW1r3", className)}
+      data-disabled={disabled ? "true" : undefined}
+      data-focused={focused ? "true" : undefined}
+      data-hovered={hovered ? "true" : undefined}
+      data-invalid={invalid ? "true" : undefined}
+      data-selected={selected ? "true" : undefined}
+      data-size={size}
+      data-variant={variant === "secondary" ? "secondary" : undefined}
+    >
+      <input
+        {...props}
+        checked={checked}
+        className="selection__input__SW0ce"
+        defaultChecked={defaultChecked}
+        disabled={disabled}
+        onBlur={(event) => {
+          interactiveHandlers.onBlur();
+          callEventHandler(onBlur, event);
+        }}
+        onChange={(event) => {
+          if (!controlled) {
+            setInternalChecked(event.target.checked);
+          }
+          callEventHandler(onChange, event);
+        }}
+        onFocus={(event) => {
+          interactiveHandlers.onFocus();
+          callEventHandler(onFocus, event);
+        }}
+        onPointerEnter={(event) => {
+          interactiveHandlers.onPointerEnter();
+          callEventHandler(onPointerEnter, event);
+        }}
+        onPointerLeave={(event) => {
+          interactiveHandlers.onPointerLeave();
+          callEventHandler(onPointerLeave, event);
+        }}
+        role="switch"
+        type="checkbox"
+      />
+      <span className="switch__track__SW1r4">
+        <span className="switch__thumb__SW1r5" />
+      </span>
+      <span className="selection__content__SW0cn">
+        <span className="label__root__SW0bl">{label}</span>
+        {description ? <span className="description__root__SW0bm">{description}</span> : null}
+      </span>
+    </label>
+  );
+}
+
 export function Radio({
   checked,
   className,
   defaultChecked,
   description,
   disabled = false,
+  fullWidth = false,
   invalid = false,
   label,
   onBlur,
@@ -1001,6 +1166,7 @@ export function Radio({
     <label
       className={cx("radio__root__SW0cd", className)}
       data-disabled={disabled ? "true" : undefined}
+      data-full-width={fullWidth ? "true" : undefined}
       data-focused={focused ? "true" : undefined}
       data-hovered={hovered ? "true" : undefined}
       data-invalid={invalid ? "true" : undefined}

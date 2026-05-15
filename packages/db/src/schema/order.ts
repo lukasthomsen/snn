@@ -63,6 +63,7 @@ export const cartItems = pgTable(
   },
   (table) => [
     index("cart_item_cart_idx").on(table.cartId),
+    uniqueIndex("cart_item_cart_variant_unique").on(table.cartId, table.variantId),
   ],
 );
 

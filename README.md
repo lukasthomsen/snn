@@ -45,3 +45,21 @@ pnpm lint
 pnpm typecheck
 pnpm build
 ```
+
+## Commerce Database Commands
+
+Use a local or other non-production database unless you explicitly intend to touch shared data.
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+pnpm db:backfill:commerce
+pnpm db:backfill:commerce -- --apply
+pnpm db:seed:commerce
+pnpm db:seed:commerce -- --apply
+pnpm db:check:commerce
+```
+
+- `db:backfill:commerce` converts legacy variant prices and stock links into price sets and inventory items.
+- `db:seed:commerce` creates deterministic sample products across supplements, snacks, accessories, apparel, bundles, market prices, sale prices, media placeholders, and inventory.
+- `db:check:commerce` reports storefront-blocking catalog issues before cart and checkout work begins.

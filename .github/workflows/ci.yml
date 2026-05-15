@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check migrations
+        run: pnpm db:check:migrations
+
       - name: Lint
         run: pnpm lint
 

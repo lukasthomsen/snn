@@ -18,6 +18,16 @@ type AuthPageProps = {
   title: string;
 };
 
+export type AuthField = {
+  autoComplete?: string;
+  label: string;
+  maxLength?: number;
+  minLength?: number;
+  name: string;
+  placeholder?: string;
+  type?: string;
+};
+
 export function AuthPage({
   body,
   brandFooter,

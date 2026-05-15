@@ -101,7 +101,6 @@ export function ForgotPasswordForm({
         type="email"
       />
       <Button
-        className="submit__button__SW0fx"
         fullWidth
         loading={isPending}
         size="lg"
@@ -215,7 +214,6 @@ export function ResetPasswordForm({
         type="password"
       />
       <Button
-        className="submit__button__SW0fx"
         disabled={!token}
         fullWidth
         loading={isPending}

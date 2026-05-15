@@ -1,6 +1,14 @@
 import { integer, jsonb, pgEnum, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const collectionStatusEnum = pgEnum("collection_status", ["draft", "active", "archived"]);
+export const marketStatusEnum = pgEnum("market_status", ["draft", "active", "archived"]);
+export const priceListStatusEnum = pgEnum("price_list_status", [
+  "draft",
+  "scheduled",
+  "active",
+  "archived",
+]);
+export const priceListTypeEnum = pgEnum("price_list_type", ["sale", "override"]);
 export const fulfillmentStatusEnum = pgEnum("fulfillment_status", [
   "pending",
   "packed",
@@ -40,7 +48,24 @@ export const productMediaRoleEnum = pgEnum("product_media_role", [
   "swatch",
   "hero",
 ]);
-export const productStatusEnum = pgEnum("product_status", ["draft", "active", "archived"]);
+export const productAttributeTypeEnum = pgEnum("product_attribute_type", [
+  "text",
+  "number",
+  "boolean",
+  "select",
+  "multi_select",
+]);
+export const productStatusEnum = pgEnum("product_status", [
+  "draft",
+  "scheduled",
+  "published",
+  "active",
+  "archived",
+]);
+export const productReviewStatusEnum = pgEnum("product_review_status", [
+  "published",
+  "hidden",
+]);
 export const cartStatusEnum = pgEnum("cart_status", ["open", "converted", "expired", "abandoned"]);
 export const privacyRequestStatusEnum = pgEnum("privacy_request_status", [
   "pending",

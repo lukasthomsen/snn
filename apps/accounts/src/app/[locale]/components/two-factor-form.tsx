@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
-import { Button, TextField } from "@snn/ui";
+import { Alert, Button, InputOtp } from "@snn/ui";
 
 type TwoFactorFormProps = {
   callbackURL: string;
@@ -18,6 +18,7 @@ export function TwoFactorForm({
   codePlaceholder,
   submitLabel,
 }: TwoFactorFormProps) {
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [isPending, setIsPending] = useState(false);
 
@@ -58,19 +59,18 @@ export function TwoFactorForm({
 
   return (
     <form className="auth__form__SW0fp" noValidate onSubmit={(event) => void handleSubmit(event)}>
-      <TextField
+      <InputOtp
         autoComplete="one-time-code"
+        description={codePlaceholder}
         disabled={isPending}
         fullWidth
-        inputMode="numeric"
         label={codeLabel}
-        name="code"
-        placeholder={codePlaceholder}
-        required
+        onValueChange={setCode}
         size="md"
+        value={code}
       />
+      <input name="code" type="hidden" value={code} />
       <Button
-        className="submit__button__SW0fx"
         fullWidth
         loading={isPending}
         size="lg"
@@ -78,11 +78,7 @@ export function TwoFactorForm({
       >
         {submitLabel}
       </Button>
-      {error ? (
-        <p className="form__notice__SW0hq" data-tone="danger">
-          {error}
-        </p>
-      ) : null}
+      {error ? <Alert status="danger">{error}</Alert> : null}
     </form>
   );
 }

@@ -119,7 +119,6 @@ export function SocialAuthButtons({
   return (
     <div className="provider__buttons__SW0fs">
       <Button
-        className="provider__button__SW0ft"
         disabled={isChecking || pendingProvider !== null || !availability.google}
         fullWidth
         onClick={() => void handleSocialSignIn("google")}
@@ -140,7 +139,6 @@ export function SocialAuthButtons({
         </span>
       </Button>
       <Button
-        className="provider__button__SW0ft"
         disabled={isChecking || pendingProvider !== null || !availability.apple}
         fullWidth
         onClick={() => void handleSocialSignIn("apple")}

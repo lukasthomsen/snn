@@ -55,7 +55,7 @@
   margin: 0;
   color: var(--color-text-inverse);
   font-family: var(--font-display);
-  font-size: clamp(2.15rem, 4.5vw, 3.35rem);
+  font-size: clamp(2.15rem, 4.5vw, var(--text-h1));
   font-weight: var(--font-weight-bold);
   letter-spacing: -0.06em;
   line-height: 0.94;
@@ -73,35 +73,6 @@
   font-weight: var(--font-weight-normal);
   letter-spacing: var(--tracking-flat);
   line-height: 1.65;
-}
-
-.brand__dots__SW0fj {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: -0.1rem;
-}
-
-.brand__dot__SW0fk {
-  width: 0.42rem;
-  height: 0.42rem;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--color-border-inverse);
-  cursor: pointer;
-  font: inherit;
-  opacity: 0.6;
-  transition:
-    opacity var(--duration-fast) var(--easing-standard),
-    background-color var(--duration-fast) var(--easing-standard);
-}
-
-.brand__dot__SW0fk[data-active="true"],
-.brand__dot__SW0fk:hover,
-.brand__dot__SW0fk:focus-visible {
-  background: var(--color-text-inverse-muted);
-  opacity: 0.9;
 }
 
 .brand__footer__SW0fl {
@@ -123,7 +94,7 @@
 }
 
 .auth__card-frame__SW0fm {
-  width: min(100%, 440px);
+  width: min(100%, var(--layout-form-width));
 }
 
 .auth__card__SW0fn {
@@ -159,7 +130,7 @@
 .auth__header__SW0fo h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.1rem, 4vw, 2.8rem);
+  font-size: clamp(2.1rem, 4vw, var(--text-h1));
   letter-spacing: -0.035em;
   line-height: 0.98;
 }
@@ -176,22 +147,6 @@
 .provider__buttons__SW0fs {
   display: grid;
   gap: 0.7rem;
-}
-
-.provider__button__SW0ft {
-  justify-content: center;
-  min-height: var(--control-height-md);
-  padding-inline: 1rem 1.15rem;
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-flat);
-  box-shadow: none;
-}
-
-.provider__button__SW0ft:hover,
-.provider__button__SW0ft[data-hovered="true"] {
-  box-shadow: none;
 }
 
 .provider__mark__SW0fu {
@@ -231,17 +186,6 @@
 .inline__link__SW0fw:hover {
   text-decoration: underline;
   text-underline-offset: 0.18em;
-}
-
-.submit__button__SW0fx {
-  margin-top: 0.15rem;
-}
-
-.submit__button__SW0fx[data-size="lg"] {
-  min-height: var(--control-height-lg);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  letter-spacing: 0.01em;
 }
 
 .form__link__SW0hp {

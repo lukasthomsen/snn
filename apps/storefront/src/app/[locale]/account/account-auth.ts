@@ -7,22 +7,24 @@ import { CustomerAuthError, requireCustomerSession } from "@snn/customer";
 
 export const accountSections = {
   da: [
-    { href: "account", label: "Overview" },
+    { href: "account/rewards", label: "Rewards" },
+    { href: "account/points-history", label: "Points history" },
+    { href: "account/loyalty", label: "Loyalty overview" },
     { href: "account/orders", label: "Orders" },
-    { href: "account/liked", label: "Liked" },
-    { href: "account/profile", label: "Profile" },
-    { href: "account/addresses", label: "Addresses" },
-    { href: "account/security", label: "Security" },
-    { href: "account/privacy", label: "Privacy" },
+    { href: "account/addresses", label: "Address book" },
+    { href: "account/returns", label: "Returns" },
+    { href: "account/refer", label: "Refer a friend" },
+    { href: "account/settings", label: "Account settings" },
   ],
   en: [
-    { href: "account", label: "Overview" },
+    { href: "account/rewards", label: "Rewards" },
+    { href: "account/points-history", label: "Points history" },
+    { href: "account/loyalty", label: "Loyalty overview" },
     { href: "account/orders", label: "Orders" },
-    { href: "account/liked", label: "Liked" },
-    { href: "account/profile", label: "Profile" },
-    { href: "account/addresses", label: "Addresses" },
-    { href: "account/security", label: "Security" },
-    { href: "account/privacy", label: "Privacy" },
+    { href: "account/addresses", label: "Address book" },
+    { href: "account/returns", label: "Returns" },
+    { href: "account/refer", label: "Refer a friend" },
+    { href: "account/settings", label: "Account settings" },
   ],
 } as const;
 

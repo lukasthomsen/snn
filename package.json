@@ -9,15 +9,21 @@
   "scripts": {
     "audit": "pnpm audit",
     "build": "turbo run build",
-    "dev": "turbo run dev --parallel --filter=@snn/storefront --filter=@snn/admin --filter=@snn/accounts",
+    "clean": "tsx scripts/maintenance/clean-generated.ts",
+    "dev": "pnpm -r --parallel --filter @snn/storefront --filter @snn/admin --filter @snn/accounts run dev",
     "dev:storefront": "pnpm --filter @snn/storefront dev",
     "dev:admin": "pnpm --filter @snn/admin dev",
     "dev:accounts": "pnpm --filter @snn/accounts dev",
     "lint": "turbo run lint",
+    "verify": "pnpm db:check:migrations && pnpm lint && pnpm typecheck && pnpm build",
     "media:ensure-variants": "tsx scripts/media/ensure-cloudflare-image-variants.ts",
     "typecheck": "turbo run typecheck",
+    "db:check:migrations": "tsx scripts/maintenance/check-migrations.ts",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "tsx scripts/db/migrate.ts",
+    "db:backfill:commerce": "tsx scripts/db/backfill-commerce-foundation.ts",
+    "db:check:commerce": "tsx scripts/db/check-commerce-health.ts",
+    "db:seed:commerce": "tsx scripts/db/seed-commerce-demo.ts",
     "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
   },
   "pnpm": {
@@ -28,10 +34,13 @@
     }
   },
   "devDependencies": {
+    "@snn/commerce": "workspace:*",
+    "@snn/db": "workspace:*",
     "@types/node": "^24.10.1",
     "@types/pg": "^8.20.0",
     "bufferutil": "^4.1.0",
     "drizzle-kit": "0.31.10",
+    "drizzle-orm": "0.45.2",
     "pg": "^8.20.0",
     "tsx": "^4.21.0",
     "turbo": "2.9.7",

@@ -1,5 +1,5 @@
 import { getAppOrigin } from "@snn/config";
-import { Button } from "@snn/ui";
+import { Button, MetricCard } from "@snn/ui";
 import { isLocale } from "@snn/i18n";
 import { getCustomerSecurityState } from "@snn/customer";
 
@@ -36,23 +36,29 @@ export default async function SecurityPage({ params }: SecurityPageProps) {
       </header>
 
       <div className="account__stats__SW1ab">
-        <article className="account__card__SW1ac">
-          <span>Email verified</span>
-          <strong>{security.emailVerified ? "Yes" : "No"}</strong>
-        </article>
-        <article className="account__card__SW1ac">
-          <span>2FA</span>
-          <strong>{security.twoFactorEnabled ? "On" : "Off"}</strong>
-        </article>
-        <article className="account__card__SW1ac">
-          <span>Passkeys</span>
-          <strong>{security.passkeyCount}</strong>
-        </article>
+        <MetricCard
+          grow
+          label="Email verified"
+          size="lg"
+          value={security.emailVerified ? "Yes" : "No"}
+        />
+        <MetricCard
+          grow
+          label="2FA"
+          size="lg"
+          value={security.twoFactorEnabled ? "On" : "Off"}
+        />
+        <MetricCard
+          grow
+          label="Passkeys"
+          size="lg"
+          value={security.passkeyCount}
+        />
       </div>
 
       <SecurityActions
         authOrigin={getAppOrigin("auth")}
-        homeHref={`/${safeLocale}`}
+        locale={safeLocale}
         passkeyCount={security.passkeyCount}
         twoFactorEnabled={security.twoFactorEnabled}
       />

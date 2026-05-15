@@ -64,14 +64,30 @@
     "lint": {
       "dependsOn": [
         "^lint"
+      ],
+      "inputs": [
+        "eslint.config.*",
+        "src/**",
+        "package.json",
+        "tsconfig.json"
       ]
     },
     "typecheck": {
       "dependsOn": [
         "^typecheck"
+      ],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        ".next/types/**/*.ts",
+        ".next/dev/types/**/*.ts"
       ]
     },
     "db:generate": {
+      "cache": false
+    },
+    "clean": {
       "cache": false
     }
   }

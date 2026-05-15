@@ -134,7 +134,6 @@ export function SignInForm({
       </a>
 
       <Button
-        className="submit__button__SW0fx"
         disabled={isSubmitting}
         fullWidth
         size="lg"

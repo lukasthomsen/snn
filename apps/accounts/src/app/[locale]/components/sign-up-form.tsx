@@ -156,7 +156,6 @@ export function SignUpForm({
       />
 
       <Button
-        className="submit__button__SW0fx"
         disabled={isSubmitting}
         fullWidth
         size="lg"

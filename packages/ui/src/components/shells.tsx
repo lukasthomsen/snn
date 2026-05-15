@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 import { cx } from "../cx";
 
@@ -8,7 +8,6 @@ type HeroFrameProps = HTMLAttributes<HTMLElement> & {
   actions?: ReactNode;
   align?: "center" | "start";
   description: string;
-  eyebrow?: string;
   media?: ReactNode;
   title: string;
   titleColor?: string;
@@ -19,7 +18,6 @@ export function HeroFrame({
   align = "start",
   className,
   description,
-  eyebrow,
   media,
   style,
   title,
@@ -38,12 +36,11 @@ export function HeroFrame({
         {
           ...(titleColor ? { "--hero-title-color": titleColor } : {}),
           ...style,
-        } as CSSProperties
+        }
       }
     >
       <div className="hero__layout__SW0ds">
         <div className="hero__copy__SW0dr">
-          {eyebrow ? <p className="hero__eyebrow__SW0dt">{eyebrow}</p> : null}
           <h1 className="hero__title__SW0du">{title}</h1>
           <p className="hero__description__SW0dv">{description}</p>
           {actions ? <div className="hero__actions__SW0dw">{actions}</div> : null}
@@ -88,7 +85,7 @@ export function ProductTileFrame({
         {
           ...(visualColor ? { "--product-visual-color": visualColor } : {}),
           ...style,
-        } as CSSProperties
+        }
       }
     >
       <div className="product-visual__root__SW0e0">
@@ -110,7 +107,6 @@ type FormFrameProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode;
   description?: string;
   footer?: ReactNode;
-  kicker?: string;
   title: string;
 };
 
@@ -119,13 +115,11 @@ export function FormFrame({
   className,
   description,
   footer,
-  kicker,
   title,
   ...props
 }: FormFrameProps) {
   return (
     <Card {...props} className={cx("form-frame__root__SW0e7", className)}>
-      {kicker ? <p className="form__kicker__SW0e8">{kicker}</p> : null}
       <Stack gap="var(--space-sm)">
         <h2 className="form__title__SW0e9">{title}</h2>
         {description ? <p className="form__description__SW0ea">{description}</p> : null}

@@ -1,8 +1,13 @@
-import { Button, TextField } from "@snn/ui";
-import { isLocale } from "@snn/i18n";
+import { Button, Checkbox, EmptyState, TextField } from "@snn/ui";
 import { getCustomerAddresses } from "@snn/customer";
+import { isLocale } from "@snn/i18n";
 
-import { createAddressAction, deleteAddressAction } from "../actions";
+import {
+  createAddressAction,
+  deleteAddressAction,
+  setMainAddressAction,
+} from "../actions";
+import { BackToAccountLink } from "../account-components";
 import { requireAccountSession } from "../account-auth";
 
 type AddressesPageProps = {
@@ -11,59 +16,105 @@ type AddressesPageProps = {
   }>;
 };
 
+type AddressRecord = Awaited<ReturnType<typeof getCustomerAddresses>>[number];
+
+function formatAddressLines(address: AddressRecord) {
+  const name = [address.firstName, address.lastName].filter(Boolean).join(" ").trim();
+
+  return [
+    name,
+    address.line1,
+    address.line2,
+    `${address.postalCode} ${address.city}`,
+    address.countryCode,
+  ].filter(Boolean);
+}
+
 export default async function AddressesPage({ params }: AddressesPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account/addresses`);
   const addresses = await getCustomerAddresses(user);
+  const mainAddress =
+    addresses.find((address) => address.isDefaultShipping) ?? addresses[0];
 
   return (
-    <div className="account__stack__SW1a8">
-      <header className="account__section-header__SW1a9">
-        <h2>Addresses</h2>
-        <p className="account__muted__SW1aa">Reusable delivery and billing details.</p>
+    <div className="accountSubpage__root__SW2j0">
+      <BackToAccountLink locale={safeLocale} />
+      <header className="accountSubpage__header__SW2j1">
+        <h1>Address book</h1>
       </header>
 
-      <section className="account__panel__SW1ad">
-        {addresses.length > 0 ? (
-          <div className="account__list__SW1ae">
-            {addresses.map((address) => (
-              <article className="account__row__SW1af" key={address.id}>
-                <div>
-                  <strong>{address.label ?? "Address"}</strong>
-                  <span>
-                    {address.line1}, {address.postalCode} {address.city}
-                  </span>
-                </div>
-                <form action={deleteAddressAction.bind(null, safeLocale, address.id)}>
-                  <button className="account__text-button__SW1aj" type="submit">
-                    Delete
-                  </button>
-                </form>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="account__muted__SW1aa">No saved addresses yet.</p>
-        )}
-      </section>
+      <div className="accountAddressBook__root__SW2k0">
+        <aside className="accountAddressBook__main__SW2k1">
+          <section className="accountAddressBook__mainCard__SW2k2">
+            <h2>Main address</h2>
+            {mainAddress ? (
+              <address>
+                {formatAddressLines(mainAddress).map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </address>
+            ) : (
+              <p>No main address yet.</p>
+            )}
+          </section>
 
-      <section className="account__panel__SW1ad">
-        <h3>Add address</h3>
-        <form action={createAddressAction.bind(null, safeLocale)} className="account__form__SW1ak">
-          <TextField fullWidth label="Label" name="label" placeholder="Home" size="md" />
-          <TextField fullWidth label="First name" name="firstName" size="md" />
-          <TextField fullWidth label="Last name" name="lastName" size="md" />
-          <TextField fullWidth label="Address line" name="line1" required size="md" />
-          <TextField fullWidth label="Address line 2" name="line2" size="md" />
-          <TextField fullWidth label="Postal code" name="postalCode" required size="md" />
-          <TextField fullWidth label="City" name="city" required size="md" />
-          <TextField defaultValue="DK" fullWidth label="Country code" name="countryCode" required size="md" />
-          <Button size="lg" type="submit">
-            Save address
-          </Button>
-        </form>
-      </section>
+          <section className="accountAddressBook__add__SW2k3">
+            <h2>Add an address</h2>
+            <form action={createAddressAction.bind(null, safeLocale)}>
+              <TextField fullWidth label="Label" name="label" placeholder="Home" size="md" />
+              <TextField fullWidth label="First name" name="firstName" size="md" />
+              <TextField fullWidth label="Last name" name="lastName" size="md" />
+              <TextField fullWidth label="Address line" name="line1" required size="md" />
+              <TextField fullWidth label="Address line 2" name="line2" size="md" />
+              <TextField fullWidth label="Postal code" name="postalCode" required size="md" />
+              <TextField fullWidth label="City" name="city" required size="md" />
+              <TextField defaultValue="DK" fullWidth label="Country code" name="countryCode" required size="md" />
+              <Checkbox
+                label="Make this my main"
+                name="isDefaultShipping"
+              />
+              <Button fullWidth shape="field" size="lg" type="submit">
+                + Add an address
+              </Button>
+            </form>
+          </section>
+        </aside>
+
+        <section className="accountAddressBook__list__SW2k5">
+          <h2>Your addresses</h2>
+          {addresses.length > 0 ? (
+            addresses.map((address) => (
+              <article className="accountAddressBook__card__SW2k6" key={address.id}>
+                <address>
+                  {formatAddressLines(address).map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
+                </address>
+                <div className="accountAddressBook__actions__SW2k7">
+                  <Button disabled size="sm" tone="secondary" type="button">Edit</Button>
+                  <form action={deleteAddressAction.bind(null, safeLocale, address.id)}>
+                    <Button size="sm" tone="danger" type="submit">Delete</Button>
+                  </form>
+                  <form action={setMainAddressAction.bind(null, safeLocale, address.id)}>
+                    <Button
+                      data-active={address.isDefaultShipping ? "true" : undefined}
+                      size="sm"
+                      tone={address.isDefaultShipping ? "primary" : "secondary"}
+                      type="submit"
+                    >
+                      Make this my main
+                    </Button>
+                  </form>
+                </div>
+              </article>
+            ))
+          ) : (
+            <EmptyState title="No saved addresses yet." />
+          )}
+        </section>
+      </div>
     </div>
   );
 }

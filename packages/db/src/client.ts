@@ -1,16 +1,19 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
 import { getDatabaseUrl } from "@snn/config";
 
 import * as schema from "./schema/index";
 
 let database: ReturnType<typeof createDatabase> | undefined;
+let pool: Pool | undefined;
 
 function createDatabase() {
-  const sql = neon(getDatabaseUrl());
+  pool = new Pool({
+    connectionString: getDatabaseUrl(),
+  });
 
-  return drizzle(sql, { schema });
+  return drizzle(pool, { schema });
 }
 
 export function getDb() {
@@ -21,3 +24,8 @@ export function getDb() {
   return database;
 }
 
+export async function closeDb() {
+  await pool?.end();
+  pool = undefined;
+  database = undefined;
+}

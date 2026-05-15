@@ -3,11 +3,14 @@
 import { useState, type FormEvent } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
-import { Button, TextField } from "@snn/ui";
+import type { Locale } from "@snn/i18n";
+import { Alert, Button, TextField } from "@snn/ui";
+
+import { signOutCustomerAction } from "../actions";
 
 type SecurityActionsProps = {
   authOrigin: string;
-  homeHref: string;
+  locale: Locale;
   passkeyCount: number;
   twoFactorEnabled: boolean;
 };
@@ -36,7 +39,7 @@ function getErrorMessage(value: unknown) {
 
 export function SecurityActions({
   authOrigin,
-  homeHref,
+  locale,
   passkeyCount,
   twoFactorEnabled,
 }: SecurityActionsProps) {
@@ -228,8 +231,12 @@ export function SecurityActions({
     setIsPending(true);
 
     try {
-      await createSnnAuthClient(authOrigin).signOut();
-      window.location.assign(homeHref);
+      const result = await signOutCustomerAction(locale);
+
+      if (result && !result.ok) {
+        setError(result.message);
+        setIsPending(false);
+      }
     } catch {
       setError("We could not sign you out. Please try again.");
       setIsPending(false);
@@ -378,14 +385,10 @@ export function SecurityActions({
       </section>
 
       {message ? (
-        <p className="account__notice__SW1al" data-tone="success">
-          {message}
-        </p>
+        <Alert status="success">{message}</Alert>
       ) : null}
       {error ? (
-        <p className="account__notice__SW1al" data-tone="danger">
-          {error}
-        </p>
+        <Alert status="danger">{error}</Alert>
       ) : null}
     </div>
   );

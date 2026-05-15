@@ -42,7 +42,8 @@ export default async function LikedPage({ params }: LikedPageProps) {
                   ) : null}
                 </div>
                 <strong>{product.name ?? product.slug}</strong>
-                <form action={unlikeProductAction.bind(null, safeLocale, product.productId)}>
+                <span>{product.variantTitle}</span>
+                <form action={unlikeProductAction.bind(null, safeLocale, product.productId, product.variantId)}>
                   <button className="account__text-button__SW1aj" type="submit">
                     Remove
                   </button>
