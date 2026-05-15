@@ -5,9 +5,9 @@ import { getDb, schema } from "@snn/db";
 
 export const imageVariantNames = [
   "thumb",
-  "product-card",
-  "pdp-gallery",
-  "pdp-zoom",
+  "productcard",
+  "pdpgallery",
+  "pdpzoom",
   "hero",
 ] as const;
 
@@ -34,18 +34,18 @@ export const defaultImageVariants: Record<ImageVariantName, ImageVariantDefiniti
     neverRequireSignedURLs: true,
     options: { fit: "cover", height: 240, metadata: "none", width: 240 },
   },
-  "product-card": {
-    id: "product-card",
+  productcard: {
+    id: "productcard",
     neverRequireSignedURLs: true,
     options: { fit: "cover", height: 1200, metadata: "none", width: 960 },
   },
-  "pdp-gallery": {
-    id: "pdp-gallery",
+  pdpgallery: {
+    id: "pdpgallery",
     neverRequireSignedURLs: true,
     options: { fit: "contain", height: 1600, metadata: "none", width: 1600 },
   },
-  "pdp-zoom": {
-    id: "pdp-zoom",
+  pdpzoom: {
+    id: "pdpzoom",
     neverRequireSignedURLs: true,
     options: { fit: "contain", height: 2400, metadata: "keep", width: 2400 },
   },

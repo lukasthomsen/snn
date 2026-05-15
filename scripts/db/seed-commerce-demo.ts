@@ -17,6 +17,7 @@ type ProductStatus = DbModule["schema"]["products"]["$inferInsert"]["status"];
 
 let getCatalogHealthReport: CommerceModule["getCatalogHealthReport"];
 let recordCommerceAuditEvent: CommerceModule["recordCommerceAuditEvent"];
+let closeDb: DbModule["closeDb"] | undefined;
 let getDb: DbModule["getDb"];
 let schema: DbModule["schema"];
 
@@ -28,6 +29,7 @@ async function loadRuntimeModules() {
 
   getCatalogHealthReport = commerceModule.getCatalogHealthReport;
   recordCommerceAuditEvent = commerceModule.recordCommerceAuditEvent;
+  closeDb = dbModule.closeDb;
   getDb = dbModule.getDb;
   schema = dbModule.schema;
 }
@@ -2232,178 +2234,182 @@ async function ensureDemoReviewFixtures(
 async function main() {
   await loadRuntimeModules();
 
-  if (!shouldApply) {
-    console.log("Commerce demo seed is in dry-run mode.");
-    console.log("Run `pnpm db:seed:commerce -- --apply` to seed the connected database.");
-    return;
-  }
-
-  if (isProduction && process.env.ALLOW_PRODUCTION_COMMERCE_SEED !== "true") {
-    throw new Error("Refusing to seed commerce demo data in production.");
-  }
-
-  const db = getDb();
-
-  await ensureCurrency(db);
-  const salesChannel = await ensureSalesChannel(db);
-  const market = await ensureMarket(db, salesChannel.id);
-  const location = await ensureInventoryLocation(db, salesChannel.id);
-  const priceList = await ensurePriceList(db);
-  const categoryRecords = new Map<string, Awaited<ReturnType<typeof ensureCategory>>>();
-  const collectionRecords = new Map<string, Awaited<ReturnType<typeof ensureCollection>>>();
-  const seededProductSlugs: string[] = [];
-
-  for (const category of categories) {
-    categoryRecords.set(category.slug, await ensureCategory(db, category.slug));
-  }
-
-  for (const collection of collections) {
-    collectionRecords.set(collection.slug, await ensureCollection(db, collection.slug));
-  }
-
-  for (const seed of productSeeds) {
-    const product = await ensureProduct(db, seed);
-    const optionValueIds = new Map<string, string>();
-
-    seededProductSlugs.push(product.slug);
-
-    await clearDemoMediaForProduct(db, product.id, seed);
-
-    await db
-      .insert(schema.productSalesChannels)
-      .values({
-        productId: product.id,
-        salesChannelId: salesChannel.id,
-      })
-      .onConflictDoNothing();
-
-    for (const slug of seed.categories) {
-      const category = categoryRecords.get(slug);
-
-      if (category) {
-        await db
-          .insert(schema.productCategories)
-          .values({
-            categoryId: category.id,
-            productId: product.id,
-          })
-          .onConflictDoNothing();
-      }
+  try {
+    if (!shouldApply) {
+      console.log("Commerce demo seed is in dry-run mode.");
+      console.log("Run `pnpm db:seed:commerce -- --apply` to seed the connected database.");
+      return;
     }
 
-    for (const slug of seed.collections) {
-      const collection = collectionRecords.get(slug);
-
-      if (collection) {
-        await db
-          .insert(schema.collectionProducts)
-          .values({
-            collectionId: collection.id,
-            productId: product.id,
-          })
-          .onConflictDoNothing();
-      }
+    if (isProduction && process.env.ALLOW_PRODUCTION_COMMERCE_SEED !== "true") {
+      throw new Error("Refusing to seed commerce demo data in production.");
     }
 
-    for (const [optionIndex, optionSeed] of seed.options.entries()) {
-      const option = await ensureProductOption(
-        db,
-        product.id,
-        optionSeed.code,
-        optionSeed.name,
-        optionIndex,
-      );
+    const db = getDb();
 
-      for (const [valueIndex, value] of optionSeed.values.entries()) {
-        const optionValue = await ensureProductOptionValue(db, option.id, value, valueIndex);
+    await ensureCurrency(db);
+    const salesChannel = await ensureSalesChannel(db);
+    const market = await ensureMarket(db, salesChannel.id);
+    const location = await ensureInventoryLocation(db, salesChannel.id);
+    const priceList = await ensurePriceList(db);
+    const categoryRecords = new Map<string, Awaited<ReturnType<typeof ensureCategory>>>();
+    const collectionRecords = new Map<string, Awaited<ReturnType<typeof ensureCollection>>>();
+    const seededProductSlugs: string[] = [];
 
-        optionValueIds.set(`${optionSeed.code}:${value}`, optionValue.id);
-      }
+    for (const category of categories) {
+      categoryRecords.set(category.slug, await ensureCategory(db, category.slug));
     }
 
-    await ensureSharedMedia(db, product.id, seed);
-
-    for (const attribute of seed.attributes ?? []) {
-      await ensureAttribute(db, product.id, attribute);
+    for (const collection of collections) {
+      collectionRecords.set(collection.slug, await ensureCollection(db, collection.slug));
     }
 
-    for (const [variantIndex, variantSeed] of seed.variants.entries()) {
-      const variant = await ensureVariant(db, product.id, {
-        ...variantSeed,
-        isDefault: variantSeed.isDefault ?? variantIndex === 0,
-      });
+    for (const seed of productSeeds) {
+      const product = await ensureProduct(db, seed);
+      const optionValueIds = new Map<string, string>();
 
-      await ensureVariantMedia(db, product.id, seed, variantSeed, variant.id);
+      seededProductSlugs.push(product.slug);
 
-      for (const [code, value] of Object.entries(variantSeed.optionValues)) {
-        const optionValueId = optionValueIds.get(`${code}:${value}`);
+      await clearDemoMediaForProduct(db, product.id, seed);
 
-        if (!optionValueId) {
-          throw new Error(`Missing option value ${code}:${value} for ${variant.sku}.`);
+      await db
+        .insert(schema.productSalesChannels)
+        .values({
+          productId: product.id,
+          salesChannelId: salesChannel.id,
+        })
+        .onConflictDoNothing();
+
+      for (const slug of seed.categories) {
+        const category = categoryRecords.get(slug);
+
+        if (category) {
+          await db
+            .insert(schema.productCategories)
+            .values({
+              categoryId: category.id,
+              productId: product.id,
+            })
+            .onConflictDoNothing();
         }
-
-        await db
-          .insert(schema.productVariantOptionValues)
-          .values({
-            optionValueId,
-            variantId: variant.id,
-          })
-          .onConflictDoNothing();
       }
 
-      if (variant.priceSetId && typeof variantSeed.priceAmount === "number") {
-        await ensureBasePrice(
+      for (const slug of seed.collections) {
+        const collection = collectionRecords.get(slug);
+
+        if (collection) {
+          await db
+            .insert(schema.collectionProducts)
+            .values({
+              collectionId: collection.id,
+              productId: product.id,
+            })
+            .onConflictDoNothing();
+        }
+      }
+
+      for (const [optionIndex, optionSeed] of seed.options.entries()) {
+        const option = await ensureProductOption(
           db,
-          variant.priceSetId,
-          market.id,
-          variantSeed.priceAmount,
-          variantSeed.compareAtAmount ?? null,
+          product.id,
+          optionSeed.code,
+          optionSeed.name,
+          optionIndex,
         );
 
-        if (typeof variantSeed.saleAmount === "number") {
-          await ensureSalePrice(
-            db,
-            priceList.id,
-            variant.priceSetId,
-            market.id,
-            variantSeed.saleAmount,
-            variantSeed.compareAtAmount ?? variantSeed.priceAmount,
-          );
+        for (const [valueIndex, value] of optionSeed.values.entries()) {
+          const optionValue = await ensureProductOptionValue(db, option.id, value, valueIndex);
+
+          optionValueIds.set(`${optionSeed.code}:${value}`, optionValue.id);
         }
       }
 
-      await ensureInventoryForVariant(db, {
-        inventoryItems: variantSeed.inventoryItems,
-        locationId: location.id,
-        onHand: variantSeed.sku.includes("BERRY") ? 0 : 96 - variantIndex * 12,
-        sku: variantSeed.sku,
-        title: variantSeed.title,
-        variantId: variant.id,
-      });
+      await ensureSharedMedia(db, product.id, seed);
+
+      for (const attribute of seed.attributes ?? []) {
+        await ensureAttribute(db, product.id, attribute);
+      }
+
+      for (const [variantIndex, variantSeed] of seed.variants.entries()) {
+        const variant = await ensureVariant(db, product.id, {
+          ...variantSeed,
+          isDefault: variantSeed.isDefault ?? variantIndex === 0,
+        });
+
+        await ensureVariantMedia(db, product.id, seed, variantSeed, variant.id);
+
+        for (const [code, value] of Object.entries(variantSeed.optionValues)) {
+          const optionValueId = optionValueIds.get(`${code}:${value}`);
+
+          if (!optionValueId) {
+            throw new Error(`Missing option value ${code}:${value} for ${variant.sku}.`);
+          }
+
+          await db
+            .insert(schema.productVariantOptionValues)
+            .values({
+              optionValueId,
+              variantId: variant.id,
+            })
+            .onConflictDoNothing();
+        }
+
+        if (variant.priceSetId && typeof variantSeed.priceAmount === "number") {
+          await ensureBasePrice(
+            db,
+            variant.priceSetId,
+            market.id,
+            variantSeed.priceAmount,
+            variantSeed.compareAtAmount ?? null,
+          );
+
+          if (typeof variantSeed.saleAmount === "number") {
+            await ensureSalePrice(
+              db,
+              priceList.id,
+              variant.priceSetId,
+              market.id,
+              variantSeed.saleAmount,
+              variantSeed.compareAtAmount ?? variantSeed.priceAmount,
+            );
+          }
+        }
+
+        await ensureInventoryForVariant(db, {
+          inventoryItems: variantSeed.inventoryItems,
+          locationId: location.id,
+          onHand: variantSeed.sku.includes("BERRY") ? 0 : 96 - variantIndex * 12,
+          sku: variantSeed.sku,
+          title: variantSeed.title,
+          variantId: variant.id,
+        });
+      }
+
+      await recordCommerceAuditEvent({
+        action: product.status === "draft" ? "catalog.product.updated" : "catalog.product.created",
+        actorType: "system",
+        entityId: product.id,
+        entityType: "product",
+        metadata: {
+          seed: "commerce-demo",
+          slug: product.slug,
+        },
+      }, db);
     }
 
-    await recordCommerceAuditEvent({
-      action: product.status === "draft" ? "catalog.product.updated" : "catalog.product.created",
-      actorType: "system",
-      entityId: product.id,
-      entityType: "product",
-      metadata: {
-        seed: "commerce-demo",
-        slug: product.slug,
-      },
-    }, db);
+    await ensureDemoReviewFixtures(db, {
+      salesChannelId: salesChannel.id,
+    });
+
+    const health = await getCatalogHealthReport({ countryCode: "DK", locale: "da" }, db);
+
+    console.log("Commerce demo seed complete.");
+    console.log(`Market: ${market.code}`);
+    console.log(`Products: ${seededProductSlugs.join(", ")}`);
+    console.log(`Health issues: ${health.issues.length}`);
+  } finally {
+    await closeDb?.();
   }
-
-  await ensureDemoReviewFixtures(db, {
-    salesChannelId: salesChannel.id,
-  });
-
-  const health = await getCatalogHealthReport({ countryCode: "DK", locale: "da" }, db);
-
-  console.log("Commerce demo seed complete.");
-  console.log(`Market: ${market.code}`);
-  console.log(`Products: ${seededProductSlugs.join(", ")}`);
-  console.log(`Health issues: ${health.issues.length}`);
 }
 
 main().catch((error) => {

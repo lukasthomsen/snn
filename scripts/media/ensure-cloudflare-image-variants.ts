@@ -1,12 +1,11 @@
 import { existsSync } from "node:fs";
 
-import { ensureDefaultImageVariants } from "@snn/media";
-
 if (existsSync(".env.local")) {
   process.loadEnvFile(".env.local");
 }
 
 async function main() {
+  const { ensureDefaultImageVariants } = await import("../../packages/media/src/index");
   const result = await ensureDefaultImageVariants();
 
   console.log(

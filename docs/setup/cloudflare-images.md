@@ -45,9 +45,9 @@ Scope it to the specific Cloudflare account that owns the SNN setup.
 SNN reserves these Cloudflare Images variants:
 
 - `thumb`
-- `product-card`
-- `pdp-gallery`
-- `pdp-zoom`
+- `productcard`
+- `pdpgallery`
+- `pdpzoom`
 - `hero`
 
 Create or reconcile them from the repo root with:
