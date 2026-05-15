@@ -10,6 +10,7 @@ import {
   type CartSnapshot,
 } from "@snn/commerce";
 import { ensureCustomerProfile, getCustomerAddresses, getCustomerSession } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 import type { Locale } from "@snn/i18n";
 
 export const cartCookieName = "snn_cart_id";
@@ -95,60 +96,64 @@ export async function getCartIdentity(locale: Locale): Promise<CartIdentityInput
 }
 
 export async function loadExistingCartSnapshot(locale: Locale): Promise<CartSnapshot> {
-  const identity = await getCartIdentity(locale);
+  return tracePerformance("storefront.cart.loadExisting", { locale }, async () => {
+    const identity = await getCartIdentity(locale);
 
-  if (!identity.cartId && !identity.customerId) {
-    return createEmptyCartSnapshot();
-  }
-
-  try {
-    return await getExistingCartSnapshot(identity);
-  } catch (error) {
-    if (error instanceof CartServiceError && error.code === "CART_NOT_FOUND") {
+    if (!identity.cartId && !identity.customerId) {
       return createEmptyCartSnapshot();
     }
 
-    throw error;
-  }
+    try {
+      return await getExistingCartSnapshot(identity);
+    } catch (error) {
+      if (error instanceof CartServiceError && error.code === "CART_NOT_FOUND") {
+        return createEmptyCartSnapshot();
+      }
+
+      throw error;
+    }
+  });
 }
 
 export async function loadCheckoutPrefill(): Promise<CheckoutPrefill> {
-  const session = await getCustomerSession(await headers()).catch(() => null);
-  const verifiedCustomer = session?.user.emailVerified && !session.user.banned
-    ? session.user
-    : null;
+  return tracePerformance("storefront.checkout.prefill", {}, async () => {
+    const session = await getCustomerSession(await headers()).catch(() => null);
+    const verifiedCustomer = session?.user.emailVerified && !session.user.banned
+      ? session.user
+      : null;
 
-  if (!verifiedCustomer) {
+    if (!verifiedCustomer) {
+      return {
+        city: "",
+        countryCode: "DK",
+        email: "",
+        firstName: "",
+        lastName: "",
+        line1: "",
+        line2: "",
+        phone: "",
+        postalCode: "",
+        signedIn: false,
+      };
+    }
+
+    const [profile, addresses] = await Promise.all([
+      ensureCustomerProfile(verifiedCustomer),
+      getCustomerAddresses(verifiedCustomer),
+    ]);
+    const address = addresses.find((item) => item.isDefaultShipping) ?? addresses[0] ?? null;
+
     return {
-      city: "",
-      countryCode: "DK",
-      email: "",
-      firstName: "",
-      lastName: "",
-      line1: "",
-      line2: "",
-      phone: "",
-      postalCode: "",
-      signedIn: false,
+      city: address?.city ?? "",
+      countryCode: address?.countryCode ?? "DK",
+      email: verifiedCustomer.email,
+      firstName: address?.firstName ?? profile.firstName ?? "",
+      lastName: address?.lastName ?? profile.lastName ?? "",
+      line1: address?.line1 ?? "",
+      line2: address?.line2 ?? "",
+      phone: address?.phone ?? profile.phone ?? "",
+      postalCode: address?.postalCode ?? "",
+      signedIn: true,
     };
-  }
-
-  const [profile, addresses] = await Promise.all([
-    ensureCustomerProfile(verifiedCustomer),
-    getCustomerAddresses(verifiedCustomer),
-  ]);
-  const address = addresses.find((item) => item.isDefaultShipping) ?? addresses[0] ?? null;
-
-  return {
-    city: address?.city ?? "",
-    countryCode: address?.countryCode ?? "DK",
-    email: verifiedCustomer.email,
-    firstName: address?.firstName ?? profile.firstName ?? "",
-    lastName: address?.lastName ?? profile.lastName ?? "",
-    line1: address?.line1 ?? "",
-    line2: address?.line2 ?? "",
-    phone: address?.phone ?? profile.phone ?? "",
-    postalCode: address?.postalCode ?? "",
-    signedIn: true,
-  };
+  });
 }

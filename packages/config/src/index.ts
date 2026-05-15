@@ -36,6 +36,7 @@ const serverEnvSchema = z.object({
   CF_TURNSTILE_SECRET_KEY: optionalString,
   DATABASE_URL: z.string().default("postgresql://postgres:postgres@127.0.0.1:5432/snn"),
   DATABASE_URL_UNPOOLED: optionalString,
+  ENABLE_PERFORMANCE_TRACE: optionalString,
   ENABLE_MEDIA_MANAGEMENT_IN_PRODUCTION: optionalString,
   ENABLE_THEME_LAB_IN_PRODUCTION: optionalString,
   GOOGLE_CLIENT_ID: optionalString,

@@ -1,8 +1,10 @@
 .next
 .turbo
 node_modules
+node_modules.stale-*
 dist
 coverage
+perf-reports
 .codex
 .DS_Store
 **/.DS_Store

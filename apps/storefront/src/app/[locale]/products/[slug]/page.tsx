@@ -1,10 +1,7 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-import {
-  getProductReviewEligibility,
-  getRelatedProductCards,
-} from "@snn/commerce";
+import { getProductReviewEligibility } from "@snn/commerce";
 import { ensureCustomerProfile, getCustomerLikedProductVariantIds, getCustomerSession } from "@snn/customer";
 import { isLocale, type Locale } from "@snn/i18n";
 
@@ -14,6 +11,7 @@ import {
   getCachedProductReviews,
   getCachedProductReviewSummary,
   getCachedRelatedProductCards,
+  getPersonalizedRelatedProductCards,
 } from "../catalog-data";
 
 export const dynamic = "force-dynamic";
@@ -165,7 +163,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
       ? getCustomerLikedProductVariantIds(session.user, product.id)
       : [],
     isSignedIn && session
-      ? getRelatedProductCards({
+      ? getPersonalizedRelatedProductCards({
         countryCode: "DK",
         likedUserId: session.user.id,
         limit: 8,

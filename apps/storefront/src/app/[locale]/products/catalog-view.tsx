@@ -1,11 +1,11 @@
 import type { Route } from "next";
 import Link from "next/link";
 
-import { getProductCards, type ProductSort } from "@snn/commerce";
+import type { ProductSort } from "@snn/commerce";
 import type { Locale } from "@snn/i18n";
 import { Accordion, AccordionItem } from "@snn/ui";
 
-import { getCachedCatalogFilters, getCachedProductCards } from "./catalog-data";
+import { getCachedCatalogFilters, getCachedProductCards, getPersonalizedProductCards } from "./catalog-data";
 import { CatalogHeroIntro } from "./catalog-hero-intro";
 import { CatalogSortControl, type CatalogSortOption } from "./catalog-filter-controls";
 import { CatalogProductGrid } from "./product-like-controls";
@@ -272,7 +272,7 @@ export async function CatalogView({
     getCachedCatalogFilters({ locale }),
     shouldUseCachedCards
       ? getCachedProductCards(productCardInput)
-      : getProductCards(productCardInput),
+      : getPersonalizedProductCards(productCardInput),
   ]);
   const { items } = productList;
   const productCountCopy = getProductCountCopy(copy, items.length);

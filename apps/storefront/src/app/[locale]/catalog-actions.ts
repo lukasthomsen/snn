@@ -9,6 +9,7 @@ import {
   requireCustomerSession,
   unlikeCustomerProduct,
 } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 import type { Locale } from "@snn/i18n";
 
 type ProductLikeActionInput = {
@@ -117,52 +118,57 @@ export async function toggleProductLikeAction({
   productId,
   variantId,
 }: ProductLikeActionInput): Promise<ProductLikeActionResult> {
-  const previousLiked = !liked;
-  const session = await getLikeSession(locale, previousLiked);
+  return tracePerformance("storefront.product.toggleLike", {
+    liked,
+    locale,
+  }, async () => {
+    const previousLiked = !liked;
+    const session = await getLikeSession(locale, previousLiked);
 
-  if (session.result) {
-    return {
-      ...session.result,
-      productId,
-      variantId,
-    };
-  }
-
-  if (!session.user) {
-    return {
-      code: "AUTH_REQUIRED",
-      liked: previousLiked,
-      message: actionMessages[locale].authRequired,
-      ok: false,
-      productId,
-      variantId,
-      redirectTo: getWishlistPath(locale),
-    };
-  }
-
-  try {
-    if (liked) {
-      await likeCustomerProduct(session.user, productId, variantId);
-    } else {
-      await unlikeCustomerProduct(session.user, productId, variantId);
+    if (session.result) {
+      return {
+        ...session.result,
+        productId,
+        variantId,
+      };
     }
 
-    revalidateLikedSurfaces(locale);
+    if (!session.user) {
+      return {
+        code: "AUTH_REQUIRED",
+        liked: previousLiked,
+        message: actionMessages[locale].authRequired,
+        ok: false,
+        productId,
+        variantId,
+        redirectTo: getWishlistPath(locale),
+      };
+    }
 
-    return {
-      liked,
-      ok: true,
-      productId,
-      variantId,
-    };
-  } catch {
-    return {
-      code: "UNKNOWN",
-      liked: previousLiked,
-      message: actionMessages[locale].unknown,
-      ok: false,
-      productId,
-      variantId,
-    };
-  }
+    try {
+      if (liked) {
+        await likeCustomerProduct(session.user, productId, variantId);
+      } else {
+        await unlikeCustomerProduct(session.user, productId, variantId);
+      }
+
+      revalidateLikedSurfaces(locale);
+
+      return {
+        liked,
+        ok: true,
+        productId,
+        variantId,
+      };
+    } catch {
+      return {
+        code: "UNKNOWN",
+        liked: previousLiked,
+        message: actionMessages[locale].unknown,
+        ok: false,
+        productId,
+        variantId,
+      };
+    }
+  });
 }

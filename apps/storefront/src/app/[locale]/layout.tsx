@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Suspense, type CSSProperties } from "react";
 
 import { getAppOrigin } from "@snn/config";
@@ -77,6 +79,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             </CartDrawerProvider>
           </NewsletterSignupProvider>
         </ThemeScope>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

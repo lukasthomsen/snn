@@ -6,6 +6,7 @@ import {
   type CartMoney,
   type CheckoutOrderContactInput,
 } from "@snn/commerce";
+import { tracePerformance } from "@snn/db";
 import type { Locale } from "@snn/i18n";
 import {
   getStripeClient,
@@ -199,50 +200,55 @@ export async function prepareCheckoutPayment(
   contactInput: CheckoutOrderContactInput,
   expectedAmount: CartMoney,
 ): Promise<PrepareCheckoutPaymentResult> {
-  try {
-    const contact = normalizeContact(contactInput);
-    const identity = await getCartIdentity(locale);
-    const order = await createCheckoutOrderFromCart({
-      ...identity,
-      contact,
-      locale,
-    });
+  return tracePerformance("storefront.checkout.preparePayment", {
+    currencyCode: expectedAmount.currencyCode,
+    locale,
+  }, async () => {
+    try {
+      const contact = normalizeContact(contactInput);
+      const identity = await getCartIdentity(locale);
+      const order = await createCheckoutOrderFromCart({
+        ...identity,
+        contact,
+        locale,
+      });
 
-    if (order.amount.amount <= 0) {
+      if (order.amount.amount <= 0) {
+        return {
+          error: "Your order total must be greater than zero before payment.",
+          ok: false,
+        };
+      }
+
+      assertExpectedAmount(order.amount, expectedAmount);
+
+      const stripe = getStripeClient();
+      const paymentIntent = await getCheckoutPaymentIntent(stripe, order);
+
+      if (!paymentIntent.client_secret) {
+        return {
+          error: "Stripe did not return a payment secret. Please try again.",
+          ok: false,
+        };
+      }
+
+      await persistPaymentIntent(paymentIntent, "prepare-checkout");
+
       return {
-        error: "Your order total must be greater than zero before payment.",
+        amount: order.amount,
+        clientSecret: paymentIntent.client_secret,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paymentIntentId: paymentIntent.id,
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        error: getErrorMessage(error),
         ok: false,
       };
     }
-
-    assertExpectedAmount(order.amount, expectedAmount);
-
-    const stripe = getStripeClient();
-    const paymentIntent = await getCheckoutPaymentIntent(stripe, order);
-
-    if (!paymentIntent.client_secret) {
-      return {
-        error: "Stripe did not return a payment secret. Please try again.",
-        ok: false,
-      };
-    }
-
-    await persistPaymentIntent(paymentIntent, "prepare-checkout");
-
-    return {
-      amount: order.amount,
-      clientSecret: paymentIntent.client_secret,
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      paymentIntentId: paymentIntent.id,
-      ok: true,
-    };
-  } catch (error) {
-    return {
-      error: getErrorMessage(error),
-      ok: false,
-    };
-  }
+  });
 }
 
 export async function finalizeCheckoutPayment(

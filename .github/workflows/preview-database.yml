@@ -27,10 +27,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install Vercel CLI
         run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
@@ -90,6 +100,23 @@ jobs:
           role: snn_migrator
           ssl: verify-full
           expires_at: ${{ steps.expires-at.outputs.value }}
+
+      - name: Install dependencies
+        if: steps.vercel-access.outputs.enabled == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate and seed preview database
+        if: steps.vercel-access.outputs.enabled == 'true'
+        env:
+          DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
+          VERCEL_ENV: preview
+        run: |
+          set -euo pipefail
+
+          pnpm db:migrate
+          pnpm db:seed:commerce -- --apply
+
       - name: Apply branch-scoped preview database URLs
         if: steps.vercel-access.outputs.enabled == 'true'
         env:
@@ -117,6 +144,13 @@ jobs:
 
             vercel env add DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --value "$DATABASE_URL_UNPOOLED" \
+              --yes \
+              --force \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_ORG_ID_VALUE"
+
+            vercel env add ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
+              --value "1" \
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
@@ -202,6 +236,11 @@ jobs:
               --scope "$VERCEL_ORG_ID_VALUE" || true
 
             vercel env remove DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
+              --yes \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_ORG_ID_VALUE" || true
+
+            vercel env remove ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
               --scope "$VERCEL_ORG_ID_VALUE" || true

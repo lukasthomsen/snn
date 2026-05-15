@@ -4,6 +4,7 @@ import { Pool } from "pg";
 import { getDatabaseUrl } from "@snn/config";
 
 import * as schema from "./schema/index";
+import { instrumentPoolForPerformance } from "./performance";
 
 let database: ReturnType<typeof createDatabase> | undefined;
 let pool: Pool | undefined;
@@ -12,6 +13,7 @@ function createDatabase() {
   pool = new Pool({
     connectionString: getDatabaseUrl(),
   });
+  instrumentPoolForPerformance(pool);
 
   return drizzle(pool, { schema });
 }
