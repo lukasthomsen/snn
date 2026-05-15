@@ -5,6 +5,7 @@ node_modules.stale-*
 dist
 coverage
 perf-reports
+.lighthouseci
 .codex
 .DS_Store
 **/.DS_Store
