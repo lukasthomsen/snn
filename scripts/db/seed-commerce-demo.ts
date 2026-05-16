@@ -17,6 +17,24 @@ type DbModule = typeof import("@snn/db");
 type MediaModule = typeof import("@snn/media");
 type CommerceDb = ReturnType<DbModule["getDb"]>;
 type ProductStatus = DbModule["schema"]["products"]["$inferInsert"]["status"];
+type DemoMediaInput = {
+  key: string;
+  mediaType: "image" | "video";
+  slot: number;
+  slotLabel: string;
+  title: string;
+  tone: string;
+};
+type CloudflareDemoMedia = {
+  byteSize: number;
+  deliveryUrl: string;
+  filename: string;
+  height: number;
+  metadata: Record<string, unknown>;
+  providerAssetId: string;
+  uploadedAt: string;
+  width: number;
+};
 
 let buildCloudflareImageUrl: MediaModule["buildCloudflareImageUrl"];
 let getCatalogHealthReport: CommerceModule["getCatalogHealthReport"];
@@ -27,6 +45,7 @@ let closeDb: DbModule["closeDb"] | undefined;
 let getDb: DbModule["getDb"];
 let schema: DbModule["schema"];
 let uploadCloudflareImage: MediaModule["uploadCloudflareImage"];
+const cloudflareDemoMediaCache = new Map<string, Promise<CloudflareDemoMedia | null>>();
 
 async function loadRuntimeModules() {
   const [commerceModule, configModule, dbModule, mediaModule] = await Promise.all([
@@ -1140,15 +1159,7 @@ function getCloudflareDeliveryVariant(slot: number) {
   return slot === 0 ? "productcard" : "pdpgallery";
 }
 
-async function getCloudflareDemoMedia(input: {
-  key: string;
-  mediaType: "image" | "video";
-  slot: number;
-  slotLabel: string;
-  title: string;
-  tone: string;
-  variant?: VariantSeed | undefined;
-}) {
+async function loadCloudflareDemoMedia(input: DemoMediaInput): Promise<CloudflareDemoMedia | null> {
   const config = getCloudflareImagesConfig();
 
   if (!config.enabled) {
@@ -1199,6 +1210,89 @@ async function getCloudflareDemoMedia(input: {
     uploadedAt: uploadedAt ?? new Date().toISOString(),
     width: 1200,
   };
+}
+
+async function getCloudflareDemoMedia(input: DemoMediaInput) {
+  let cached = cloudflareDemoMediaCache.get(input.key);
+
+  if (!cached) {
+    cached = loadCloudflareDemoMedia(input);
+    cloudflareDemoMediaCache.set(input.key, cached);
+  }
+
+  return cached;
+}
+
+function getSharedMediaInput(seed: ProductSeed, slot: number): DemoMediaInput {
+  const mediaType = isVideoSlot(seed.media?.sharedVideoSlots, slot) ? "video" : "image";
+  const title = seed.translations.en.name;
+  const tone = getSharedTone(seed, slot);
+
+  return {
+    key: getMediaKey(seed, undefined, slot),
+    mediaType,
+    slot,
+    slotLabel: getSlotLabel(slot, mediaType),
+    title,
+    tone,
+  };
+}
+
+function getVariantMediaInput(seed: ProductSeed, variant: VariantSeed, slot: number): DemoMediaInput {
+  const mediaType = isVideoSlot(seed.media?.variantVideoSlots, slot) ? "video" : "image";
+  const tone = getVariantTone(seed, variant, slot);
+
+  return {
+    key: getMediaKey(seed, variant, slot),
+    mediaType,
+    slot,
+    slotLabel: getSlotLabel(slot, mediaType),
+    title: variant.title,
+    tone,
+  };
+}
+
+function getDemoMediaInputs(seed: ProductSeed) {
+  const inputs: DemoMediaInput[] = [];
+
+  for (let slot = 0; slot < (seed.media?.sharedSlots ?? 1); slot += 1) {
+    inputs.push(getSharedMediaInput(seed, slot));
+  }
+
+  for (const variantSeed of seed.variants) {
+    for (let slot = 0; slot < (seed.media?.variantSlots ?? 2); slot += 1) {
+      inputs.push(getVariantMediaInput(seed, variantSeed, slot));
+    }
+  }
+
+  return inputs;
+}
+
+async function ensureCloudflareDemoMedia() {
+  const config = getCloudflareImagesConfig();
+
+  if (!config.enabled) {
+    return;
+  }
+
+  const inputs = productSeeds.flatMap((seed) => getDemoMediaInputs(seed));
+  const concurrency = Number.parseInt(process.env.CLOUDFLARE_DEMO_MEDIA_CONCURRENCY ?? "8", 10);
+  const workerCount = Math.max(1, Math.min(Number.isFinite(concurrency) ? concurrency : 8, 16));
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < inputs.length) {
+      const input = inputs[nextIndex];
+      nextIndex += 1;
+
+      if (input) {
+        await getCloudflareDemoMedia(input);
+      }
+    }
+  }
+
+  console.log(`Ensuring ${inputs.length} Cloudflare demo media assets with ${workerCount} workers.`);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
 }
 
 function isVideoSlot(slots: number[] | undefined, slot: number) {
@@ -2407,6 +2501,8 @@ async function main() {
     for (const collection of collections) {
       collectionRecords.set(collection.slug, await ensureCollection(db, collection.slug));
     }
+
+    await ensureCloudflareDemoMedia();
 
     for (const seed of productSeeds) {
       const product = await ensureProduct(db, seed);
