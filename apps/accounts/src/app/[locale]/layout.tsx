@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Archivo, Public_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import type { CSSProperties } from "react";
 
 import { isLocale, locales, type Locale } from "@snn/i18n";
@@ -9,16 +9,10 @@ import "@snn/ui/styles/base.css";
 
 import "./styles.css";
 
-const bodyFont = Public_Sans({
+const interFont = Inter({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-public-sans",
-});
-
-const displayFont = Archivo({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
+  variable: "--font-inter",
 });
 
 type LocaleLayoutProps = Readonly<{
@@ -45,7 +39,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   return (
-    <html className={`${bodyFont.variable} ${displayFont.variable}`} lang={locale as Locale}>
+    <html className={interFont.variable} lang={locale as Locale}>
       <body
         data-theme="mono"
         style={themeToCssVariables(monoTheme) as CSSProperties}

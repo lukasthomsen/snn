@@ -1,4 +1,4 @@
-import { Button, TextField } from "@snn/ui";
+import { TextField } from "@snn/ui";
 import { isLocale } from "@snn/i18n";
 import { ensureCustomerProfile } from "@snn/customer";
 
@@ -56,9 +56,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             size="md"
             type="email"
           />
-          <Button size="lg" type="submit">
+          <button className="accountServerButton__SW4d0" data-size="lg" type="submit">
             Save profile
-          </Button>
+          </button>
         </form>
       </section>
     </div>

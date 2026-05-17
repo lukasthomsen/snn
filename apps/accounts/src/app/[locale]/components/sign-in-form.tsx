@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
 import { Button, TextField } from "@snn/ui";
@@ -41,9 +41,14 @@ export function SignInForm({
   primaryAction,
   twoFactorHref,
 }: SignInFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState<string | undefined>(initialError);
   const [tone, setTone] = useState<"danger" | "success">("danger");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    formRef.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,9 +112,16 @@ export function SignInForm({
   }
 
   return (
-    <form className="auth__form__SW0fp" noValidate onSubmit={handleSubmit}>
+    <form
+      aria-busy={isSubmitting}
+      className="auth__form__SW0fp"
+      noValidate
+      onSubmit={handleSubmit}
+      ref={formRef}
+    >
       <TextField
         autoComplete="email"
+        autoFocus
         fullWidth
         label={emailLabel}
         name="email"
@@ -136,10 +148,11 @@ export function SignInForm({
       <Button
         disabled={isSubmitting}
         fullWidth
+        loading={isSubmitting}
         size="lg"
         type="submit"
       >
-        <span>{isSubmitting ? `${primaryAction}...` : primaryAction}</span>
+        <span>{primaryAction}</span>
         <span aria-hidden="true">→</span>
       </Button>
 

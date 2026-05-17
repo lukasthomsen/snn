@@ -991,6 +991,9 @@ export function CartLineList({
       aria-busy={isUpdating ? "true" : undefined}
       className="cartLine__list__SW5c0"
       data-layout={layout}
+      data-perf-ready="true"
+      data-perf-surface="cart-lines"
+      data-perf-updating={isUpdating ? "true" : "false"}
       data-updating={isUpdating ? "true" : undefined}
     >
       {lines.map((line) => {
@@ -1004,7 +1007,12 @@ export function CartLineList({
         );
 
         return (
-          <article className="cartLine__root__SW5c1" key={line.id}>
+          <article
+            className="cartLine__root__SW5c1"
+            data-perf-cart-line="true"
+            data-perf-line-quantity={line.quantity}
+            key={line.id}
+          >
             {productHref ? (
               <a className="cartLine__media__SW5c2" href={productHref}>
                 {media}

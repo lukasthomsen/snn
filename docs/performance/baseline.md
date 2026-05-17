@@ -35,13 +35,17 @@ pnpm perf:flows
 pnpm perf:all
 ```
 
+`pnpm perf:lighthouse` includes protected account-dashboard Lighthouse runs when the signed-in
+environment variables are present. If they are missing, the account Lighthouse step skips and
+public route Lighthouse still runs.
+
 Reports are written to `perf-reports/`, which is intentionally ignored. Playwright also writes newline-delimited flow timings to `perf-reports/playwright/measurements.ndjson`.
 
 ## What To Capture
 
 - Vercel preview URL and commit SHA.
 - Lighthouse mobile and desktop medians across three runs.
-- Playwright action timings for cart, likes, wishlist, and checkout entry.
+- Playwright action timings for cart, likes, wishlist, account dashboard, sign out, and checkout entry.
 - Vercel structured logs with `event=performance.trace`, including duration, query count, and total database time.
 - Neon query-plan notes for the slowest traced actions.
 
@@ -92,9 +96,20 @@ Notes:
 - Mobile LCP misses the 2.5 s target on home, product listing, filtered listing, and product detail. TTFB is low, TBT is low, and transfer weight is modest, which points first at above-the-fold image/render priority rather than server response time.
 - SEO scores are consistently low, and product detail accessibility is below target. These are not the main speed bottleneck, but they are now visible in CI.
 
+### Signed-In Account Dashboard
+
+Completed on 2026-05-16 against the current local workspace with a disposable verified customer. Final Lighthouse CI numbers below use `next start` for production-like storefront and accounts servers, three authenticated account-dashboard passes per device.
+
+| Device | Perf | A11y | Best Practices | SEO | FCP | LCP | TBT | CLS | TTFB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mobile `/da/account` | 97 | 100 | 100 | 100 | 1,207 ms | 2,488 ms | 9 ms | 0.000 | 346 ms |
+| Desktop `/da/account` | 100 | 100 | 100 | 100 | 326 ms | 531 ms | 0 ms | 0.000 | 338 ms |
+
+The account dashboard is visually and functionally stable. Mobile account now passes the strict targets (`<= 2.5 s` LCP and `<= 150 ms` TBT) when measured against a production-like server; the earlier miss came from `next dev` and dev-only chunks. Desktop account passes all configured Lighthouse assertions.
+
 ## Playwright Flow Summary
 
-Playwright ran five repeats on desktop and mobile against the protected preview using the Vercel automation bypass header. Signed-in like/wishlist tests skipped because no disposable verified preview customer credentials were provided.
+Playwright ran five repeats on desktop and mobile against the protected preview using the Vercel automation bypass header. The signed-in account dashboard/sign-out flow was completed locally on 2026-05-16 with a disposable verified customer.
 
 | Project | Measurement | n | Median | p75 | p95 |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -106,6 +121,16 @@ Playwright ran five repeats on desktop and mobile against the protected preview 
 | mobile | `cart.incrementQuantity` | 5 | 15,552 ms | 15,616 ms | 17,200 ms |
 | mobile | `cart.decrementQuantity` | 5 | 15,068 ms | 15,076 ms | 15,151 ms |
 | mobile | `cart.removeItem` | 5 | 15,053 ms | 15,064 ms | 15,068 ms |
+| desktop | `account.dashboard.load` | 1 | 429 ms | 429 ms | 429 ms |
+| desktop | `account.quickLink.addresses` | 1 | 350 ms | 350 ms | 350 ms |
+| desktop | `account.quickLink.rewards` | 1 | 334 ms | 334 ms | 334 ms |
+| desktop | `account.signOut` | 1 | 220 ms | 220 ms | 220 ms |
+| desktop | `account.signedOutRedirect` | 1 | 54 ms | 54 ms | 54 ms |
+| mobile | `account.dashboard.load` | 1 | 420 ms | 420 ms | 420 ms |
+| mobile | `account.quickLink.addresses` | 1 | 343 ms | 343 ms | 343 ms |
+| mobile | `account.quickLink.rewards` | 1 | 1,741 ms | 1,741 ms | 1,741 ms |
+| mobile | `account.signOut` | 1 | 998 ms | 998 ms | 998 ms |
+| mobile | `account.signedOutRedirect` | 1 | 39 ms | 39 ms | 39 ms |
 
 Route-load measurements were consistently around 15.7-16.9 s because the current helper waits for `networkidle` and usually reaches the 15 s timeout boundary. This is useful as a signal that persistent requests or analytics keep the network busy, but the next harness pass should measure paint-ready UI state separately from network-idle state.
 
@@ -134,5 +159,5 @@ Findings:
 2. Cart add/remove query shape: add uses 17 queries and remove uses 12, with database time dominating the measured server action.
 3. Interaction readiness measurement: quantity/remove tests wait for `networkidle` until timeout even though server traces are fast, so the UI needs a deterministic settled marker and possibly fewer persistent requests during cart mutations.
 4. Checkout coverage gap: empty checkout redirects to cart, so benchmark coverage needs a 1-item cart and signed-in customer state.
-5. Signed-in coverage gap: like/unlike and wishlist flow instrumentation is present, but the benchmark needs disposable verified customer credentials before those timings can be trusted.
+5. Signed-in like/wishlist coverage gap: account dashboard/sign-out coverage is complete locally; like/unlike and wishlist still need a dedicated preview signed-in run before those timings can be trusted.
 6. Preview DB isolation gap: the workflow is prepared to migrate/seed preview DBs, but GitHub could not access the Vercel token path during this run, so Neon branch isolation still needs confirmation.

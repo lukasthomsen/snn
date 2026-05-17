@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PERF_BASE_URL ?? "http://localhost:3000";
 const vercelBypassToken = process.env.PERF_VERCEL_BYPASS_TOKEN ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const repeatEach = Number.parseInt(process.env.PERF_FLOW_RUNS ?? "5", 10);
 const extraHTTPHeaders = vercelBypassToken
   ? {
       "x-vercel-protection-bypass": vercelBypassToken,
@@ -38,6 +39,7 @@ export default defineConfig({
     ["json", { outputFile: "perf-reports/playwright/results.json" }],
     ["html", { open: "never", outputFolder: "perf-reports/playwright/html" }],
   ],
+  repeatEach: Number.isFinite(repeatEach) && repeatEach > 0 ? repeatEach : 5,
   retries: 0,
   testDir: "tests/performance",
   timeout: 90_000,

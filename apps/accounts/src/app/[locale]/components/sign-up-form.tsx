@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
 import { Button, TextField } from "@snn/ui";
 
 import { AuthStatusMessage } from "./auth-status-message";
 
-const passwordMinLength = 15;
+const passwordMinLength = 8;
 const passwordMaxLength = 128;
 
 type SignUpFormMessages = {
@@ -51,9 +51,14 @@ export function SignUpForm({
   primaryAction,
   verificationCopy,
 }: SignUpFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState<string | undefined>();
   const [tone, setTone] = useState<"danger" | "success">("danger");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    formRef.current?.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,15 +115,22 @@ export function SignUpForm({
   }
 
   return (
-    <form className="auth__form__SW0fp" noValidate onSubmit={handleSubmit}>
+    <form
+      aria-busy={isSubmitting}
+      className="auth__form__SW0fp auth__form--compact__SW0if"
+      noValidate
+      onSubmit={handleSubmit}
+      ref={formRef}
+    >
       <TextField
         autoComplete="name"
+        autoFocus
         fullWidth
         label={nameLabel}
         name="name"
         placeholder={namePlaceholder}
         required
-        size="md"
+        size="sm"
       />
       <TextField
         autoComplete="email"
@@ -127,7 +139,7 @@ export function SignUpForm({
         name="email"
         placeholder={emailPlaceholder}
         required
-        size="md"
+        size="sm"
         type="email"
       />
       <TextField
@@ -139,7 +151,7 @@ export function SignUpForm({
         name="password"
         placeholder={passwordPlaceholder}
         required
-        size="md"
+        size="sm"
         type="password"
       />
       <TextField
@@ -151,17 +163,18 @@ export function SignUpForm({
         name="confirmPassword"
         placeholder={confirmPasswordPlaceholder}
         required
-        size="md"
+        size="sm"
         type="password"
       />
 
       <Button
         disabled={isSubmitting}
         fullWidth
-        size="lg"
+        loading={isSubmitting}
+        size="md"
         type="submit"
       >
-        <span>{isSubmitting ? `${primaryAction}...` : primaryAction}</span>
+        <span>{primaryAction}</span>
         <span aria-hidden="true">→</span>
       </Button>
 

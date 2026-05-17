@@ -1,5 +1,5 @@
 import { getAppOrigin } from "@snn/config";
-import { Button, MetricCard } from "@snn/ui";
+import { MetricCard } from "@snn/ui";
 import { isLocale } from "@snn/i18n";
 import { getCustomerSecurityState } from "@snn/customer";
 
@@ -76,9 +76,9 @@ export default async function SecurityPage({ params }: SecurityPageProps) {
                   </span>
                 </div>
                 <form action={revokeSessionAction.bind(null, safeLocale, session.token)}>
-                  <Button size="sm" tone="secondary" type="submit">
+                  <button className="accountServerButton__SW4d0" data-size="sm" data-tone="secondary" type="submit">
                     Revoke
-                  </Button>
+                  </button>
                 </form>
               </article>
             ))}

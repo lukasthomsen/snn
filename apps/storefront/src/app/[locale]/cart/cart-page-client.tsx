@@ -57,7 +57,12 @@ export function CartPageClient({ initialCart, locale }: CartPageClientProps) {
   }, [initialCart, syncCart]);
 
   return (
-    <main className="cartPage__root__SW6a0">
+    <main
+      className="cartPage__root__SW6a0"
+      data-perf-ready="true"
+      data-perf-surface="cart-page"
+      data-perf-updating={cartUpdating ? "true" : "false"}
+    >
       <section className="cartPage__header__SW6a1">
         <h1>{pageCopy.title}</h1>
         <p>{pageCopy.itemCount.replace("{count}", String(activeCart.itemCount))}</p>

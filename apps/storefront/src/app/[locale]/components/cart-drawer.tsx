@@ -389,7 +389,13 @@ export function CartDrawerProvider({
         )}
         title={copy.title}
       >
-        <div className="cartDrawer__shell__SW5a2">
+        <div
+          className="cartDrawer__shell__SW5a2"
+          data-perf-ready={cart ? "true" : "false"}
+          data-perf-surface="cart-drawer"
+          data-perf-tab={activeTab}
+          data-perf-updating={cartUpdateCount > 0 ? "true" : "false"}
+        >
           <div className="cartDrawer__scroll__SW5b2">
             {message ? (
               <p className="cartDrawer__message__SW5a3" role="status">
@@ -398,7 +404,12 @@ export function CartDrawerProvider({
             ) : null}
 
             {activeTab === "bag" ? (
-              <div className="cartDrawer__panel__SW5a4">
+              <div
+                className="cartDrawer__panel__SW5a4"
+                data-perf-ready={cart ? "true" : "false"}
+                data-perf-surface="cart-drawer-bag"
+                data-perf-updating={cartUpdateCount > 0 ? "true" : "false"}
+              >
                 {loadingCart && !cart ? (
                   <p className="cartDrawer__loading__SW5a5">{copy.loading}</p>
                 ) : null}
@@ -463,7 +474,12 @@ export function CartDrawerProvider({
                 ) : null}
               </div>
             ) : (
-              <div className="cartDrawer__panel__SW5a4">
+              <div
+                className="cartDrawer__panel__SW5a4"
+                data-perf-ready={likesState.status !== "idle" && likesState.status !== "loading" ? "true" : "false"}
+                data-perf-surface="cart-drawer-likes"
+                data-perf-updating={likesState.status === "idle" || likesState.status === "loading" ? "true" : "false"}
+              >
                 {likesState.status === "loading" || likesState.status === "idle" ? (
                   <p className="cartDrawer__loading__SW5a5">{copy.loading}</p>
                 ) : null}

@@ -1,4 +1,4 @@
-import { Button, Checkbox, EmptyState, TextField } from "@snn/ui";
+import { Checkbox, EmptyState, TextField } from "@snn/ui";
 import { getCustomerAddresses } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
@@ -75,9 +75,9 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
                 label="Make this my main"
                 name="isDefaultShipping"
               />
-              <Button fullWidth shape="field" size="lg" type="submit">
+              <button className="accountServerButton__SW4d0" data-full-width="true" data-size="lg" type="submit">
                 + Add an address
-              </Button>
+              </button>
             </form>
           </section>
         </aside>
@@ -93,19 +93,24 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
                   ))}
                 </address>
                 <div className="accountAddressBook__actions__SW2k7">
-                  <Button disabled size="sm" tone="secondary" type="button">Edit</Button>
+                  <button className="accountServerButton__SW4d0" data-size="sm" data-tone="secondary" disabled type="button">
+                    Edit
+                  </button>
                   <form action={deleteAddressAction.bind(null, safeLocale, address.id)}>
-                    <Button size="sm" tone="danger" type="submit">Delete</Button>
+                    <button className="accountServerButton__SW4d0" data-size="sm" data-tone="danger" type="submit">
+                      Delete
+                    </button>
                   </form>
                   <form action={setMainAddressAction.bind(null, safeLocale, address.id)}>
-                    <Button
+                    <button
+                      className="accountServerButton__SW4d0"
                       data-active={address.isDefaultShipping ? "true" : undefined}
-                      size="sm"
-                      tone={address.isDefaultShipping ? "primary" : "secondary"}
+                      data-size="sm"
+                      data-tone={address.isDefaultShipping ? "primary" : "secondary"}
                       type="submit"
                     >
                       Make this my main
-                    </Button>
+                    </button>
                   </form>
                 </div>
               </article>

@@ -65,6 +65,37 @@ export type CustomerOrderCard = CustomerOrderSummary & {
   overflowItemCount: number;
 };
 
+export type CustomerDashboardAddress = Pick<
+  CustomerAddressRecord,
+  | "city"
+  | "countryCode"
+  | "firstName"
+  | "lastName"
+  | "line1"
+  | "postalCode"
+  | "updatedAt"
+>;
+
+export type CustomerDashboardOrder = Pick<
+  CustomerOrderSummary,
+  | "currencyCode"
+  | "id"
+  | "orderNumber"
+  | "placedAt"
+  | "status"
+  | "totalAmount"
+>;
+
+export type CustomerAccountDashboard = {
+  addressCount: number;
+  defaultAddress: CustomerDashboardAddress | null;
+  likedProductCount: number;
+  orderCount: number;
+  profile: CustomerProfileRecord;
+  recentOrders: CustomerDashboardOrder[];
+  rewards: CustomerRewardsPreview;
+};
+
 type CustomerSessionData = {
   session: {
     id: string;
@@ -339,12 +370,7 @@ export async function ensureCustomerProfile(user: CustomerUser) {
 export async function getCustomerOrders(user: CustomerUser) {
   const db = getDb();
   const profile = await ensureCustomerProfile(user);
-  const orderVisibility = user.emailVerified
-    ? or(
-        eq(schema.orders.customerId, profile.id),
-        sql`lower(${schema.orders.email}) = ${normalizeEmail(user.email)}`,
-      )
-    : eq(schema.orders.customerId, profile.id);
+  const orderVisibility = getCustomerOrderVisibility(user, profile);
 
   return db
     .select({
@@ -360,6 +386,15 @@ export async function getCustomerOrders(user: CustomerUser) {
     .where(orderVisibility)
     .orderBy(desc(schema.orders.placedAt))
     .limit(50);
+}
+
+function getCustomerOrderVisibility(user: CustomerUser, profile: CustomerProfileRecord) {
+  return user.emailVerified
+    ? or(
+        eq(schema.orders.customerId, profile.id),
+        sql`lower(${schema.orders.email}) = ${normalizeEmail(user.email)}`,
+      )
+    : eq(schema.orders.customerId, profile.id);
 }
 
 async function getOrderCardsFromSummaries(orders: CustomerOrderSummary[]) {
@@ -414,26 +449,27 @@ export async function getCustomerOrderCards(user: CustomerUser, limit = 50) {
   return getOrderCardsFromSummaries(orders.slice(0, limit));
 }
 
-function buildCustomerRewardsPreview(input: {
-  addresses: CustomerAddressRecord[];
-  likedProducts: Array<{ likedAt: Date }>;
-  orderCards: CustomerOrderCard[];
+function buildCustomerRewardsPreviewFromStats(input: {
+  addressCount: number;
+  addressUpdatedAt?: Date | null | undefined;
+  likedProductCount: number;
+  likedProductUpdatedAt?: Date | null | undefined;
+  orderCount: number;
+  orderHistory: CustomerDashboardOrder[];
   profile: CustomerProfileRecord;
   security: {
     passkeyCount: number;
     twoFactorEnabled: boolean;
   };
+  totalOrderAmount: number;
 }) {
-  const totalOrderAmount = input.orderCards.reduce(
-    (sum, order) => sum + order.totalAmount,
-    0,
-  );
-  const orderXp = input.orderCards.length > 0
-    ? input.orderCards.length * 280 + Math.floor(totalOrderAmount / 100)
+  const totalOrderAmount = Number(input.totalOrderAmount) || 0;
+  const orderXp = input.orderCount > 0
+    ? input.orderCount * 280 + Math.floor(totalOrderAmount / 100)
     : 0;
   const profileXp = 100;
-  const addressXp = Math.min(input.addresses.length * 50, 150);
-  const likedXp = Math.min(input.likedProducts.length * 20, 200);
+  const addressXp = Math.min(input.addressCount * 50, 150);
+  const likedXp = Math.min(input.likedProductCount * 20, 200);
   const securityXp =
     (input.security.passkeyCount > 0 ? 80 : 0) +
     (input.security.twoFactorEnabled ? 120 : 0);
@@ -450,7 +486,7 @@ function buildCustomerRewardsPreview(input: {
   const progressPercent = nextTier
     ? Math.min(100, Math.max(0, ((currentXp - currentTier.threshold) / tierRange) * 100))
     : 100;
-  const orderHistory = input.orderCards.slice(0, 6).map((order) => ({
+  const orderHistory = input.orderHistory.slice(0, 6).map((order) => ({
     id: `order-${order.id}`,
     label: `Order ${order.orderNumber}`,
     description: "Purchase activity",
@@ -473,7 +509,7 @@ function buildCustomerRewardsPreview(input: {
             label: "Address book",
             description: "Saved checkout details",
             points: addressXp,
-            occurredAt: input.addresses[0]?.updatedAt ?? input.profile.updatedAt,
+            occurredAt: input.addressUpdatedAt ?? input.profile.updatedAt,
           },
         ]
       : []),
@@ -484,7 +520,7 @@ function buildCustomerRewardsPreview(input: {
             label: "Liked items",
             description: "Saved products for later",
             points: likedXp,
-            occurredAt: input.likedProducts[0]?.likedAt ?? input.profile.updatedAt,
+            occurredAt: input.likedProductUpdatedAt ?? input.profile.updatedAt,
           },
         ]
       : []),
@@ -501,6 +537,29 @@ function buildCustomerRewardsPreview(input: {
     tiers: previewRewardTiers,
     xpToNextTier,
   } satisfies CustomerRewardsPreview;
+}
+
+function buildCustomerRewardsPreview(input: {
+  addresses: CustomerAddressRecord[];
+  likedProducts: Array<{ likedAt: Date }>;
+  orderCards: CustomerOrderCard[];
+  profile: CustomerProfileRecord;
+  security: {
+    passkeyCount: number;
+    twoFactorEnabled: boolean;
+  };
+}) {
+  return buildCustomerRewardsPreviewFromStats({
+    addressCount: input.addresses.length,
+    addressUpdatedAt: input.addresses[0]?.updatedAt,
+    likedProductCount: input.likedProducts.length,
+    likedProductUpdatedAt: input.likedProducts[0]?.likedAt,
+    orderCount: input.orderCards.length,
+    orderHistory: input.orderCards,
+    profile: input.profile,
+    security: input.security,
+    totalOrderAmount: input.orderCards.reduce((sum, order) => sum + order.totalAmount, 0),
+  });
 }
 
 export async function getCustomerAddresses(user: CustomerUser) {
@@ -808,6 +867,105 @@ export async function getCustomerSecurityState(user: CustomerUser) {
     passkeyCount: passkeyCount?.value ?? 0,
     twoFactorEnabled: user.twoFactorEnabled === true,
   };
+}
+
+export async function getCustomerAccountDashboard(user: CustomerUser) {
+  const db = getDb();
+  const profile = await ensureCustomerProfile(user);
+  const orderVisibility = getCustomerOrderVisibility(user, profile);
+
+  const [
+    defaultAddressRows,
+    recentOrderRows,
+    likedProductCountRows,
+    passkeyCountRows,
+  ] = await Promise.all([
+    db
+      .select({
+        addressCount: sql<number>`(count(*) over())::int`,
+        city: schema.addresses.city,
+        countryCode: schema.addresses.countryCode,
+        firstName: schema.addresses.firstName,
+        lastName: schema.addresses.lastName,
+        line1: schema.addresses.line1,
+        postalCode: schema.addresses.postalCode,
+        updatedAt: schema.addresses.updatedAt,
+      })
+      .from(schema.addresses)
+      .where(eq(schema.addresses.customerId, profile.id))
+      .orderBy(desc(schema.addresses.isDefaultShipping), desc(schema.addresses.updatedAt))
+      .limit(1),
+    db
+      .select({
+        currencyCode: schema.orders.currencyCode,
+        id: schema.orders.id,
+        orderCount: sql<number>`(count(*) over())::int`,
+        orderNumber: schema.orders.orderNumber,
+        placedAt: schema.orders.placedAt,
+        status: schema.orders.status,
+        totalAmount: schema.orders.totalAmount,
+        totalOrderAmount: sql<number>`coalesce(sum(${schema.orders.totalAmount}) over(), 0)::int`,
+      })
+      .from(schema.orders)
+      .where(orderVisibility)
+      .orderBy(desc(schema.orders.placedAt))
+      .limit(2),
+    db
+      .select({ value: count() })
+      .from(schema.customerProductLikes)
+      .where(eq(schema.customerProductLikes.userId, user.id)),
+    db
+      .select({ value: count() })
+      .from(schema.passkeys)
+      .where(eq(schema.passkeys.userId, user.id)),
+  ]);
+
+  const [defaultAddressWithCount] = defaultAddressRows;
+  const addressCount = Number(defaultAddressWithCount?.addressCount ?? 0);
+  const orderCount = Number(recentOrderRows[0]?.orderCount ?? 0);
+  const likedProductCount = Number(likedProductCountRows[0]?.value ?? 0);
+  const totalOrderAmount = Number(recentOrderRows[0]?.totalOrderAmount ?? 0);
+  const recentOrders = recentOrderRows.map((order) => ({
+    currencyCode: order.currencyCode,
+    id: order.id,
+    orderNumber: order.orderNumber,
+    placedAt: order.placedAt,
+    status: order.status,
+    totalAmount: order.totalAmount,
+  }));
+  const rewards = buildCustomerRewardsPreviewFromStats({
+    addressCount,
+    addressUpdatedAt: defaultAddressWithCount?.updatedAt,
+    likedProductCount,
+    orderCount,
+    orderHistory: recentOrders,
+    profile,
+    security: {
+      passkeyCount: Number(passkeyCountRows[0]?.value ?? 0),
+      twoFactorEnabled: user.twoFactorEnabled === true,
+    },
+    totalOrderAmount,
+  });
+
+  return {
+    addressCount,
+    defaultAddress: defaultAddressWithCount
+      ? {
+          city: defaultAddressWithCount.city,
+          countryCode: defaultAddressWithCount.countryCode,
+          firstName: defaultAddressWithCount.firstName,
+          lastName: defaultAddressWithCount.lastName,
+          line1: defaultAddressWithCount.line1,
+          postalCode: defaultAddressWithCount.postalCode,
+          updatedAt: defaultAddressWithCount.updatedAt,
+        }
+      : null,
+    likedProductCount,
+    orderCount,
+    profile,
+    recentOrders,
+    rewards,
+  } satisfies CustomerAccountDashboard;
 }
 
 export async function revokeCustomerSession(user: CustomerUser, token: string) {

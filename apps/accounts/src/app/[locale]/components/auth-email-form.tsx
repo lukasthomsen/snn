@@ -7,7 +7,7 @@ import { Button, TextField } from "@snn/ui";
 
 import type { AuthField } from "./auth-page";
 
-const passwordMinLength = 15;
+const passwordMinLength = 8;
 const passwordMaxLength = 128;
 
 type AuthEmailFormProps = {

@@ -23,7 +23,7 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
     : undefined;
 
   return (
-    <main className="catalog__root__SW3a0">
+    <main className="catalog__root__SW3a0" data-perf-ready="true" data-perf-surface="catalog">
       <CatalogView
         basePath={`/${safeLocale}/products`}
         likedUserId={likedUserId}

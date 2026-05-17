@@ -1,4 +1,4 @@
-import { Button, Select, Textarea } from "@snn/ui";
+import { Select, Textarea } from "@snn/ui";
 import { isLocale } from "@snn/i18n";
 
 import { createPrivacyRequestAction } from "../actions";
@@ -40,9 +40,9 @@ export default async function PrivacyPage({ params }: PrivacyPageProps) {
             placeholder="Add any details that help the privacy team handle the request."
             size="md"
           />
-          <Button size="lg" type="submit">
+          <button className="accountServerButton__SW4d0" data-size="lg" type="submit">
             Submit request
-          </Button>
+          </button>
         </form>
       </section>
     </div>

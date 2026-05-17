@@ -28,7 +28,7 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
   const productsHref = `/${safeLocale}/products`;
 
   return (
-    <main className="home__root__SW0fz">
+    <main className="home__root__SW0fz" data-perf-ready="true" data-perf-surface="home">
       <section className="hero__section__SW0g0" id="hero">
         <div className="hero__stage__SW0g1">
           <div className="hero__inner__SW0g2">

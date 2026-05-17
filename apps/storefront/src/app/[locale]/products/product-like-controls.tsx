@@ -191,6 +191,10 @@ function ProductLikeControl({
       action={formAction}
       aria-busy={pending}
       className={variant === "card" ? "product-card__like-form__SW3ak" : "product-detail__like-form__SW3bf"}
+      data-perf-placement={variant}
+      data-perf-ready="true"
+      data-perf-surface="product-like"
+      data-perf-updating={pending ? "true" : "false"}
     >
       <input name="liked" type="hidden" value={String(nextLiked)} />
       <FavoriteButton

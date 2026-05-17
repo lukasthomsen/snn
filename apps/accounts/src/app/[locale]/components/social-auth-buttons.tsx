@@ -121,7 +121,9 @@ export function SocialAuthButtons({
       <Button
         disabled={isChecking || pendingProvider !== null || !availability.google}
         fullWidth
+        loading={pendingProvider === "google"}
         onClick={() => void handleSocialSignIn("google")}
+        radius="sm"
         shape="field"
         size="md"
         tone="secondary"
@@ -133,15 +135,15 @@ export function SocialAuthButtons({
         <span>
           {isChecking
             ? messages.checking
-            : pendingProvider === "google"
-              ? `${googleLabel}...`
-              : googleLabel}
+            : googleLabel}
         </span>
       </Button>
       <Button
         disabled={isChecking || pendingProvider !== null || !availability.apple}
         fullWidth
+        loading={pendingProvider === "apple"}
         onClick={() => void handleSocialSignIn("apple")}
+        radius="sm"
         shape="field"
         size="md"
         tone="secondary"
@@ -153,9 +155,7 @@ export function SocialAuthButtons({
         <span>
           {isChecking
             ? messages.checking
-            : pendingProvider === "apple"
-              ? `${appleLabel}...`
-              : appleLabel}
+            : appleLabel}
         </span>
       </Button>
       <AuthStatusMessage message={message} tone="danger" />

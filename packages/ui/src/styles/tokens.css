@@ -104,7 +104,7 @@
 
   --color-border-primary: var(--color-neutral-100);
   --color-border-secondary: var(--color-neutral-200);
-  --color-border-strong: var(--color-neutral-200);
+  --color-border-strong: var(--color-neutral-300);
   --color-border-subtle: rgba(19, 19, 19, 0.08);
   --color-border-tertiary: var(--color-border-subtle);
   --color-border-inverse: rgba(255, 255, 255, 0.12);

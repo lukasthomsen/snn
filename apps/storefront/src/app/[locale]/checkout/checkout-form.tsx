@@ -330,7 +330,12 @@ export function CheckoutForm({
   }
 
   return (
-    <main className="checkout__root__SW5i0">
+    <main
+      className="checkout__root__SW5i0"
+      data-perf-ready="true"
+      data-perf-surface="checkout"
+      data-perf-updating={isPreparing ? "true" : "false"}
+    >
       <form className="checkout__form__SW6b0" onSubmit={handleSubmit} ref={formRef}>
         <section className="checkoutPanel__root__SW6e1">
           <div className="checkoutPanel__heading__SW6e2">
@@ -452,7 +457,12 @@ export function CheckoutForm({
               {copy.secure}
             </span>
           </div>
-          <div className="checkoutPayment__root__SW6c1" data-ready={payment ? "true" : undefined}>
+          <div
+            className="checkoutPayment__root__SW6c1"
+            data-perf-ready={payment ? "true" : "false"}
+            data-perf-surface="checkout-payment"
+            data-ready={payment ? "true" : undefined}
+          >
             <div className="checkoutPayment__summary__SW6e5">
               <CreditCardIcon />
               <div>

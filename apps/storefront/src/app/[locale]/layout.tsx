@@ -23,6 +23,7 @@ const interFont = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
+const shouldRenderVercelInsights = process.env.VERCEL === "1";
 
 type LocaleLayoutProps = Readonly<{
   children: React.ReactNode;
@@ -79,8 +80,12 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             </CartDrawerProvider>
           </NewsletterSignupProvider>
         </ThemeScope>
-        <Analytics />
-        <SpeedInsights />
+        {shouldRenderVercelInsights ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );

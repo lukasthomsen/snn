@@ -990,7 +990,11 @@ export function ProductDetailClient({
   }
 
   return (
-    <>
+    <div
+      data-perf-ready="true"
+      data-perf-surface="product-detail"
+      data-perf-updating={addingToBag ? "true" : "false"}
+    >
       <section className="product-detail__layout__SW3b2">
         <div
           aria-label={product.name}
@@ -1376,6 +1380,6 @@ export function ProductDetailClient({
           {addingToBag ? copy.addingToBag : copy.addToBag}
         </Button>
       </div>
-    </>
+    </div>
   );
 }

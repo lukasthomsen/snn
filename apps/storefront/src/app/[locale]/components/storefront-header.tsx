@@ -244,7 +244,7 @@ export function StorefrontHeader({
       </div>
       <div className="header__nav__SW0ee">
         <div className="header__content__SW0ef">
-          <Link className="brand__link__SW0eg" href={`/${locale}`}>
+          <Link aria-label="VELORO home" className="brand__link__SW0eg" href={`/${locale}`}>
             <StorefrontBrandLogo />
           </Link>
 

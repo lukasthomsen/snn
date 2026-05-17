@@ -42,7 +42,7 @@ export default async function WishlistPage({ params, searchParams }: WishlistPag
 
   if (session?.user.emailVerified && !session.user.banned) {
     return (
-      <div className="catalog__embedded__SW3am">
+      <div className="catalog__embedded__SW3am" data-perf-ready="true" data-perf-surface="wishlist">
         <CatalogView
           basePath={`/${safeLocale}/wishlist`}
           emptyCopy={copy.empty}
@@ -60,7 +60,7 @@ export default async function WishlistPage({ params, searchParams }: WishlistPag
   const callbackPath = `/${safeLocale}/wishlist`;
 
   return (
-    <main className="wishlistPrompt__root__SW4a0">
+    <main className="wishlistPrompt__root__SW4a0" data-perf-ready="true" data-perf-surface="wishlist">
       <section className="wishlistPrompt__panel__SW4a1">
         <span className="wishlistPrompt__mark__SW4a2" aria-hidden="true">♡</span>
         <h1>{copy.title}</h1>

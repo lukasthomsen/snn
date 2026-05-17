@@ -224,8 +224,8 @@
 
 .button__root__SW0b3[data-tone="secondary"]:hover:not(:disabled),
 .button__root__SW0b3[data-tone="secondary"][data-hovered="true"] {
-  border-color: var(--color-border-secondary);
-  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-primary);
   color: var(--color-action-secondary-text);
 }
 

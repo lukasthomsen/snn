@@ -29,7 +29,6 @@ export const dynamic = "force-dynamic";
 const signUpCopy = {
   da: {
     appleLabel: "Fortsæt med Apple",
-    body: "Opret en konto for at komme i gang.",
     brandFooter: "2026 SNN. Alle rettigheder forbeholdes.",
     brandStatements: [
       {
@@ -55,7 +54,7 @@ const signUpCopy = {
       mismatch: "Adgangskoderne skal være ens.",
       networkError: "Der opstod en forbindelsesfejl. Prøv igen om lidt.",
       oauthFailed: "Google-login blev ikke gennemført. Prøv igen.",
-      passwordLength: "Adgangskoden skal være mellem 15 og 128 tegn.",
+      passwordLength: "Adgangskoden skal være mellem 8 og 128 tegn.",
       required: "Navn, e-mail og adgangskode er påkrævet.",
       unavailableProvider: "Denne login-metode er ikke klar endnu.",
     },
@@ -69,12 +68,11 @@ const signUpCopy = {
     primaryAction: "Opret konto",
     secondaryActionLabel: "Log ind",
     secondaryActionText: "Har du allerede en konto?",
-    title: "Join us!",
+    title: "Opret din SNN-konto",
     verificationCopy: "Tjek din e-mail for at bekræfte kontoen.",
   },
   en: {
     appleLabel: "Continue with Apple",
-    body: "Create an account to get started.",
     brandFooter: "2026 SNN. All rights reserved.",
     brandStatements: [
       {
@@ -100,7 +98,7 @@ const signUpCopy = {
       mismatch: "Passwords must match.",
       networkError: "A connection error occurred. Please try again shortly.",
       oauthFailed: "Google sign-in was not completed. Please try again.",
-      passwordLength: "Password must be between 15 and 128 characters.",
+      passwordLength: "Password must be between 8 and 128 characters.",
       required: "Name, email, and password are required.",
       unavailableProvider: "This sign-in method is not ready yet.",
     },
@@ -114,7 +112,7 @@ const signUpCopy = {
     primaryAction: "Create account",
     secondaryActionLabel: "Sign in",
     secondaryActionText: "Already have an account?",
-    title: "Join us!",
+    title: "Create your SNN account",
     verificationCopy: "Check your email to verify your account.",
   },
 } as const;
@@ -140,7 +138,6 @@ export default async function SignUpPage({
 
   return (
     <AuthPage
-      body={copy.body}
       brandFooter={copy.brandFooter}
       brandStatements={[...copy.brandStatements]}
       brandTitle={copy.brandTitle}

@@ -302,7 +302,7 @@ export async function CatalogView({
   }));
 
   return (
-    <>
+    <div data-perf-ready="true" data-perf-surface={likedOnlyUserId ? "wishlist" : "catalog-results"}>
       <section className="catalog-hero__root__SW3a1">
         <h1>{title ?? copy.title}</h1>
         <p className="catalog__count__SW3at">{productCountCopy}</p>
@@ -482,6 +482,6 @@ export async function CatalogView({
           />
         </div>
       </section>
-    </>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-import { Button } from "@snn/ui";
 import { getCustomerOrderCards } from "@snn/customer";
 import { isLocale } from "@snn/i18n";
 
@@ -36,9 +35,9 @@ export default async function OrdersPage({ params }: OrdersPageProps) {
             ))}
           </div>
           <div className="accountOrdersList__more__SW2j3">
-            <Button disabled size="lg" type="button">
+            <button className="accountServerButton__SW4d0" data-size="lg" disabled type="button">
               Load more
-            </Button>
+            </button>
           </div>
         </>
       ) : (

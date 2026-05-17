@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { isLocale } from "@snn/i18n";
 import { getCustomerLikedProducts } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 
 import { unlikeProductAction } from "../actions";
 import { requireAccountSession } from "../account-auth";
@@ -16,10 +17,12 @@ export default async function LikedPage({ params }: LikedPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account/liked`);
-  const likedProducts = await getCustomerLikedProducts(user, safeLocale);
+  const likedProducts = await tracePerformance("storefront.account.likedProducts", {
+    locale: safeLocale,
+  }, () => getCustomerLikedProducts(user, safeLocale));
 
   return (
-    <div className="account__stack__SW1a8">
+    <div className="account__stack__SW1a8" data-perf-ready="true" data-perf-surface="account-liked">
       <header className="account__section-header__SW1a9">
         <h2>Liked items</h2>
         <p className="account__muted__SW1aa">Product-only likes for v1.</p>

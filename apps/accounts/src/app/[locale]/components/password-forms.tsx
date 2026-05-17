@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { createSnnAuthClient } from "@snn/auth/client";
 import { Button, TextField } from "@snn/ui";
 
-const passwordMinLength = 15;
+const passwordMinLength = 8;
 const passwordMaxLength = 128;
 
 type ForgotPasswordFormProps = {

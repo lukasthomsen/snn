@@ -6,7 +6,6 @@ import {
 } from "./auth-brand-carousel";
 
 type AuthPageProps = {
-  body: string;
   brandFooter: string;
   brandStatements: AuthBrandStatement[];
   brandTitle: string;
@@ -29,7 +28,6 @@ export type AuthField = {
 };
 
 export function AuthPage({
-  body,
   brandFooter,
   brandStatements,
   brandTitle,
@@ -63,8 +61,7 @@ export function AuthPage({
                   {secondaryActionLabel}
                 </a>
               </p>
-              <h3 id="auth-title">{title}</h3>
-              <p className="auth__copy__SW0fr">{body}</p>
+              <h1 id="auth-title">{title}</h1>
             </div>
 
             {children}

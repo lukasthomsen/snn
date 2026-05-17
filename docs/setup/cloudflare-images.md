@@ -2,6 +2,10 @@
 
 SNN uses Cloudflare Images as the product-media system of record.
 
+Cloudflare Images is the Cloudflare-facing delivery path for product media.
+Page traffic for `www`, `accounts`, and `admin` remains Vercel-primary and
+should not be Cloudflare-proxied.
+
 ## Why this setup
 
 - Product metadata stays in Neon/Postgres.
@@ -57,6 +61,13 @@ pnpm media:ensure-variants
 ```
 
 That script uses the definitions in `/Users/lukasthomsen/Desktop/snn/packages/media/src/index.ts`.
+
+The read-only edge audit also verifies these variants when Cloudflare API
+credentials are available:
+
+```bash
+pnpm perf:edge
+```
 
 ## Demo seed media
 

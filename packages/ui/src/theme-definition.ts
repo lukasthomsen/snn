@@ -164,7 +164,7 @@ export const monoTheme: ThemeDefinition = {
     backgroundQuinary: "#131313",
     blueLighter: "#7fa7ea",
     bluePrimary: "#5f8fdd",
-    borderStrong: "#c7c7c7",
+    borderStrong: "#a1a1a1",
     borderSubtle: "#dfdfdf",
     canvas: "#ffffff",
     danger: "#8f332d",

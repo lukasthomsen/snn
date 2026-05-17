@@ -29,7 +29,6 @@ export const dynamic = "force-dynamic";
 const signInCopy = {
   da: {
     appleLabel: "Fortsæt med Apple",
-    body: "Log ind for at holde din rutine samlet og klar.",
     brandFooter: "2026 SNN. Alle rettigheder forbeholdes.",
     brandStatements: [
       {
@@ -66,11 +65,10 @@ const signInCopy = {
     primaryAction: "Log ind",
     secondaryActionLabel: "Opret en",
     secondaryActionText: "Har du brug for en konto?",
-    title: "Welcome back!",
+    title: "Log ind på SNN",
   },
   en: {
     appleLabel: "Continue with Apple",
-    body: "Sign in to keep your routine organized and ready.",
     brandFooter: "2026 SNN. All rights reserved.",
     brandStatements: [
       {
@@ -107,7 +105,7 @@ const signInCopy = {
     primaryAction: "Sign in",
     secondaryActionLabel: "Create one",
     secondaryActionText: "Need an account?",
-    title: "Welcome back!",
+    title: "Sign in to SNN",
   },
 } as const;
 
@@ -136,7 +134,6 @@ export default async function SignInPage({
 
   return (
     <AuthPage
-      body={copy.body}
       brandFooter={copy.brandFooter}
       brandStatements={[...copy.brandStatements]}
       brandTitle={copy.brandTitle}
