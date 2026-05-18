@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, date, index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { countryCode, createdAt, foreignUuid, primaryUuid, updatedAt } from "./shared";
 import { users } from "./auth";
@@ -12,6 +12,7 @@ export const customerProfiles = pgTable(
     email: text("email").notNull(),
     firstName: text("first_name"),
     lastName: text("last_name"),
+    dateOfBirth: date("date_of_birth", { mode: "string" }),
     phone: text("phone"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

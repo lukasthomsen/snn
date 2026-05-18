@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CustomerAuthError, ensureCustomerProfile, getCustomerSession } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 import { isLocale } from "@snn/i18n";
 
 import {
@@ -52,7 +53,11 @@ export default async function AuthCompletePage({
   }
 
   try {
-    await ensureCustomerProfile(session.user);
+    await tracePerformance(
+      "accounts.authComplete.profileSync",
+      { locale: safeLocale },
+      () => ensureCustomerProfile(session.user),
+    );
   } catch (error) {
     if (error instanceof CustomerAuthError) {
       redirect(signInPath as Route);

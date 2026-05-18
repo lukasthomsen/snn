@@ -1,10 +1,13 @@
 import { getAppOrigin } from "@snn/config";
+import { authTurnstileActions } from "@snn/auth/policy";
 import { isLocale } from "@snn/i18n";
+import { Link } from "@snn/ui";
 
 import {
   getAccountAuthPath,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
+import { getAuthTurnstileChallenge } from "../auth-turnstile";
 import { AuthUtilityPage } from "../components/auth-utility-page";
 import { ForgotPasswordForm } from "../components/password-forms";
 
@@ -36,6 +39,13 @@ const copy = {
     emailLabel: "E-mailadresse",
     emailPlaceholder: "dig@example.com",
     helper: "Kan du ikke komme ind?",
+    messages: {
+      emailInvalid: "Angiv en gyldig e-mailadresse.",
+      emailRequired: "E-mailadresse er påkrævet.",
+      networkError: "Vi kunne ikke kontakte login-tjenesten. Prøv igen.",
+      turnstileRequired: "Gennemfør sikkerhedstjekket for at fortsætte.",
+      turnstileUnavailable: "Sikkerhedstjekket kunne ikke indlæses. Prøv igen.",
+    },
     signInLabel: "Tilbage til log ind",
     submitLabel: "Send reset-link",
     successMessage: "Hvis e-mailen findes, sender vi et reset-link.",
@@ -61,6 +71,13 @@ const copy = {
     emailLabel: "Email address",
     emailPlaceholder: "you@example.com",
     helper: "Having trouble getting in?",
+    messages: {
+      emailInvalid: "Enter a valid email address.",
+      emailRequired: "Email address is required.",
+      networkError: "We could not reach the authentication service. Please try again.",
+      turnstileRequired: "Complete the security check to continue.",
+      turnstileUnavailable: "The security check could not load. Please try again.",
+    },
     signInLabel: "Back to sign in",
     submitLabel: "Send reset link",
     successMessage: "If the email exists, we will send a reset link.",
@@ -82,6 +99,10 @@ export default async function ForgotPasswordPage({
   const resetRedirect = new URL(`/${safeLocale}/reset-password`, getAppOrigin("auth"));
   resetRedirect.searchParams.set("callbackURL", callbackURL);
   const resetRedirectURL = resetRedirect.toString();
+  const turnstileCopy = {
+    requiredMessage: content.messages.turnstileRequired,
+    unavailableMessage: content.messages.turnstileUnavailable,
+  };
 
   return (
     <AuthUtilityPage
@@ -90,9 +111,9 @@ export default async function ForgotPasswordPage({
       brandTitle={content.brandTitle}
       helper={
         <>
-          <a className="inline__link__SW0fw" href={getAccountAuthPath(safeLocale, "sign-in", callbackURL)}>
+          <Link href={getAccountAuthPath(safeLocale, "sign-in", callbackURL)} variant="underline">
             {content.signInLabel}
-          </a>
+          </Link>
         </>
       }
       title={content.title}
@@ -100,9 +121,14 @@ export default async function ForgotPasswordPage({
       <ForgotPasswordForm
         emailLabel={content.emailLabel}
         emailPlaceholder={content.emailPlaceholder}
+        messages={content.messages}
         resetRedirectURL={resetRedirectURL}
         submitLabel={content.submitLabel}
         successMessage={content.successMessage}
+        turnstile={getAuthTurnstileChallenge(
+          authTurnstileActions.passwordReset,
+          turnstileCopy,
+        )}
       />
     </AuthUtilityPage>
   );

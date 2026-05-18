@@ -6,6 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./policy": "./src/policy.ts",
+    "./turnstile": "./src/turnstile.ts",
     "./server": "./src/server.ts"
   },
   "scripts": {

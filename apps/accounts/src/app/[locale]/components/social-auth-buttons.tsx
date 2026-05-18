@@ -2,22 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { createSnnAuthClient } from "@snn/auth/client";
+import { createSnnAuthClient, withTurnstileFetchOptions } from "@snn/auth/client";
 import { AppleLogoIcon, Button, GoogleLogoIcon } from "@snn/ui";
+import type { ControlSize } from "@snn/ui";
 
 import { AuthStatusMessage } from "./auth-status-message";
+import { TurnstileField, type TurnstileChallenge } from "./turnstile-field";
 
-type SocialAuthButtonsProps = {
+export type SocialAuthButtonsProps = {
   appleLabel: string;
   callbackURL: string;
   errorCallbackURL: string;
   googleLabel: string;
   initialMessage?: string | undefined;
   messages: {
-    checking: string;
     genericError: string;
     unavailable: string;
   };
+  newUserCallbackURL?: string | undefined;
+  size?: ControlSize | undefined;
+  turnstile?: TurnstileChallenge | undefined;
 };
 
 export function SocialAuthButtons({
@@ -27,16 +31,20 @@ export function SocialAuthButtons({
   googleLabel,
   initialMessage,
   messages,
+  newUserCallbackURL,
+  size = "sm",
+  turnstile,
 }: SocialAuthButtonsProps) {
   const [message, setMessage] = useState<string | undefined>(initialMessage);
   const [availability, setAvailability] = useState({
-    apple: false,
-    google: false,
+    apple: true,
+    google: true,
   });
-  const [isChecking, setIsChecking] = useState(true);
   const [pendingProvider, setPendingProvider] = useState<"apple" | "google" | null>(
     null,
   );
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const authClient = useMemo(() => createSnnAuthClient(), []);
 
   useEffect(() => {
@@ -66,13 +74,9 @@ export function SocialAuthButtons({
       } catch {
         if (isMounted) {
           setAvailability({
-            apple: false,
-            google: false,
+            apple: true,
+            google: true,
           });
-        }
-      } finally {
-        if (isMounted) {
-          setIsChecking(false);
         }
       }
     }
@@ -92,13 +96,20 @@ export function SocialAuthButtons({
       return;
     }
 
+    if (turnstile?.siteKey && !turnstileToken) {
+      setMessage(turnstile.requiredMessage);
+      return;
+    }
+
     setPendingProvider(provider);
 
     try {
       const result = await authClient.signIn.social({
         callbackURL,
         errorCallbackURL,
+        ...(newUserCallbackURL ? { newUserCallbackURL } : {}),
         provider,
+        ...withTurnstileFetchOptions(turnstileToken),
       });
 
       if (result.error) {
@@ -112,6 +123,11 @@ export function SocialAuthButtons({
     } catch {
       setMessage(messages.genericError);
     } finally {
+      if (turnstile?.siteKey) {
+        setTurnstileToken(null);
+        setTurnstileResetSignal((currentSignal) => currentSignal + 1);
+      }
+
       setPendingProvider(null);
     }
   }
@@ -119,45 +135,43 @@ export function SocialAuthButtons({
   return (
     <div className="provider__buttons__SW0fs">
       <Button
-        disabled={isChecking || pendingProvider !== null || !availability.google}
+        disabled={pendingProvider !== null || !availability.google}
         fullWidth
         loading={pendingProvider === "google"}
         onClick={() => void handleSocialSignIn("google")}
         radius="sm"
         shape="field"
-        size="md"
+        size={size}
         tone="secondary"
         type="button"
       >
         <span className="provider__mark__SW0fu">
           <GoogleLogoIcon size={18} />
         </span>
-        <span>
-          {isChecking
-            ? messages.checking
-            : googleLabel}
-        </span>
+        <span>{googleLabel}</span>
       </Button>
       <Button
-        disabled={isChecking || pendingProvider !== null || !availability.apple}
+        disabled={pendingProvider !== null || !availability.apple}
         fullWidth
         loading={pendingProvider === "apple"}
         onClick={() => void handleSocialSignIn("apple")}
         radius="sm"
         shape="field"
-        size="md"
+        size={size}
         tone="secondary"
         type="button"
       >
         <span className="provider__mark__SW0fu">
           <AppleLogoIcon size={19} />
         </span>
-        <span>
-          {isChecking
-            ? messages.checking
-            : appleLabel}
-        </span>
+        <span>{appleLabel}</span>
       </Button>
+      <TurnstileField
+        challenge={turnstile}
+        disabled={pendingProvider !== null}
+        onTokenChange={setTurnstileToken}
+        resetSignal={turnstileResetSignal}
+      />
       <AuthStatusMessage message={message} tone="danger" />
     </div>
   );

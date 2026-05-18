@@ -11,6 +11,10 @@ const optionalUrl = z
   .union([z.string().url(), z.literal("")])
   .optional()
   .transform((value) => value || undefined);
+const optionalPositiveInteger = z
+  .union([z.coerce.number().int().positive(), z.literal("")])
+  .optional()
+  .transform((value) => (typeof value === "number" ? value : undefined));
 
 const serverEnvSchema = z.object({
   ADMIN_SUBDOMAIN: z.string().default("admin"),
@@ -20,7 +24,7 @@ const serverEnvSchema = z.object({
   APPLE_PRIVATE_KEY: optionalString,
   APPLE_TEAM_ID: optionalString,
   AUTH_SUBDOMAIN: z.string().default("accounts"),
-  AUTH_EMAIL_FROM: z.string().default("Veloro <accounts@veloro.dk>"),
+  AUTH_EMAIL_FROM: z.string().default("SNN <accounts@veloro.dk>"),
   AUTH_EMAIL_REPLY_TO: optionalString,
   BETTER_AUTH_API_KEY: optionalString,
   BETTER_AUTH_API_URL: optionalUrl,
@@ -34,6 +38,11 @@ const serverEnvSchema = z.object({
   CLOUDFLARE_IMAGES_API_TOKEN: optionalString,
   CLOUDFLARE_IMAGES_DELIVERY_HASH: optionalString,
   CF_TURNSTILE_SECRET_KEY: optionalString,
+  AUTH_TURNSTILE_MODE: z.enum(["off", "report", "enforce"]).optional(),
+  DATABASE_POOL_CONNECTION_TIMEOUT_MS: optionalPositiveInteger,
+  DATABASE_POOL_IDLE_TIMEOUT_MS: optionalPositiveInteger,
+  DATABASE_POOL_MAX: optionalPositiveInteger,
+  DATABASE_POOL_MAX_USES: optionalPositiveInteger,
   DATABASE_URL: z.string().default("postgresql://postgres:postgres@127.0.0.1:5432/snn"),
   DATABASE_URL_UNPOOLED: optionalString,
   ENABLE_PERFORMANCE_TRACE: optionalString,
@@ -158,6 +167,15 @@ export function getDatabaseMigrationUrl() {
   return cachedEnv.DATABASE_URL_UNPOOLED ?? cachedEnv.DATABASE_URL;
 }
 
+export function getDatabasePoolConfig() {
+  return {
+    connectionTimeoutMillis: cachedEnv.DATABASE_POOL_CONNECTION_TIMEOUT_MS,
+    idleTimeoutMillis: cachedEnv.DATABASE_POOL_IDLE_TIMEOUT_MS,
+    max: cachedEnv.DATABASE_POOL_MAX,
+    maxUses: cachedEnv.DATABASE_POOL_MAX_USES,
+  };
+}
+
 export function getBetterAuthSecret() {
   return (
     cachedEnv.BETTER_AUTH_SECRET ??
@@ -187,6 +205,18 @@ export function getTurnstileSiteKey() {
 
 export function getTurnstileSecretKey() {
   return cachedEnv.CF_TURNSTILE_SECRET_KEY;
+}
+
+export function getAuthTurnstileMode() {
+  if (cachedEnv.AUTH_TURNSTILE_MODE) {
+    return cachedEnv.AUTH_TURNSTILE_MODE;
+  }
+
+  return getDeploymentTarget() === "production" &&
+    cachedEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
+    cachedEnv.CF_TURNSTILE_SECRET_KEY
+    ? "enforce"
+    : "off";
 }
 
 export function getCloudflareConfig() {

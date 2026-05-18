@@ -1,5 +1,7 @@
 import { getCustomerOrderCards } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 import { isLocale } from "@snn/i18n";
+import { Heading } from "@snn/ui";
 
 import {
   BackToAccountLink,
@@ -18,13 +20,17 @@ export default async function OrdersPage({ params }: OrdersPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account/orders`);
-  const orders = await getCustomerOrderCards(user);
+  const orders = await tracePerformance(
+    "storefront.account.orders",
+    { locale: safeLocale },
+    () => getCustomerOrderCards(user),
+  );
 
   return (
     <div className="accountSubpage__root__SW2j0">
       <BackToAccountLink locale={safeLocale} />
       <header className="accountSubpage__header__SW2j1">
-        <h1>Orders</h1>
+        <Heading as="h1">Orders</Heading>
       </header>
 
       {orders.length > 0 ? (

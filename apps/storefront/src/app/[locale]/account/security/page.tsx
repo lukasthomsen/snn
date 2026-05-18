@@ -1,7 +1,8 @@
 import { getAppOrigin } from "@snn/config";
-import { MetricCard } from "@snn/ui";
+import { Heading, MetricCard } from "@snn/ui";
 import { isLocale } from "@snn/i18n";
 import { getCustomerSecurityState } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 
 import { revokeSessionAction } from "../actions";
 import { requireAccountSession } from "../account-auth";
@@ -24,23 +25,33 @@ export default async function SecurityPage({ params }: SecurityPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account/security`);
-  const security = await getCustomerSecurityState(user);
+  const security = await tracePerformance(
+    "storefront.account.security",
+    { locale: safeLocale },
+    () => getCustomerSecurityState(user),
+  );
+  const authOrigin = getAppOrigin("auth");
+  const callbackURL = new URL(
+    `/${safeLocale}/account/security`,
+    getAppOrigin("storefront"),
+  ).toString();
+  const deleteCallbackURL = new URL(`/${safeLocale}`, getAppOrigin("storefront")).toString();
 
   return (
     <div className="account__stack__SW1a8">
       <header className="account__section-header__SW1a9">
-        <h2>Security</h2>
+        <Heading as="h1">Sign-in & security</Heading>
         <p className="account__muted__SW1aa">
-          Email verification, passkeys, password changes, and session control.
+          Manage email verification, password access, passkeys, 2FA, and active sessions.
         </p>
       </header>
 
       <div className="account__stats__SW1ab">
         <MetricCard
           grow
-          label="Email verified"
+          label="Email"
           size="lg"
-          value={security.emailVerified ? "Yes" : "No"}
+          value={security.emailVerified ? "Verified" : "Needs verification"}
         />
         <MetricCard
           grow
@@ -57,14 +68,22 @@ export default async function SecurityPage({ params }: SecurityPageProps) {
       </div>
 
       <SecurityActions
-        authOrigin={getAppOrigin("auth")}
+        authOrigin={authOrigin}
+        callbackURL={callbackURL}
+        deleteCallbackURL={deleteCallbackURL}
+        email={security.email}
+        emailManagedByProvider={security.emailManagedByProvider}
+        emailManagedByProviderIds={security.emailManagedByProviderIds}
+        emailVerified={security.emailVerified}
+        hasPassword={security.hasPassword}
+        linkedProviders={security.linkedProviders}
         locale={safeLocale}
         passkeyCount={security.passkeyCount}
         twoFactorEnabled={security.twoFactorEnabled}
       />
 
       <section className="account__panel__SW1ad">
-        <h3>Active sessions</h3>
+        <Heading as="h2">Active sessions</Heading>
         {security.activeSessions.length > 0 ? (
           <div className="account__list__SW1ae">
             {security.activeSessions.map((session) => (

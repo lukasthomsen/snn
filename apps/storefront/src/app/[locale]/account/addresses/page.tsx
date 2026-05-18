@@ -1,5 +1,6 @@
-import { Checkbox, EmptyState, TextField } from "@snn/ui";
+import { Checkbox, EmptyState, Heading, TextField } from "@snn/ui";
 import { getCustomerAddresses } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 import { isLocale } from "@snn/i18n";
 
 import {
@@ -34,7 +35,11 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "da";
   const { user } = await requireAccountSession(safeLocale, `/${safeLocale}/account/addresses`);
-  const addresses = await getCustomerAddresses(user);
+  const addresses = await tracePerformance(
+    "storefront.account.addresses",
+    { locale: safeLocale },
+    () => getCustomerAddresses(user),
+  );
   const mainAddress =
     addresses.find((address) => address.isDefaultShipping) ?? addresses[0];
 
@@ -42,13 +47,13 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
     <div className="accountSubpage__root__SW2j0">
       <BackToAccountLink locale={safeLocale} />
       <header className="accountSubpage__header__SW2j1">
-        <h1>Address book</h1>
+        <Heading as="h1">Address book</Heading>
       </header>
 
       <div className="accountAddressBook__root__SW2k0">
         <aside className="accountAddressBook__main__SW2k1">
           <section className="accountAddressBook__mainCard__SW2k2">
-            <h2>Main address</h2>
+            <Heading as="h2">Main address</Heading>
             {mainAddress ? (
               <address>
                 {formatAddressLines(mainAddress).map((line) => (
@@ -61,7 +66,7 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
           </section>
 
           <section className="accountAddressBook__add__SW2k3">
-            <h2>Add an address</h2>
+            <Heading as="h2">Add an address</Heading>
             <form action={createAddressAction.bind(null, safeLocale)}>
               <TextField fullWidth label="Label" name="label" placeholder="Home" size="md" />
               <TextField fullWidth label="First name" name="firstName" size="md" />
@@ -83,7 +88,7 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
         </aside>
 
         <section className="accountAddressBook__list__SW2k5">
-          <h2>Your addresses</h2>
+          <Heading as="h2">Your addresses</Heading>
           {addresses.length > 0 ? (
             addresses.map((address) => (
               <article className="accountAddressBook__card__SW2k6" key={address.id}>

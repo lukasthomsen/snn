@@ -92,6 +92,7 @@ export type CustomerAccountDashboard = {
   likedProductCount: number;
   orderCount: number;
   profile: CustomerProfileRecord;
+  recentOrderCards: CustomerOrderCard[];
   recentOrders: CustomerDashboardOrder[];
   rewards: CustomerRewardsPreview;
 };
@@ -127,6 +128,7 @@ export type AddressInput = {
 };
 
 export type ProfileInput = {
+  dateOfBirth?: string | null | undefined;
   firstName?: string | null | undefined;
   lastName?: string | null | undefined;
   phone?: string | null | undefined;
@@ -214,6 +216,44 @@ function nullableText(value: string | null | undefined) {
   const trimmed = value?.trim();
 
   return trimmed ? trimmed : null;
+}
+
+function nullableDateOfBirth(value: string | null | undefined) {
+  const dateOfBirth = nullableText(value);
+
+  if (!dateOfBirth) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+    throw new Error("Date of birth must use YYYY-MM-DD.");
+  }
+
+  const [yearText, monthText, dayText] = dateOfBirth.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error("Date of birth must be a valid date.");
+  }
+
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (date.getTime() >= todayUtc) {
+    throw new Error("Date of birth must be in the past.");
+  }
+
+  return dateOfBirth;
 }
 
 function assertCountryCode(value: string) {
@@ -708,6 +748,7 @@ export async function updateCustomerProfile(user: CustomerUser, input: ProfileIn
   const [updatedProfile] = await db
     .update(schema.customerProfiles)
     .set({
+      dateOfBirth: nullableDateOfBirth(input.dateOfBirth),
       firstName: nullableText(input.firstName),
       lastName: nullableText(input.lastName),
       phone: nullableText(input.phone),
@@ -843,28 +884,58 @@ export async function createPrivacyRequest(
 
 export async function getCustomerSecurityState(user: CustomerUser) {
   const db = getDb();
-  const [passkeyCount] = await db
-    .select({ value: count() })
-    .from(schema.passkeys)
-    .where(eq(schema.passkeys.userId, user.id));
-  const activeSessions = await db
-    .select({
-      id: schema.sessions.id,
-      token: schema.sessions.token,
-      ipAddress: schema.sessions.ipAddress,
-      userAgent: schema.sessions.userAgent,
-      createdAt: schema.sessions.createdAt,
-      expiresAt: schema.sessions.expiresAt,
-    })
-    .from(schema.sessions)
-    .where(and(eq(schema.sessions.userId, user.id), gt(schema.sessions.expiresAt, new Date())))
-    .orderBy(desc(schema.sessions.updatedAt))
-    .limit(10);
+  const [passkeyCountRows, activeSessions, linkedAccounts] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(schema.passkeys)
+      .where(eq(schema.passkeys.userId, user.id)),
+    db
+      .select({
+        id: schema.sessions.id,
+        token: schema.sessions.token,
+        ipAddress: schema.sessions.ipAddress,
+        userAgent: schema.sessions.userAgent,
+        createdAt: schema.sessions.createdAt,
+        expiresAt: schema.sessions.expiresAt,
+      })
+      .from(schema.sessions)
+      .where(and(eq(schema.sessions.userId, user.id), gt(schema.sessions.expiresAt, new Date())))
+      .orderBy(desc(schema.sessions.updatedAt))
+      .limit(10),
+    db
+      .select({
+        providerId: schema.accounts.providerId,
+        hasPassword: sql<boolean>`${schema.accounts.password} is not null`,
+      })
+      .from(schema.accounts)
+      .where(eq(schema.accounts.userId, user.id))
+      .orderBy(schema.accounts.createdAt),
+  ]);
+  const linkedProviders = Array.from(
+    new Set(linkedAccounts.map((account) => account.providerId)),
+  );
+  const hasPassword = linkedAccounts.some((account) =>
+    account.hasPassword ||
+    account.providerId === "credential" ||
+    account.providerId === "email-password",
+  );
+  const emailManagedByProviderIds = linkedProviders.filter((providerId) =>
+    providerId === "apple" || providerId === "google",
+  );
+  const emailManagedByProvider = emailManagedByProviderIds.length > 0;
+  const googleLinked = linkedProviders.includes("google");
 
   return {
     activeSessions,
+    canChangeEmail: !emailManagedByProvider,
+    email: user.email,
+    emailManagedByProvider,
+    emailManagedByProviderIds,
     emailVerified: user.emailVerified,
-    passkeyCount: passkeyCount?.value ?? 0,
+    googleLinked,
+    hasPassword,
+    linkedProviders,
+    passkeyCount: passkeyCountRows[0]?.value ?? 0,
     twoFactorEnabled: user.twoFactorEnabled === true,
   };
 }
@@ -898,6 +969,7 @@ export async function getCustomerAccountDashboard(user: CustomerUser) {
     db
       .select({
         currencyCode: schema.orders.currencyCode,
+        email: schema.orders.email,
         id: schema.orders.id,
         orderCount: sql<number>`(count(*) over())::int`,
         orderNumber: schema.orders.orderNumber,
@@ -925,7 +997,16 @@ export async function getCustomerAccountDashboard(user: CustomerUser) {
   const orderCount = Number(recentOrderRows[0]?.orderCount ?? 0);
   const likedProductCount = Number(likedProductCountRows[0]?.value ?? 0);
   const totalOrderAmount = Number(recentOrderRows[0]?.totalOrderAmount ?? 0);
-  const recentOrders = recentOrderRows.map((order) => ({
+  const recentOrderSummaries = recentOrderRows.map((order) => ({
+    currencyCode: order.currencyCode,
+    email: order.email,
+    id: order.id,
+    orderNumber: order.orderNumber,
+    placedAt: order.placedAt,
+    status: order.status,
+    totalAmount: order.totalAmount,
+  }));
+  const recentOrders = recentOrderSummaries.map((order) => ({
     currencyCode: order.currencyCode,
     id: order.id,
     orderNumber: order.orderNumber,
@@ -933,6 +1014,7 @@ export async function getCustomerAccountDashboard(user: CustomerUser) {
     status: order.status,
     totalAmount: order.totalAmount,
   }));
+  const recentOrderCards = await getOrderCardsFromSummaries(recentOrderSummaries);
   const rewards = buildCustomerRewardsPreviewFromStats({
     addressCount,
     addressUpdatedAt: defaultAddressWithCount?.updatedAt,
@@ -963,6 +1045,7 @@ export async function getCustomerAccountDashboard(user: CustomerUser) {
     likedProductCount,
     orderCount,
     profile,
+    recentOrderCards,
     recentOrders,
     rewards,
   } satisfies CustomerAccountDashboard;

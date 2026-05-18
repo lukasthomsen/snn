@@ -4,14 +4,20 @@ import { passkey } from "@better-auth/passkey";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
-import { createAuthMiddleware, freshSessionMiddleware } from "better-auth/api";
+import {
+  APIError,
+  createAuthMiddleware,
+  freshSessionMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { admin, haveIBeenPwned, twoFactor } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { admin, emailOTP, haveIBeenPwned, twoFactor } from "better-auth/plugins";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import {
   getAppOrigin,
   getAuthAllowedHosts,
+  getAuthTurnstileMode,
   getBetterAuthInfrastructureConfig,
   getBetterAuthSecret,
   getCanonicalAuthOrigin,
@@ -25,6 +31,17 @@ import {
 import { getDb, schema } from "@snn/db";
 
 import { sendAuthActionEmail } from "./email";
+import {
+  authAppName,
+  authPasswordPolicy,
+  authTurnstileHeaderName,
+  authTurnstileProtectedPaths,
+  internalAuthRequestHeaderName,
+  isStrongPassword,
+  normalizeDateOfBirth,
+  nullableText,
+} from "./policy";
+import { validateTurnstileToken } from "./turnstile";
 
 type BetterAuthOptions = Parameters<typeof betterAuth>[0];
 
@@ -38,7 +55,9 @@ const authSchema = {
   passkey: schema.passkeys,
 };
 
-const appName = "Veloro";
+const emailVerificationExpiresIn = 60 * 60 * 24;
+const emailVerificationCodeExpiresIn = 10 * 60;
+const appName = authAppName;
 
 function getPasskeyRpId() {
   if (getDeploymentTarget() === "local") {
@@ -64,7 +83,10 @@ async function ensureCustomerProfileForVerifiedUser(user: {
   const db = getDb();
   const email = user.email.trim().toLowerCase();
   const [existingProfile] = await db
-    .select()
+    .select({
+      id: schema.customerProfiles.id,
+      userId: schema.customerProfiles.userId,
+    })
     .from(schema.customerProfiles)
     .where(eq(schema.customerProfiles.email, email))
     .limit(1);
@@ -90,6 +112,335 @@ async function ensureCustomerProfileForVerifiedUser(user: {
     firstName: firstName ?? null,
     lastName: lastNameParts.length > 0 ? lastNameParts.join(" ") : null,
     userId: user.id,
+  });
+}
+
+function getRequestBody(body: unknown) {
+  return body && typeof body === "object"
+    ? body as Record<string, unknown>
+    : {};
+}
+
+type AuthTurnstileContext = {
+  headers?: Headers | undefined;
+  path: string;
+  request?: Request | undefined;
+};
+
+function getAuthMiddlewareHeaders(ctx: AuthTurnstileContext) {
+  return ctx.request?.headers ?? ctx.headers;
+}
+
+function getHeader(headers: Headers | undefined, name: string) {
+  return headers?.get(name) ?? undefined;
+}
+
+function getRequestRemoteIp(headers: Headers | undefined) {
+  const forwardedFor = getHeader(headers, "x-forwarded-for");
+
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim();
+  }
+
+  return getHeader(headers, "cf-connecting-ip") ?? getHeader(headers, "x-real-ip");
+}
+
+function getTurnstileActionForPath(path: string) {
+  return authTurnstileProtectedPaths[
+    path as keyof typeof authTurnstileProtectedPaths
+  ];
+}
+
+async function validateAuthTurnstileForPath(ctx: AuthTurnstileContext) {
+  const expectedAction = getTurnstileActionForPath(ctx.path);
+
+  if (!expectedAction) {
+    return;
+  }
+
+  const headers = getAuthMiddlewareHeaders(ctx);
+
+  if (
+    !ctx.request &&
+    getHeader(headers, internalAuthRequestHeaderName) === "1"
+  ) {
+    return;
+  }
+
+  const mode = getAuthTurnstileMode();
+
+  if (mode === "off") {
+    return;
+  }
+
+  const result = await validateTurnstileToken({
+    expectedAction,
+    idempotencyKey: getHeader(headers, "x-vercel-id"),
+    remoteIp: getRequestRemoteIp(headers),
+    token: getHeader(headers, authTurnstileHeaderName) ?? "",
+  });
+
+  if (result.success) {
+    return;
+  }
+
+  globalThis.console.warn("[auth] Turnstile challenge failed", {
+    errors: result.errors,
+    mode,
+    path: ctx.path,
+  });
+
+  if (mode === "report") {
+    return;
+  }
+
+  throw new APIError("FORBIDDEN", {
+    code: "TURNSTILE_REQUIRED",
+    message: "Security check failed. Please try again.",
+  });
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getDatabaseErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object") {
+    return undefined;
+  }
+
+  if ("code" in error && typeof error.code === "string") {
+    return error.code;
+  }
+
+  if ("cause" in error) {
+    return getDatabaseErrorCode(error.cause);
+  }
+
+  return undefined;
+}
+
+function isMissingDateOfBirthColumnError(error: unknown) {
+  return (
+    getDatabaseErrorCode(error) === "42703" &&
+    getErrorMessage(error).includes("date_of_birth")
+  );
+}
+
+function warnAboutProfileSyncFailure(context: string, error: unknown) {
+  globalThis.console.warn(
+    `[auth] Customer profile sync skipped during ${context}: ${getErrorMessage(error)}`,
+  );
+}
+
+type ExistingAuthUser = {
+  emailVerified: boolean;
+  id: string;
+};
+
+type ExistingAuthAccount = {
+  hasPassword: boolean;
+  providerId: string;
+};
+
+const credentialProviderIds = new Set(["credential", "email-password"]);
+const socialEmailProviderIds = new Set(["apple", "google"]);
+
+function hasCredentialPasswordAccount(accounts: ExistingAuthAccount[]) {
+  return accounts.some((account) =>
+    credentialProviderIds.has(account.providerId) && account.hasPassword,
+  );
+}
+
+function hasSocialEmailProvider(accounts: ExistingAuthAccount[]) {
+  return accounts.some((account) => socialEmailProviderIds.has(account.providerId));
+}
+
+async function getAuthUserByEmail(email: string) {
+  const [user] = await getDb()
+    .select({
+      emailVerified: schema.users.emailVerified,
+      id: schema.users.id,
+    })
+    .from(schema.users)
+    .where(eq(schema.users.email, email))
+    .limit(1);
+
+  return user;
+}
+
+async function getAuthAccountsByUserId(userId: string) {
+  return getDb()
+    .select({
+      hasPassword: sql<boolean>`${schema.accounts.password} is not null`,
+      providerId: schema.accounts.providerId,
+    })
+    .from(schema.accounts)
+    .where(eq(schema.accounts.userId, userId));
+}
+
+function canSendCredentialVerification(input: {
+  accounts: ExistingAuthAccount[];
+  user: ExistingAuthUser;
+}) {
+  return (
+    !input.user.emailVerified &&
+    hasCredentialPasswordAccount(input.accounts) &&
+    !hasSocialEmailProvider(input.accounts)
+  );
+}
+
+async function assertCredentialSignUpCanUseEmail(email: string) {
+  const existingUser = await getAuthUserByEmail(email);
+
+  if (!existingUser) {
+    return;
+  }
+
+  const accounts = await getAuthAccountsByUserId(existingUser.id);
+
+  if (canSendCredentialVerification({ accounts, user: existingUser })) {
+    return;
+  }
+
+  if (hasSocialEmailProvider(accounts)) {
+    throw new APIError("BAD_REQUEST", {
+      code: "EMAIL_MANAGED_BY_SOCIAL_PROVIDER",
+      message: "This email is already connected to Google or Apple sign-in.",
+    });
+  }
+
+  throw new APIError("BAD_REQUEST", {
+    code: "EMAIL_ALREADY_REGISTERED",
+    message: "An account with this email already exists.",
+  });
+}
+
+async function sendExistingCredentialVerification(input: {
+  request: Request | undefined;
+  user: ExistingAuthUser & { email: string };
+}) {
+  const accounts = await getAuthAccountsByUserId(input.user.id);
+
+  if (!canSendCredentialVerification({ accounts, user: input.user })) {
+    return;
+  }
+
+  const headers = new Headers(input.request?.headers);
+  headers.set(internalAuthRequestHeaderName, "1");
+
+  await auth.api.sendVerificationOTP({
+    body: {
+      email: input.user.email,
+      type: "email-verification",
+    },
+    headers,
+  });
+}
+
+async function upsertCustomerProfileForSignUp(input: {
+  dateOfBirth: unknown;
+  email: string;
+  firstName: unknown;
+  lastName: unknown;
+  name: string;
+  userId: string;
+}) {
+  const email = input.email.trim().toLowerCase();
+  const [fallbackFirstName, ...fallbackLastNameParts] = input.name.trim().split(/\s+/).filter(Boolean);
+  const firstName = nullableText(input.firstName) ?? fallbackFirstName ?? null;
+  const lastName = nullableText(input.lastName) ??
+    (fallbackLastNameParts.length > 0 ? fallbackLastNameParts.join(" ") : null);
+  const dateOfBirth = normalizeDateOfBirth(input.dateOfBirth);
+  const now = new Date();
+
+  try {
+    await getDb()
+      .insert(schema.customerProfiles)
+      .values({
+        dateOfBirth,
+        email,
+        firstName,
+        lastName,
+        userId: input.userId,
+      })
+      .onConflictDoUpdate({
+        target: schema.customerProfiles.email,
+        set: {
+          dateOfBirth,
+          firstName,
+          lastName,
+          updatedAt: now,
+          userId: input.userId,
+        },
+      });
+  } catch (error) {
+    if (!isMissingDateOfBirthColumnError(error)) {
+      throw error;
+    }
+
+    warnAboutProfileSyncFailure("sign-up date of birth write", error);
+    await getDb()
+      .insert(schema.customerProfiles)
+      .values({
+        email,
+        firstName,
+        lastName,
+        userId: input.userId,
+      })
+      .onConflictDoUpdate({
+        target: schema.customerProfiles.email,
+        set: {
+          firstName,
+          lastName,
+          updatedAt: now,
+          userId: input.userId,
+        },
+      });
+  }
+}
+
+async function safelyEnsureCustomerProfileForVerifiedUser(user: {
+  id: string;
+  email: string;
+  name: string;
+}) {
+  try {
+    await ensureCustomerProfileForVerifiedUser(user);
+  } catch (error) {
+    warnAboutProfileSyncFailure("email verification", error);
+  }
+}
+
+async function safelyUpsertCustomerProfileForSignUp(input: {
+  dateOfBirth: unknown;
+  email: string;
+  firstName: unknown;
+  lastName: unknown;
+  name: string;
+  userId: string;
+}) {
+  try {
+    await upsertCustomerProfileForSignUp(input);
+  } catch (error) {
+    warnAboutProfileSyncFailure("sign-up", error);
+  }
+}
+
+async function deleteCustomerProfileForDeletedUser(user: { id: string }) {
+  await getDb().transaction(async (tx) => {
+    await tx.insert(schema.auditLogs).values({
+      action: "customer_account.deleted",
+      actorType: "customer",
+      actorUserId: user.id,
+      entityId: user.id,
+      entityType: "user",
+      metadata: {},
+    });
+
+    await tx
+      .delete(schema.customerProfiles)
+      .where(eq(schema.customerProfiles.userId, user.id));
   });
 }
 
@@ -149,6 +500,10 @@ const socialProviders = await buildSocialProviders();
 const cookieDomain = getCookieDomain();
 const betterAuthInfrastructure = getBetterAuthInfrastructureConfig();
 const freshSessionPaths = new Set([
+  "/change-email",
+  "/change-password",
+  "/delete-user",
+  "/set-password",
   "/two-factor/enable",
   "/two-factor/disable",
   "/two-factor/generate-backup-codes",
@@ -177,6 +532,28 @@ const authPlugins = [
     twoFactorCookieMaxAge: 10 * 60,
     trustDeviceMaxAge: 30 * 24 * 60 * 60,
   }),
+  emailOTP({
+    allowedAttempts: 5,
+    expiresIn: emailVerificationCodeExpiresIn,
+    otpLength: 8,
+    overrideDefaultEmailVerification: true,
+    resendStrategy: "reuse",
+    async sendVerificationOTP({ email, otp, type }) {
+      if (type !== "email-verification") {
+        return;
+      }
+
+      await sendAuthActionEmail({
+        actionCode: otp,
+        appName,
+        expirationMinutes: Math.floor(emailVerificationCodeExpiresIn / 60),
+        kind: "verify-email",
+        to: email,
+        userName: "",
+      });
+    },
+    storeOTP: "encrypted",
+  }),
   passkey({
     rpID: getPasskeyRpId(),
     rpName: appName,
@@ -186,6 +563,7 @@ const authPlugins = [
   haveIBeenPwned({
     customPasswordCompromisedMessage:
       "This password has appeared in a data breach. Please choose a different password.",
+    paths: ["/sign-up/email", "/change-password", "/reset-password", "/set-password"],
   }),
   nextCookies(),
 ];
@@ -202,11 +580,41 @@ export const auth = betterAuth({
     provider: "pg",
     schema: authSchema,
   }),
+  user: {
+    changeEmail: {
+      enabled: true,
+      async sendChangeEmailConfirmation({ user, newEmail, url }) {
+        await sendAuthActionEmail({
+          actionUrl: url,
+          appName,
+          expirationMinutes: 1440,
+          kind: "change-email",
+          newEmail,
+          to: user.email,
+          userName: user.name,
+        });
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      beforeDelete: deleteCustomerProfileForDeletedUser,
+    },
+  },
   emailAndPassword: {
     enabled: true,
-    minPasswordLength: 8,
-    maxPasswordLength: 128,
+    minPasswordLength: authPasswordPolicy.minLength,
+    maxPasswordLength: authPasswordPolicy.maxLength,
     requireEmailVerification: true,
+    async onExistingUserSignUp({ user }, request) {
+      await sendExistingCredentialVerification({
+        request,
+        user: {
+          email: user.email,
+          emailVerified: user.emailVerified,
+          id: user.id,
+        },
+      });
+    },
     resetPasswordTokenExpiresIn: 60 * 60,
     revokeSessionsOnPasswordReset: true,
     customSyntheticUser({ additionalFields, coreFields, id }) {
@@ -234,22 +642,12 @@ export const auth = betterAuth({
   },
   emailVerification: {
     async afterEmailVerification(user) {
-      await ensureCustomerProfileForVerifiedUser(user);
+      await safelyEnsureCustomerProfileForVerifiedUser(user);
     },
     autoSignInAfterVerification: true,
-    expiresIn: 60 * 60 * 24,
+    expiresIn: emailVerificationExpiresIn,
     sendOnSignIn: true,
     sendOnSignUp: true,
-    async sendVerificationEmail({ user, url }) {
-      await sendAuthActionEmail({
-        actionUrl: url,
-        appName,
-        expirationMinutes: 1440,
-        kind: "verify-email",
-        to: user.email,
-        userName: user.name,
-      });
-    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30,
@@ -300,8 +698,91 @@ export const auth = betterAuth({
       },
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        async after(user, ctx) {
+          if (ctx?.path === "/sign-up/email") {
+            const body = getRequestBody(ctx.body);
+
+            await safelyUpsertCustomerProfileForSignUp({
+              dateOfBirth: body.dateOfBirth,
+              email: user.email,
+              firstName: body.firstName,
+              lastName: body.lastName,
+              name: user.name,
+              userId: user.id,
+            });
+
+            return;
+          }
+
+          if (user.emailVerified) {
+            await safelyEnsureCustomerProfileForVerifiedUser(user);
+          }
+        },
+      },
+    },
+  },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      await validateAuthTurnstileForPath(ctx);
+
+      if (ctx.path === "/sign-up/email") {
+        const body = getRequestBody(ctx.body);
+        const firstName = nullableText(body.firstName);
+        const lastName = nullableText(body.lastName);
+        const email = nullableText(body.email)?.toLowerCase();
+        const password = typeof body.password === "string" ? body.password : "";
+        const dateOfBirthInput = nullableText(body.dateOfBirth);
+        const dateOfBirth = normalizeDateOfBirth(body.dateOfBirth);
+
+        if (!firstName || !lastName || !email || !password) {
+          throw new APIError("BAD_REQUEST", {
+            message: "First name, last name, email, and password are required.",
+          });
+        }
+
+        if (dateOfBirthInput && !dateOfBirth) {
+          throw new APIError("BAD_REQUEST", {
+            message: "Date of birth must be a valid past date.",
+          });
+        }
+
+        if (!isStrongPassword(password)) {
+          throw new APIError("BAD_REQUEST", {
+            message: "Password does not meet the requirements.",
+          });
+        }
+
+        await assertCredentialSignUpCanUseEmail(email);
+      }
+
+      if (ctx.path === "/change-email") {
+        const session = await getSessionFromCtx(ctx, {
+          disableCookieCache: true,
+        });
+
+        if (session?.user) {
+          const [managedEmailAccount] = await getDb()
+            .select({ providerId: schema.accounts.providerId })
+            .from(schema.accounts)
+            .where(
+              and(
+                eq(schema.accounts.userId, session.user.id),
+                inArray(schema.accounts.providerId, [...socialEmailProviderIds]),
+              ),
+            )
+            .limit(1);
+
+          if (managedEmailAccount) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Email is managed by Google or Apple sign-in.",
+            });
+          }
+        }
+      }
+
       if (freshSessionPaths.has(ctx.path)) {
         return freshSessionMiddleware(
           ctx as Parameters<typeof freshSessionMiddleware>[0],

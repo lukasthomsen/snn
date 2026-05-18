@@ -1,0 +1,1 @@
+ALTER TABLE "customer_profile" ADD COLUMN "date_of_birth" date;
