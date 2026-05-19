@@ -1,5 +1,4 @@
 {
-  "eyebrow": "SNN foundation",
   "title": "Butiksfundamentet er på plads før tema og forside.",
   "description": "Dette storefront-miljoe er sat op til fase 1: monorepo, auth, database, i18n, custom CSS og deployment-arkitektur. Naeste store skridt er temasystemet.",
   "phaseHeading": "Planlagt byggeraekkefoelge",

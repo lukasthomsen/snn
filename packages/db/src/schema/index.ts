@@ -5,5 +5,6 @@ export * from "./inventory";
 export * from "./media";
 export * from "./operations";
 export * from "./order";
+export * from "./product-review";
 export * from "./shared";
 export * from "./staff";

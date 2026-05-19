@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
@@ -63,6 +64,7 @@ export const cartItems = pgTable(
   },
   (table) => [
     index("cart_item_cart_idx").on(table.cartId),
+    uniqueIndex("cart_item_cart_variant_unique").on(table.cartId, table.variantId),
   ],
 );
 
@@ -94,6 +96,10 @@ export const orders = pgTable(
   (table) => [
     uniqueIndex("order_number_unique").on(table.orderNumber),
     uniqueIndex("order_cart_unique").on(table.cartId),
+    index("order_customer_idx").on(table.customerId),
+    index("order_email_idx").on(table.email),
+    index("order_email_lower_idx").on(sql`lower(${table.email})`),
+    index("order_placed_at_idx").on(table.placedAt),
   ],
 );
 

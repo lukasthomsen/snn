@@ -1,8 +1,14 @@
 .next
 .turbo
 node_modules
+node_modules.stale-*
 dist
 coverage
+perf-reports
+.lighthouseci
+.codex
+.DS_Store
+**/.DS_Store
 .env.local
 .env.development.local
 .env.production.local

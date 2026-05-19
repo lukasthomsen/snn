@@ -6,18 +6,26 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./policy": "./src/policy.ts",
+    "./turnstile": "./src/turnstile.ts",
     "./server": "./src/server.ts"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.9",
     "@better-auth/infra": "^0.2.5",
+    "@better-auth/passkey": "1.6.9",
+    "@simplewebauthn/browser": "13.3.0",
+    "@simplewebauthn/server": "13.3.0",
     "@snn/config": "workspace:*",
     "@snn/db": "workspace:*",
     "better-auth": "1.6.9",
-    "jose": "^6.1.2"
+    "drizzle-orm": "0.45.2",
+    "jose": "^6.1.2",
+    "resend": "^6.12.2"
   },
   "devDependencies": {
     "@snn/eslint-config": "workspace:*",

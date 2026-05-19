@@ -1,16 +1,31 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
-import { getDatabaseUrl } from "@snn/config";
+import { getDatabasePoolConfig, getDatabaseUrl } from "@snn/config";
 
 import * as schema from "./schema/index";
+import { instrumentPoolForPerformance } from "./performance";
 
 let database: ReturnType<typeof createDatabase> | undefined;
+let pool: Pool | undefined;
 
 function createDatabase() {
-  const sql = neon(getDatabaseUrl());
+  const poolConfig = getDatabasePoolConfig();
 
-  return drizzle(sql, { schema });
+  pool = new Pool({
+    connectionString: getDatabaseUrl(),
+    ...(poolConfig.connectionTimeoutMillis
+      ? { connectionTimeoutMillis: poolConfig.connectionTimeoutMillis }
+      : {}),
+    ...(poolConfig.idleTimeoutMillis
+      ? { idleTimeoutMillis: poolConfig.idleTimeoutMillis }
+      : {}),
+    ...(poolConfig.max ? { max: poolConfig.max } : {}),
+    ...(poolConfig.maxUses ? { maxUses: poolConfig.maxUses } : {}),
+  });
+  instrumentPoolForPerformance(pool);
+
+  return drizzle(pool, { schema });
 }
 
 export function getDb() {
@@ -21,3 +36,8 @@ export function getDb() {
   return database;
 }
 
+export async function closeDb() {
+  await pool?.end();
+  pool = undefined;
+  database = undefined;
+}

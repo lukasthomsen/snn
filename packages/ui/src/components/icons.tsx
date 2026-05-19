@@ -1,34 +1,67 @@
 import {
   Check,
-  ChevronDown,
+  CheckCircle,
+  CheckCircleSolid,
+  Clock,
+  CreditCard,
   Eye,
-  EyeOff,
+  EyeClosed,
   Globe,
   Heart,
+  HelpCircle,
+  InfoCircle,
+  InfoCircleSolid,
+  JournalPage,
+  Lock,
+  Mail,
+  MailIn,
   Minus,
+  NavArrowDown,
+  NavArrowRight,
+  Notes,
+  OpenBook,
+  Package,
+  PercentageCircle,
   Plus,
+  Ruler,
   Search,
+  ShareAndroid,
+  ShieldCheck,
+  SmartphoneDevice,
   ShoppingBag,
-  X,
-  type LucideProps,
-} from "lucide-react";
-import type { ComponentType, SVGAttributes } from "react";
+  Star,
+  Truck,
+  User,
+  Xmark,
+} from "iconoir-react";
+import type {
+  ForwardRefExoticComponent,
+  RefAttributes,
+  SVGAttributes,
+  SVGProps as ReactSvgProps,
+} from "react";
 
 type BrandIconProps = SVGAttributes<SVGSVGElement> & {
   size?: number;
 };
 
-type LucideIconProps = Omit<LucideProps, "size"> & {
+type IconoirIconProps = Omit<ReactSvgProps<SVGSVGElement>, "height" | "width"> & {
   size?: number;
 };
 
-function withLucideDefaults(Icon: ComponentType<LucideProps>) {
-  return function LucideWrapper({
+type IconoirComponent = ForwardRefExoticComponent<
+  Omit<ReactSvgProps<SVGSVGElement>, "ref"> & RefAttributes<SVGSVGElement>
+>;
+
+function withIconoirDefaults(IconInput: unknown) {
+  const Icon = IconInput as IconoirComponent;
+
+  return function IconoirWrapper({
     size = 18,
     strokeWidth = 1.8,
     ...props
-  }: LucideIconProps) {
-    return <Icon {...props} size={size} strokeWidth={strokeWidth} />;
+  }: IconoirIconProps) {
+    return <Icon {...props} height={size} strokeWidth={strokeWidth} width={size} />;
   };
 }
 
@@ -79,14 +112,37 @@ export function AppleLogoIcon({ size = 18, ...props }: BrandIconProps) {
   );
 }
 
-export const CheckIcon = withLucideDefaults(Check);
-export const ChevronDownIcon = withLucideDefaults(ChevronDown);
-export const EyeIcon = withLucideDefaults(Eye);
-export const EyeOffIcon = withLucideDefaults(EyeOff);
-export const GlobeIcon = withLucideDefaults(Globe);
-export const HeartIcon = withLucideDefaults(Heart);
-export const MinusIcon = withLucideDefaults(Minus);
-export const PlusIcon = withLucideDefaults(Plus);
-export const SearchIcon = withLucideDefaults(Search);
-export const ShoppingBagIcon = withLucideDefaults(ShoppingBag);
-export const XIcon = withLucideDefaults(X);
+export const CheckIcon = withIconoirDefaults(Check);
+export const CheckCircleIcon = withIconoirDefaults(CheckCircle);
+export const CheckCircleSolidIcon = withIconoirDefaults(CheckCircleSolid);
+export const BadgePercentIcon = withIconoirDefaults(PercentageCircle);
+export const BookOpenIcon = withIconoirDefaults(OpenBook);
+export const ChevronDownIcon = withIconoirDefaults(NavArrowDown);
+export const ChevronRightIcon = withIconoirDefaults(NavArrowRight);
+export const CircleHelpIcon = withIconoirDefaults(HelpCircle);
+export const Clock3Icon = withIconoirDefaults(Clock);
+export const CreditCardIcon = withIconoirDefaults(CreditCard);
+export const EyeIcon = withIconoirDefaults(Eye);
+export const EyeOffIcon = withIconoirDefaults(EyeClosed);
+export const GlobeIcon = withIconoirDefaults(Globe);
+export const HeartIcon = withIconoirDefaults(Heart);
+export const InfoCircleIcon = withIconoirDefaults(InfoCircle);
+export const InfoCircleSolidIcon = withIconoirDefaults(InfoCircleSolid);
+export const LockKeyholeIcon = withIconoirDefaults(Lock);
+export const MailIcon = withIconoirDefaults(Mail);
+export const MailPlusIcon = withIconoirDefaults(MailIn);
+export const MinusIcon = withIconoirDefaults(Minus);
+export const NewspaperIcon = withIconoirDefaults(JournalPage);
+export const NotebookTextIcon = withIconoirDefaults(Notes);
+export const PackageOpenIcon = withIconoirDefaults(Package);
+export const PlusIcon = withIconoirDefaults(Plus);
+export const RulerIcon = withIconoirDefaults(Ruler);
+export const SearchIcon = withIconoirDefaults(Search);
+export const ShareIcon = withIconoirDefaults(ShareAndroid);
+export const ShieldCheckIcon = withIconoirDefaults(ShieldCheck);
+export const SmartphoneIcon = withIconoirDefaults(SmartphoneDevice);
+export const ShoppingBagIcon = withIconoirDefaults(ShoppingBag);
+export const StarIcon = withIconoirDefaults(Star);
+export const TruckIcon = withIconoirDefaults(Truck);
+export const UserIcon = withIconoirDefaults(User);
+export const XIcon = withIconoirDefaults(Xmark);

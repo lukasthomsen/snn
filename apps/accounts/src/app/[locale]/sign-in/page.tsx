@@ -1,11 +1,22 @@
+import type { Route } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getCustomerSession } from "@snn/customer";
+import { authTurnstileActions } from "@snn/auth/policy";
 import { isLocale } from "@snn/i18n";
 
 import {
   getAccountAuthPath,
+  getAccountAuthURL,
+  getAuthCompleteURL,
+  getFirstParam,
   getStorefrontFooterURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
+import { getAuthTurnstileChallenge } from "../auth-turnstile";
 import { AuthPage } from "../components/auth-page";
+import { SignInFlow } from "../components/sign-in-flow";
 
 type SignInPageProps = {
   params: Promise<{
@@ -14,10 +25,11 @@ type SignInPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+export const dynamic = "force-dynamic";
+
 const signInCopy = {
   da: {
     appleLabel: "Fortsæt med Apple",
-    body: "Log ind for at holde din rutine samlet og klar.",
     brandFooter: "2026 SNN. Alle rettigheder forbeholdes.",
     brandStatements: [
       {
@@ -36,18 +48,44 @@ const signInCopy = {
     brandTitle: "Bygget til den daglige stack.",
     dividerText: "eller fortsæt med",
     emailLabel: "E-mailadresse",
-    emailPlaceholder: "dig@example.com",
+    messages: {
+      authIncomplete: "Login blev ikke gennemført. Prøv igen.",
+      emailInvalid: "Angiv en gyldig e-mailadresse.",
+      emailRequired: "E-mailadresse er påkrævet.",
+      genericError: "Forkert e-mail eller adgangskode",
+      networkError: "Der opstod en forbindelsesfejl. Prøv igen om lidt.",
+      oauthFailed: "Google-login blev ikke gennemført. Prøv igen.",
+      passwordRequired: "Adgangskode er påkrævet.",
+      required: "E-mail og adgangskode er påkrævet.",
+      unavailableProvider: "Denne login-metode er ikke klar endnu.",
+      turnstileRequired: "Gennemfør sikkerhedstjekket for at fortsætte.",
+      turnstileUnavailable: "Sikkerhedstjekket kunne ikke indlæses. Prøv igen.",
+      verificationRequired: "Bekræft din e-mailadresse, før du logger ind.",
+    },
+    forgotPasswordLabel: "Glemt adgangskode?",
     googleLabel: "Fortsæt med Google",
     passwordLabel: "Adgangskode",
-    passwordPlaceholder: "Indtast din adgangskode",
     primaryAction: "Log ind",
     secondaryActionLabel: "Opret en",
     secondaryActionText: "Har du brug for en konto?",
-    title: "Welcome back!",
+    title: "Velkommen tilbage!",
+    verificationStage: {
+      backLabel: "Tilbage til log ind",
+      body: "Vi har sendt en kode til",
+      codeError: "Indtast den 8-cifrede kode.",
+      resendError: "Vi kunne ikke sende en ny kode. Prøv igen om lidt.",
+      resendLabel: "Send igen",
+      resendPrompt: "Har du ikke modtaget en kode?",
+      resendSuccess: "Ny bekræftelseskode sendt.",
+      resendingLabel: "Sender...",
+      title: "Bekræft konto",
+      verifyError: "Koden er forkert eller udløbet.",
+      verifyLabel: "Bekræft e-mail",
+      verifyingLabel: "Bekræfter...",
+    },
   },
   en: {
     appleLabel: "Continue with Apple",
-    body: "Sign in to keep your routine organized and ready.",
     brandFooter: "2026 SNN. All rights reserved.",
     brandStatements: [
       {
@@ -66,14 +104,41 @@ const signInCopy = {
     brandTitle: "Built for the daily stack.",
     dividerText: "or continue with",
     emailLabel: "Email address",
-    emailPlaceholder: "you@example.com",
+    messages: {
+      authIncomplete: "Sign-in was not completed. Please try again.",
+      emailInvalid: "Enter a valid email address.",
+      emailRequired: "Email address is required.",
+      genericError: "Wrong email or password",
+      networkError: "A connection error occurred. Please try again shortly.",
+      oauthFailed: "Google sign-in was not completed. Please try again.",
+      passwordRequired: "Password is required.",
+      required: "Email and password are required.",
+      unavailableProvider: "This sign-in method is not ready yet.",
+      turnstileRequired: "Complete the security check to continue.",
+      turnstileUnavailable: "The security check could not load. Please try again.",
+      verificationRequired: "Verify your email address before signing in.",
+    },
+    forgotPasswordLabel: "Forgot password?",
     googleLabel: "Continue with Google",
     passwordLabel: "Password",
-    passwordPlaceholder: "Enter password",
     primaryAction: "Sign in",
     secondaryActionLabel: "Create one",
     secondaryActionText: "Need an account?",
     title: "Welcome back!",
+    verificationStage: {
+      backLabel: "Back to sign in",
+      body: "We've sent a code to",
+      codeError: "Enter the 8-digit code.",
+      resendError: "We could not send a new code. Please try again shortly.",
+      resendLabel: "Resend",
+      resendPrompt: "Didn't receive a code?",
+      resendSuccess: "New verification code sent.",
+      resendingLabel: "Sending...",
+      title: "Verify account",
+      verifyError: "The code is wrong or expired.",
+      verifyLabel: "Verify email",
+      verifyingLabel: "Verifying...",
+    },
   },
 } as const;
 
@@ -88,33 +153,28 @@ export default async function SignInPage({
   const safeLocale = isLocale(locale) ? locale : "da";
   const copy = signInCopy[safeLocale];
   const callbackURL = resolvePostAuthCallbackURL(resolvedSearchParams, safeLocale);
+  const authCompleteURL = getAuthCompleteURL(safeLocale, callbackURL);
+  const session = await getCustomerSession(await headers()).catch(() => null);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
+  const initialError = getInitialError(
+    getFirstParam(resolvedSearchParams.error),
+    copy.messages,
+  );
+  const turnstileCopy = {
+    requiredMessage: copy.messages.turnstileRequired,
+    unavailableMessage: copy.messages.turnstileUnavailable,
+  };
+
+  if (session?.user && !session.user.banned && session.user.emailVerified) {
+    redirect(callbackURL as Route);
+  }
 
   return (
     <AuthPage
-      appleLabel={copy.appleLabel}
-      body={copy.body}
       brandFooter={copy.brandFooter}
+      brandPresentation="quote"
       brandStatements={[...copy.brandStatements]}
       brandTitle={copy.brandTitle}
-      callbackURL={callbackURL}
-      dividerText={copy.dividerText}
-      fields={[
-        {
-          autoComplete: "email",
-          label: copy.emailLabel,
-          name: "email",
-          placeholder: copy.emailPlaceholder,
-          type: "email",
-        },
-        {
-          autoComplete: "current-password",
-          label: copy.passwordLabel,
-          name: "password",
-          placeholder: copy.passwordPlaceholder,
-          type: "password",
-        },
-      ]}
       finePrint={
         <>
           {safeLocale === "da"
@@ -123,19 +183,88 @@ export default async function SignInPage({
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "vilkår" : "terms"}
           </a>
-          {" and "}
+          {safeLocale === "da" ? " og " : " and "}
           <a href={storefrontFooterURL}>
             {safeLocale === "da" ? "privatlivspolitik" : "privacy policy"}
           </a>
           .
         </>
       }
-      googleLabel={copy.googleLabel}
-      primaryAction={copy.primaryAction}
       secondaryActionHref={getAccountAuthPath(safeLocale, "sign-up", callbackURL)}
       secondaryActionLabel={copy.secondaryActionLabel}
       secondaryActionText={copy.secondaryActionText}
       title={copy.title}
-    />
+    >
+      <SignInFlow
+        dividerText={copy.dividerText}
+        form={{
+          callbackURL: authCompleteURL,
+          emailLabel: copy.emailLabel,
+          forgotPasswordHref: getAccountAuthPath(
+            safeLocale,
+            "forgot-password",
+            callbackURL,
+          ),
+          forgotPasswordLabel: copy.forgotPasswordLabel,
+          initialError,
+          messages: {
+            emailInvalid: copy.messages.emailInvalid,
+            emailRequired: copy.messages.emailRequired,
+            genericError: copy.messages.genericError,
+            networkError: copy.messages.networkError,
+            passwordRequired: copy.messages.passwordRequired,
+            required: copy.messages.required,
+            verificationRequired: copy.messages.verificationRequired,
+          },
+          passwordLabel: copy.passwordLabel,
+          primaryAction: copy.primaryAction,
+          turnstile: getAuthTurnstileChallenge(
+            authTurnstileActions.signIn,
+            turnstileCopy,
+          ),
+          twoFactorHref: getAccountAuthPath(safeLocale, "two-factor", callbackURL),
+        }}
+        social={{
+          appleLabel: copy.appleLabel,
+          callbackURL: authCompleteURL,
+          errorCallbackURL: getAccountAuthURL(safeLocale, "sign-in", callbackURL, {
+            error: "oauth_failed",
+          }),
+          googleLabel: copy.googleLabel,
+          messages: {
+            genericError: copy.messages.oauthFailed,
+            unavailable: copy.messages.unavailableProvider,
+          },
+          turnstile: getAuthTurnstileChallenge(
+            authTurnstileActions.socialSignIn,
+            turnstileCopy,
+          ),
+        }}
+        stage={copy.verificationStage}
+        verificationTurnstile={getAuthTurnstileChallenge(
+          authTurnstileActions.emailVerification,
+          turnstileCopy,
+        )}
+      />
+    </AuthPage>
   );
+}
+
+function getInitialError(
+  error: string | undefined,
+  messages: (typeof signInCopy)[keyof typeof signInCopy]["messages"],
+) {
+  if (error === "auth_incomplete") {
+    return messages.authIncomplete;
+  }
+
+  if (error === "oauth_failed") {
+    return messages.oauthFailed;
+  }
+
+  if (error === "verification_required") {
+    return messages.verificationRequired;
+  }
+
+  return undefined;
 }

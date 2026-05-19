@@ -1,7 +1,8 @@
-import { boolean, index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, date, index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { countryCode, createdAt, foreignUuid, primaryUuid, updatedAt } from "./shared";
 import { users } from "./auth";
+import { products, productVariants } from "./catalog";
 
 export const customerProfiles = pgTable(
   "customer_profile",
@@ -11,6 +12,7 @@ export const customerProfiles = pgTable(
     email: text("email").notNull(),
     firstName: text("first_name"),
     lastName: text("last_name"),
+    dateOfBirth: date("date_of_birth", { mode: "string" }),
     phone: text("phone"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -46,5 +48,28 @@ export const addresses = pgTable(
   },
   (table) => [
     index("address_customer_idx").on(table.customerId),
+  ],
+);
+
+export const customerProductLikes = pgTable(
+  "customer_product_like",
+  {
+    id: primaryUuid("id"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: foreignUuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    variantId: foreignUuid("variant_id")
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex("customer_product_like_user_variant_unique").on(table.userId, table.variantId),
+    index("customer_product_like_user_idx").on(table.userId),
+    index("customer_product_like_product_idx").on(table.productId),
+    index("customer_product_like_variant_idx").on(table.variantId),
   ],
 );

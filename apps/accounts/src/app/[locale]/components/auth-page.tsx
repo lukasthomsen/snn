@@ -1,51 +1,42 @@
 import type { ReactNode } from "react";
 
-import { Button, TextField } from "@snn/ui";
+import { Heading, Link } from "@snn/ui";
 
 import {
   AuthBrandCarousel,
   type AuthBrandStatement,
 } from "./auth-brand-carousel";
-import { AuthProviderButtons } from "./auth-provider-buttons";
-
-type AuthField = {
-  autoComplete: string;
-  label: string;
-  name: string;
-  placeholder: string;
-  type?: "email" | "password" | "text";
-};
 
 type AuthPageProps = {
-  appleLabel: string;
-  body: string;
   brandFooter: string;
+  brandPresentation?: "default" | "quote";
   brandStatements: AuthBrandStatement[];
   brandTitle: string;
-  callbackURL: string;
-  dividerText: string;
-  fields: AuthField[];
+  children: ReactNode;
   finePrint: ReactNode;
-  googleLabel: string;
-  primaryAction: string;
   secondaryActionHref: string;
   secondaryActionLabel: string;
   secondaryActionText: string;
   title: string;
 };
 
+export type AuthField = {
+  autoComplete?: string;
+  label: string;
+  maxLength?: number;
+  minLength?: number;
+  name: string;
+  placeholder?: string;
+  type?: string;
+};
+
 export function AuthPage({
-  appleLabel,
-  body,
   brandFooter,
+  brandPresentation = "default",
   brandStatements,
   brandTitle,
-  callbackURL,
-  dividerText,
-  fields,
+  children,
   finePrint,
-  googleLabel,
-  primaryAction,
   secondaryActionHref,
   secondaryActionLabel,
   secondaryActionText,
@@ -58,6 +49,7 @@ export function AuthPage({
           fallbackTitle={brandTitle}
           footer={brandFooter}
           statements={brandStatements}
+          variant={brandPresentation}
         />
       </aside>
 
@@ -67,54 +59,14 @@ export function AuthPage({
             <div className="auth__header__SW0fo">
               <p className="helper__copy__SW0fq">
                 {secondaryActionText}{" "}
-                <a
-                  className="inline__link__SW0fw"
-                  href={secondaryActionHref}
-                >
+                <Link href={secondaryActionHref} variant="underline">
                   {secondaryActionLabel}
-                </a>
+                </Link>
               </p>
-              <h3 id="auth-title">{title}</h3>
-              <p className="auth__copy__SW0fr">{body}</p>
+              <Heading as="h2" id="auth-title">{title}</Heading>
             </div>
 
-            <AuthProviderButtons
-              appleLabel={appleLabel}
-              callbackURL={callbackURL}
-              googleLabel={googleLabel}
-            />
-
-            <div className="auth-divider__root__SW0fv">
-              <span />
-              <p>{dividerText}</p>
-              <span />
-            </div>
-
-            <form className="auth__form__SW0fp" noValidate>
-              {fields.map((field) => (
-                <TextField
-                  autoComplete={field.autoComplete}
-                  fullWidth
-                  key={field.name}
-                  label={field.label}
-                  name={field.name}
-                  placeholder={field.placeholder}
-                  size="md"
-                  type={field.type ?? "text"}
-                />
-              ))}
-
-              <Button
-                className="submit__button__SW0fx"
-                fullWidth
-                size="lg"
-                type="button"
-              >
-                <span>{primaryAction}</span>
-                <span aria-hidden="true">→</span>
-              </Button>
-            </form>
-
+            {children}
             <p className="legal__copy__SW0fy">{finePrint}</p>
           </div>
         </div>

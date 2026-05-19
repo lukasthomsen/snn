@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Archivo, Public_Sans } from "next/font/google";
 import type { CSSProperties } from "react";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { isLocale, locales, type Locale } from "@snn/i18n";
 import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
@@ -9,17 +10,7 @@ import "@snn/ui/styles/base.css";
 
 import "./styles.css";
 
-const bodyFont = Public_Sans({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-public-sans",
-});
-
-const displayFont = Archivo({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
-});
+const shouldRenderVercelInsights = process.env.VERCEL === "1";
 
 type LocaleLayoutProps = Readonly<{
   children: React.ReactNode;
@@ -31,6 +22,14 @@ type LocaleLayoutProps = Readonly<{
 export const metadata: Metadata = {
   title: "SNN Accounts",
   description: "Central sign-in and account creation for SNN.",
+  icons: {
+    icon: [
+      {
+        type: "image/svg+xml",
+        url: "/icon.svg",
+      },
+    ],
+  },
 };
 
 export function generateStaticParams() {
@@ -45,12 +44,18 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   return (
-    <html className={`${bodyFont.variable} ${displayFont.variable}`} lang={locale as Locale}>
+    <html lang={locale as Locale}>
       <body
         data-theme="mono"
         style={themeToCssVariables(monoTheme) as CSSProperties}
       >
         <ThemeScope theme={monoTheme}>{children}</ThemeScope>
+        {shouldRenderVercelInsights ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );

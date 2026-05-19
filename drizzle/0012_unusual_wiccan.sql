@@ -1,0 +1,1 @@
+CREATE INDEX "order_email_lower_idx" ON "order" USING btree (lower("email"));

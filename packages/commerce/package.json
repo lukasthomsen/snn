@@ -7,7 +7,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@snn/db": "workspace:*",
+    "drizzle-orm": "0.45.2"
   },
   "devDependencies": {
     "@snn/eslint-config": "workspace:*",

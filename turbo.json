@@ -10,16 +10,24 @@
     "APPLE_KEY_ID",
     "APPLE_PRIVATE_KEY",
     "APPLE_TEAM_ID",
+    "AUTH_EMAIL_FROM",
+    "AUTH_EMAIL_REPLY_TO",
     "AUTH_SUBDOMAIN",
     "BASE_DOMAIN",
+    "BETTER_AUTH_API_KEY",
+    "BETTER_AUTH_API_URL",
+    "BETTER_AUTH_KV_URL",
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
+    "CLOUDFLARE_ACCOUNT_ID",
+    "CLOUDFLARE_API_TOKEN",
     "CLOUDFLARE_IMAGES_ACCOUNT_ID",
     "CLOUDFLARE_IMAGES_API_TOKEN",
     "CLOUDFLARE_IMAGES_DELIVERY_HASH",
     "CF_TURNSTILE_SECRET_KEY",
     "DATABASE_URL",
     "DATABASE_URL_UNPOOLED",
+    "ENABLE_PERFORMANCE_TRACE",
     "ENABLE_MEDIA_MANAGEMENT_IN_PRODUCTION",
     "ENABLE_THEME_LAB_IN_PRODUCTION",
     "GOOGLE_CLIENT_ID",
@@ -29,6 +37,7 @@
     "LOCAL_STOREFRONT_ORIGIN",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
     "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+    "RESEND_API_KEY",
     "STOREFRONT_SUBDOMAIN",
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
@@ -56,14 +65,30 @@
     "lint": {
       "dependsOn": [
         "^lint"
+      ],
+      "inputs": [
+        "eslint.config.*",
+        "src/**",
+        "package.json",
+        "tsconfig.json"
       ]
     },
     "typecheck": {
       "dependsOn": [
         "^typecheck"
+      ],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        ".next/types/**/*.ts",
+        ".next/dev/types/**/*.ts"
       ]
     },
     "db:generate": {
+      "cache": false
+    },
+    "clean": {
       "cache": false
     }
   }

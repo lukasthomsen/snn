@@ -5,9 +5,9 @@ import { getDb, schema } from "@snn/db";
 
 export const imageVariantNames = [
   "thumb",
-  "product-card",
-  "pdp-gallery",
-  "pdp-zoom",
+  "productcard",
+  "pdpgallery",
+  "pdpzoom",
   "hero",
 ] as const;
 
@@ -34,18 +34,18 @@ export const defaultImageVariants: Record<ImageVariantName, ImageVariantDefiniti
     neverRequireSignedURLs: true,
     options: { fit: "cover", height: 240, metadata: "none", width: 240 },
   },
-  "product-card": {
-    id: "product-card",
+  productcard: {
+    id: "productcard",
     neverRequireSignedURLs: true,
     options: { fit: "cover", height: 1200, metadata: "none", width: 960 },
   },
-  "pdp-gallery": {
-    id: "pdp-gallery",
+  pdpgallery: {
+    id: "pdpgallery",
     neverRequireSignedURLs: true,
     options: { fit: "contain", height: 1600, metadata: "none", width: 1600 },
   },
-  "pdp-zoom": {
-    id: "pdp-zoom",
+  pdpzoom: {
+    id: "pdpzoom",
     neverRequireSignedURLs: true,
     options: { fit: "contain", height: 2400, metadata: "keep", width: 2400 },
   },
@@ -77,6 +77,7 @@ type CloudflareImageRecord = {
   draft?: boolean;
   filename?: string;
   id?: string;
+  metadata?: Record<string, unknown>;
   meta?: Record<string, unknown>;
   requireSignedURLs?: boolean;
   uploaded?: string;
@@ -107,6 +108,15 @@ export type CreateDirectUploadInput = {
   requireSignedUrls?: boolean;
 };
 
+export type UploadCloudflareImageInput = {
+  bytes: string;
+  contentType: string;
+  customId?: string;
+  filename: string;
+  metadata?: Record<string, unknown>;
+  requireSignedUrls?: boolean;
+};
+
 export type MediaAssetDraftInput = {
   altText?: string;
   filename?: string;
@@ -122,7 +132,8 @@ function ensureCloudflareImagesEnabled() {
 
   if (!config.accountId || !config.apiToken) {
     throw new Error(
-      "Cloudflare Images is not configured. Set CLOUDFLARE_IMAGES_ACCOUNT_ID and CLOUDFLARE_IMAGES_API_TOKEN.",
+      "Cloudflare Images is not configured. Set CLOUDFLARE_IMAGES_ACCOUNT_ID/CLOUDFLARE_IMAGES_API_TOKEN " +
+        "or the shared CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_API_TOKEN fallback.",
     );
   }
 
@@ -185,7 +196,7 @@ function normalizeImageResult(result: CloudflareImageRecord): CloudflareImagesDe
     draft: Boolean(result.draft),
     ...(result.filename ? { filename: result.filename } : {}),
     id: result.id,
-    metadata: result.meta ?? {},
+    metadata: result.meta ?? result.metadata ?? {},
     requireSignedURLs: Boolean(result.requireSignedURLs),
     ...(result.uploaded ? { uploadedAt: result.uploaded } : {}),
     variants: result.variants ?? [],
@@ -251,6 +262,28 @@ export async function createCloudflareDirectUpload(input: CreateDirectUploadInpu
   }
 
   return result;
+}
+
+export async function uploadCloudflareImage(input: UploadCloudflareImageInput) {
+  const body = new FormData();
+
+  if (input.customId) {
+    body.set("id", input.customId);
+  }
+
+  body.set("file", new File([input.bytes], input.filename, { type: input.contentType }));
+  body.set("requireSignedURLs", input.requireSignedUrls ? "true" : "false");
+
+  if (input.metadata) {
+    body.set("metadata", JSON.stringify(input.metadata));
+  }
+
+  const result = await requestCloudflare<CloudflareImageRecord>("/images/v1", {
+    body,
+    method: "POST",
+  });
+
+  return normalizeImageResult(result);
 }
 
 export async function getCloudflareImageDetails(imageId: string) {

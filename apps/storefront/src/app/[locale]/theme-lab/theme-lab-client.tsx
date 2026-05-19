@@ -19,6 +19,7 @@ import {
   Checkbox,
   ChoiceTile,
   Cluster,
+  ColorField,
   Container,
   FormFrame,
   GoogleLogoIcon,
@@ -60,6 +61,8 @@ const colorFields = [
   ["actionSecondaryBorder", "Secondary border", "color"],
   ["actionSecondaryText", "Secondary text", "color"],
   ["actionTertiaryText", "Ghost/outline text", "color"],
+  ["bluePrimary", "Blue primary", "color"],
+  ["blueLighter", "Blue lighter", "color"],
   ["accent", "Accent", "color"],
   ["accentSoft", "Accent soft", "color"],
   ["warning", "Warning", "color"],
@@ -108,13 +111,7 @@ const spacingFields = [
   ["layout", "pageMaxWidth", "Page max width"],
 ] as const;
 
-function getInitialTheme() {
-  if (typeof window === "undefined") {
-    return monoTheme;
-  }
-
-  const storedTheme = window.localStorage.getItem(themeStorageKey);
-
+function parseStoredTheme(storedTheme: string | null) {
   if (!storedTheme) {
     return monoTheme;
   }
@@ -160,8 +157,9 @@ function FieldRow({
 }
 
 export function ThemeLabClient({ locale }: ThemeLabClientProps) {
-  const [theme, setTheme] = useState<ThemeDefinition>(() => getInitialTheme());
-  const [importDraft, setImportDraft] = useState(() => serializeThemeDefinition(getInitialTheme()));
+  const [hasLoadedStoredTheme, setHasLoadedStoredTheme] = useState(false);
+  const [theme, setTheme] = useState<ThemeDefinition>(monoTheme);
+  const [importDraft, setImportDraft] = useState(() => serializeThemeDefinition(monoTheme));
   const [statusMessage, setStatusMessage] = useState(
     "Edit tokens on the left, watch the previews update on the right, and use Copy JSON when the preset feels right.",
   );
@@ -173,8 +171,26 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
   });
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const nextTheme = parseStoredTheme(window.localStorage.getItem(themeStorageKey));
+
+      setTheme(nextTheme);
+      setImportDraft(serializeThemeDefinition(nextTheme));
+      setHasLoadedStoredTheme(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStoredTheme) {
+      return;
+    }
+
     persistTheme(theme);
-  }, [theme]);
+  }, [hasLoadedStoredTheme, theme]);
 
   function setColorToken(key: keyof ThemeDefinition["color"], value: string) {
     startTransition(() => {
@@ -236,9 +252,9 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
   return (
     <main className="page__root__SW0g9">
       <ThemeScope theme={deferredTheme}>
-        <Container className="shell__root__SW0ga" size="wide">
+        <Container size="wide">
+          <div className="shell__root__SW0ga">
           <section className="intro__root__SW0gb">
-            <span className="intro__meta__SW0gc">SNN theme lab</span>
             <h1 className="intro__title__SW0gd">Shape the system before we build the storefront.</h1>
             <p className="intro__copy__SW0ge">
               This page is the design workshop for the whole site. Change the tokens on the left,
@@ -254,7 +270,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
 
           <div className="layout__grid__SW0gf">
             <aside className="control__rail__SW0gg">
-              <Card className="editor__section__SW0gh">
+              <Card gap="var(--space-75)">
                 <h2 className="editor__heading__SW0gi">Status</h2>
                 <p className="intro__copy__SW0ge">{statusMessage}</p>
                 <Cluster>
@@ -270,7 +286,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </Link>
               </Card>
 
-              <Card className="editor__section__SW0gh" tone="muted">
+              <Card gap="var(--space-75)" tone="muted">
                 <h2 className="editor__heading__SW0gi">How to use it</h2>
                 <Stack gap="var(--space-50)">
                   <p className="preview__copy__SW0gv">1. Adjust colors, type, spacing, and radius on the left.</p>
@@ -279,33 +295,24 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </Stack>
               </Card>
 
-              <Card className="editor__section__SW0gh">
+              <Card gap="var(--space-75)">
                 <h2 className="editor__heading__SW0gi">Color system</h2>
                 <div className="field__grid__SW0gk">
                   {colorFields.map(([key, label, controlType]) => (
                     <FieldRow key={key} label={label}>
                       {controlType === "color" ? (
-                        <div className="field__combo__SW0gn">
-                          <input
-                            className="swatch__input__SW0go"
-                            onChange={(event) => {
-                              setColorToken(key, event.target.value);
-                            }}
-                            type="color"
-                            value={theme.color[key] as string}
-                          />
-                          <input
-                            className="text__input__SW0gp"
-                            onChange={(event) => {
-                              setColorToken(key, event.target.value);
-                            }}
-                            type="text"
-                            value={theme.color[key] as string}
-                          />
-                        </div>
+                        <ColorField
+                          aria-label={label}
+                          fullWidth
+                          onChange={(event) => {
+                            setColorToken(key, event.target.value);
+                          }}
+                          value={theme.color[key] as string}
+                        />
                       ) : (
-                        <input
-                          className="text__input__SW0gp"
+                        <TextField
+                          aria-label={label}
+                          fullWidth
                           onChange={(event) => {
                             setColorToken(key, event.target.value);
                           }}
@@ -318,13 +325,14 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </div>
               </Card>
 
-              <Card className="editor__section__SW0gh">
+              <Card gap="var(--space-75)">
                 <h2 className="editor__heading__SW0gi">Typography</h2>
                 <div className="field__grid__SW0gk">
                   {typographyFields.map(([key, label]) => (
                     <FieldRow key={key} label={label}>
-                      <input
-                        className="text__input__SW0gp"
+                      <TextField
+                        aria-label={label}
+                        fullWidth
                         onChange={(event) => {
                           setTypographyToken(key, event.target.value);
                         }}
@@ -336,7 +344,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </div>
               </Card>
 
-              <Card className="editor__section__SW0gh">
+              <Card gap="var(--space-75)">
                 <h2 className="editor__heading__SW0gi">Spacing, radius, layout</h2>
                 <div className="field__grid__SW0gk">
                   {spacingFields.map(([group, key, label]) => {
@@ -349,8 +357,9 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
 
                     return (
                       <FieldRow key={`${group}-${key}`} label={label}>
-                        <input
-                          className="text__input__SW0gp"
+                        <TextField
+                          aria-label={label}
+                          fullWidth
                           onChange={(event) => {
                             setSpacingToken(group, key, event.target.value);
                           }}
@@ -362,8 +371,9 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                   })}
 
                   <FieldRow label="Motion base">
-                    <input
-                      className="text__input__SW0gp"
+                    <TextField
+                      aria-label="Motion base"
+                      fullWidth
                       onChange={(event) => {
                         setSpacingToken("motion", "base", event.target.value);
                       }}
@@ -374,10 +384,11 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </div>
               </Card>
 
-              <Card className="editor__section__SW0gh">
+              <Card gap="var(--space-75)">
                 <h2 className="editor__heading__SW0gi">Import JSON</h2>
-                <textarea
-                  className="textarea__root__SW0gr"
+                <Textarea
+                  aria-label="Import JSON"
+                  fullWidth
                   onChange={(event) => {
                     setImportDraft(event.target.value);
                   }}
@@ -401,7 +412,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
             </aside>
 
             <section className="preview__region__SW0gs">
-              <Card className="preview__shell__SW0gt">
+              <Card gap="var(--space-200)">
                 <h2 className="preview__heading__SW0gu">Theme surface preview</h2>
                 <p className="preview__copy__SW0gv">
                   This is not the final homepage. It is a controlled preview where we decide the
@@ -422,7 +433,6 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                       </>
                     }
                     description="Large editorial display moments, quiet chrome, and pill actions sit on top of a stricter monochrome spacing system."
-                    eyebrow="Homepage hero preview"
                     media={
                       <div aria-hidden="true" className="hero-preview__media__SW0gx">
                         <div className="hero-preview__ellipse__SW0gy" />
@@ -432,7 +442,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                     title="Motion with restraint."
                   />
 
-                  <Stack className="preview__rail__SW0h0" gap="var(--space-200)">
+                  <Stack gap="var(--space-200)">
                     <Cluster justify="space-between">
                       <h2 className="preview__heading__SW0gu">Buttons and product cards</h2>
                       <Badge tone="accent">Retail building blocks</Badge>
@@ -505,7 +515,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                         <div className="pdp__hero-visual__SW0h9" />
                       </div>
 
-                      <Stack className="pdp__side__SW0ha" gap="var(--space-100)">
+                      <Stack gap="var(--space-100)">
                         <Badge>PDP controls</Badge>
                         <h2 className="preview__heading__SW0gu">Air Motion 01</h2>
                         <p className="preview__copy__SW0gv">
@@ -536,16 +546,15 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                     <Grid minItemWidth="18rem">
                       <FormFrame
                         description="Calm entry flows, understated helper text, and precise monochrome surfaces keep the auth layer aligned with the storefront instead of feeling like a separate product."
-                        kicker="Need an account? Create one"
                         title="Welcome back!"
                       >
-                        <Stack className="auth-provider__stack__SW0h1" gap="var(--space-75)">
+                        <Stack gap="var(--space-75)">
                           <Button fullWidth shape="field" tone="secondary">
-                            <GoogleLogoIcon className="social__mark__SW0h2" />
+                            <GoogleLogoIcon size={18} />
                             Continue with Google
                           </Button>
                           <Button fullWidth shape="field" tone="secondary">
-                            <AppleLogoIcon className="social__mark__SW0h2" />
+                            <AppleLogoIcon size={18} />
                             Continue with Apple
                           </Button>
                         </Stack>
@@ -601,6 +610,7 @@ export function ThemeLabClient({ locale }: ThemeLabClientProps) {
                 </Stack>
               </div>
             </section>
+          </div>
           </div>
         </Container>
       </ThemeScope>

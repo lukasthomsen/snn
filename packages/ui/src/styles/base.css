@@ -45,7 +45,7 @@ button,
 input,
 select,
 textarea {
-  accent-color: var(--color-accent-solid);
+  accent-color: var(--color-blue-primary);
   font: inherit;
 }
 
@@ -109,15 +109,24 @@ h3 {
   letter-spacing: var(--tracking-flat);
 }
 
-h4,
-h5,
+h4 {
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-flat);
+}
+
+h5 {
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-flat);
+}
+
 h6 {
+  font-size: var(--text-md);
   letter-spacing: var(--tracking-flat);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-focus-outline);
-  outline-offset: 3px;
+  outline: 1px solid var(--color-focus-outline);
+  outline-offset: 1px;
 }
 
 #__next,

@@ -27,11 +27,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
+
+      - name: Check Vercel preview environment access
+        id: vercel-access
+        env:
+          VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
+          VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if vercel project inspect "$VERCEL_ACCOUNTS_PROJECT_ID" \
+            --scope "$VERCEL_ORG_ID_VALUE" \
+            --token "$VERCEL_TOKEN" >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          {
+            echo "enabled=false"
+            echo "reason=VERCEL_TOKEN cannot access VERCEL_ORG_ID."
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::warning::Skipping branch-scoped preview database bootstrap because VERCEL_TOKEN cannot access VERCEL_ORG_ID. App builds still run, and previews will use their shared Preview DATABASE_URL fallback. Update the GitHub VERCEL_TOKEN secret to enable isolated PR database branches."
+
       - name: Set preview branch expiration
+        if: steps.vercel-access.outputs.enabled == 'true'
         id: expires-at
         run: echo "value=$(date -u -d '+14 days' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Create Neon preview runtime branch
+        if: steps.vercel-access.outputs.enabled == 'true'
         id: runtime-db
         uses: neondatabase/create-branch-action@v6
         with:
@@ -45,6 +86,7 @@ jobs:
           expires_at: ${{ steps.expires-at.outputs.value }}
 
       - name: Create Neon preview migration branch
+        if: steps.vercel-access.outputs.enabled == 'true'
         id: migrator-db
         uses: neondatabase/create-branch-action@v6
         with:
@@ -57,21 +99,33 @@ jobs:
           ssl: verify-full
           expires_at: ${{ steps.expires-at.outputs.value }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
+      - name: Install dependencies
+        if: steps.vercel-access.outputs.enabled == 'true'
+        run: pnpm install --frozen-lockfile
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
+      - name: Migrate and seed preview database
+        if: steps.vercel-access.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_IMAGES_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_IMAGES_ACCOUNT_ID }}
+          CLOUDFLARE_IMAGES_API_TOKEN: ${{ secrets.CLOUDFLARE_IMAGES_API_TOKEN }}
+          CLOUDFLARE_IMAGES_DELIVERY_HASH: ${{ vars.CLOUDFLARE_IMAGES_DELIVERY_HASH }}
+          DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
+          VERCEL_ENV: preview
+        run: |
+          set -euo pipefail
+
+          pnpm db:migrate
+          pnpm db:seed:commerce -- --apply
 
       - name: Apply branch-scoped preview database URLs
+        if: steps.vercel-access.outputs.enabled == 'true'
         env:
           DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
           DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
+          VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
           VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
           VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
           VERCEL_STOREFRONT_PROJECT_ID: ${{ vars.VERCEL_STOREFRONT_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -87,23 +141,31 @@ jobs:
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE"
+              --scope "$VERCEL_ORG_ID_VALUE"
 
             vercel env add DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --value "$DATABASE_URL_UNPOOLED" \
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE"
+              --scope "$VERCEL_ORG_ID_VALUE"
+
+            vercel env add ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
+              --value "1" \
+              --yes \
+              --force \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_ORG_ID_VALUE"
           }
 
+          upsert_branch_envs "$VERCEL_ACCOUNTS_PROJECT_ID"
           upsert_branch_envs "$VERCEL_STOREFRONT_PROJECT_ID"
           upsert_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
 
       - name: Redeploy first PR previews after env bootstrap
-        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        if: steps.vercel-access.outputs.enabled == 'true' && (github.event.action == 'opened' || github.event.action == 'reopened')
         env:
-          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+          VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
@@ -115,7 +177,7 @@ jobs:
             for attempt in $(seq 1 8); do
               deployment_url="$(
                 vercel list "$project_name" \
-                  --scope "$VERCEL_SCOPE" \
+                  --scope "$VERCEL_ORG_ID_VALUE" \
                   --token "$VERCEL_TOKEN" \
                   --environment=preview \
                   --meta "githubCommitRef=$PREVIEW_GIT_BRANCH" \
@@ -126,7 +188,7 @@ jobs:
               if [ -n "$deployment_url" ]; then
                 vercel redeploy "$deployment_url" \
                   --target preview \
-                  --scope "$VERCEL_SCOPE" \
+                  --scope "$VERCEL_ORG_ID_VALUE" \
                   --token "$VERCEL_TOKEN" \
                   --no-wait
                 return 0
@@ -156,9 +218,9 @@ jobs:
 
       - name: Remove branch-scoped preview database URLs
         env:
+          VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
           VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
           VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
           VERCEL_STOREFRONT_PROJECT_ID: ${{ vars.VERCEL_STOREFRONT_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -172,14 +234,20 @@ jobs:
             vercel env remove DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" || true
 
             vercel env remove DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_SCOPE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" || true
+
+            vercel env remove ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
+              --yes \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_ORG_ID_VALUE" || true
           }
 
+          remove_branch_envs "$VERCEL_ACCOUNTS_PROJECT_ID"
           remove_branch_envs "$VERCEL_STOREFRONT_PROJECT_ID"
           remove_branch_envs "$VERCEL_ADMIN_PROJECT_ID"
 

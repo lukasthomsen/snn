@@ -1,4 +1,9 @@
-import { getCanonicalAuthOrigin, getTurnstileSecretKey, getTurnstileSiteKey } from "@snn/config";
+import {
+  getAuthTurnstileMode,
+  getCanonicalAuthOrigin,
+  getTurnstileSecretKey,
+  getTurnstileSiteKey,
+} from "@snn/config";
 
 type SiteVerifyResponse = {
   success: boolean;
@@ -15,8 +20,8 @@ type SiteVerifyResponse = {
 export type TurnstileValidationOptions = {
   expectedAction?: string;
   expectedHostname?: string;
-  idempotencyKey?: string;
-  remoteIp?: string;
+  idempotencyKey?: string | undefined;
+  remoteIp?: string | undefined;
   token: string;
 };
 
@@ -42,9 +47,12 @@ export type TurnstileValidationResult =
 export function getTurnstileConfig() {
   const siteKey = getTurnstileSiteKey();
   const secretKey = getTurnstileSecretKey();
+  const mode = getAuthTurnstileMode();
 
   return {
     enabled: Boolean(siteKey && secretKey),
+    mode,
+    publicEnabled: Boolean(siteKey && mode !== "off"),
     siteKey,
     secretKey,
   };

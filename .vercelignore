@@ -1,0 +1,13 @@
+.git
+.next
+.turbo
+.vercel
+node_modules
+dist
+coverage
+*.tsbuildinfo
+apps/*/.next
+apps/*/.turbo
+apps/*/node_modules
+packages/*/dist
+packages/*/node_modules

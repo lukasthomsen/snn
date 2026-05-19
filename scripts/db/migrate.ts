@@ -16,7 +16,7 @@ if (!connectionString) {
 }
 
 const pool = new Pool({
-  connectionString,
+  connectionString: normalizeDatabaseSslMode(connectionString),
   max: 1,
 });
 
@@ -40,3 +40,19 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+function normalizeDatabaseSslMode(value: string) {
+  try {
+    const url = new URL(value);
+    const sslMode = url.searchParams.get("sslmode");
+
+    if (sslMode && ["prefer", "require", "verify-ca"].includes(sslMode)) {
+      url.searchParams.set("sslmode", "verify-full");
+      return url.toString();
+    }
+  } catch {
+    return value;
+  }
+
+  return value;
+}

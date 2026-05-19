@@ -13,6 +13,11 @@ export {
 export {
   markStripeWebhookEvent,
   persistStripeWebhookEvent,
+  readLatestStripePaymentReference,
   upsertStripePaymentRecord,
 } from "./persistence";
-export { projectStripePaymentEvent, verifyStripeWebhookSignature } from "./webhooks";
+export {
+  projectStripePaymentEvent,
+  projectStripePaymentIntent,
+  verifyStripeWebhookSignature,
+} from "./webhooks";

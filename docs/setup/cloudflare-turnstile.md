@@ -6,10 +6,12 @@ SNN uses Cloudflare Turnstile for bot protection on sensitive public forms, star
 
 Cloudflare remains:
 
-- authoritative DNS
 - Turnstile provider
 
-Cloudflare does **not** proxy `www`, `auth`, or `admin` in front of Vercel.
+Production page traffic remains Vercel-primary. `www`, `accounts`, and `admin`
+should resolve directly to Vercel and should not be Cloudflare-proxied. Cloudflare
+can be used for DNS-only records in the future, but orange-cloud proxying in
+front of Vercel is intentionally out of scope for the current setup.
 
 ## Widget Strategy
 
@@ -28,7 +30,7 @@ Use separate widgets per environment boundary.
 - Name: `snn-auth-prod`
 - Mode: `managed`
 - Hostnames:
-  - `auth.veloro.dk`
+  - `accounts.veloro.dk`
 
 ## Preview Policy
 
@@ -87,3 +89,30 @@ Next steps for Turnstile integration:
 2. validate tokens in auth mutations
 3. add a stable staging hostname if preview auth verification becomes part of the regular workflow
 4. extend the same pattern to checkout and other high-risk public forms
+
+## Edge Audit
+
+Run the read-only edge audit from the repo root:
+
+```bash
+pnpm perf:edge
+```
+
+The audit confirms that page traffic is direct to Vercel, verifies Turnstile key
+pairing without printing secret values, and records whether the production auth
+page has an active widget or only the server-side validation foundation.
+
+## Proxy Contingency Only
+
+Do not enable Cloudflare proxying in front of Vercel for `www`, `accounts`, or
+`admin` under the current target state. If that decision changes later, add
+Cloudflare Cache Rules that bypass:
+
+- every request with a `Cookie` header
+- every request with an `Authorization` header
+- `/api/*`, including media routes and webhooks
+- cart, checkout, wishlist, account, sign-in, and sign-up paths
+- accounts and admin hostnames entirely
+
+Keep page caching on Vercel unless a later performance review explicitly changes
+the edge architecture.
