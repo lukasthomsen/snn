@@ -3,12 +3,19 @@
 import { useState, type FormEvent } from "react";
 
 import { createSnnAuthClient } from "@snn/auth/client";
-import { Alert, Button, InputOtp } from "@snn/ui";
+import { Button, InputOtp } from "@snn/ui";
+
+type TwoFactorFormMessages = {
+  codeInvalid: string;
+  codeRequired: string;
+  networkError: string;
+};
 
 type TwoFactorFormProps = {
   callbackURL: string;
   codeLabel: string;
   codePlaceholder: string;
+  messages: TwoFactorFormMessages;
   submitLabel: string;
 };
 
@@ -16,19 +23,28 @@ export function TwoFactorForm({
   callbackURL,
   codeLabel,
   codePlaceholder,
+  messages,
   submitLabel,
 }: TwoFactorFormProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | undefined>();
+  const [codeError, setCodeError] = useState<string | undefined>();
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(undefined);
-    setIsPending(true);
+    setCodeError(undefined);
 
     const formData = new FormData(event.currentTarget);
     const code = String(formData.get("code") ?? "").trim();
+
+    if (!code) {
+      setCodeError(messages.codeRequired);
+      return;
+    }
+
+    setIsPending(true);
 
     try {
       const authClient = createSnnAuthClient();
@@ -44,14 +60,14 @@ export function TwoFactorForm({
         });
 
         if (backupResult.error) {
-          setError("The two-factor code could not be verified.");
+          setCodeError(messages.codeInvalid);
           return;
         }
       }
 
       window.location.assign(callbackURL);
     } catch {
-      setError("We could not reach the authentication service. Please try again.");
+      setError(messages.networkError);
     } finally {
       setIsPending(false);
     }
@@ -63,13 +79,22 @@ export function TwoFactorForm({
         autoComplete="one-time-code"
         description={codePlaceholder}
         disabled={isPending}
+        error={codeError}
         fullWidth
         label={codeLabel}
-        onValueChange={setCode}
+        onValueChange={(nextCode) => {
+          setCode(nextCode);
+          setCodeError(undefined);
+        }}
         size="md"
         value={code}
       />
       <input name="code" type="hidden" value={code} />
+      {error ? (
+        <p className="form__notice__SW0hq" data-tone="danger">
+          {error}
+        </p>
+      ) : null}
       <Button
         fullWidth
         loading={isPending}
@@ -78,7 +103,6 @@ export function TwoFactorForm({
       >
         {submitLabel}
       </Button>
-      {error ? <Alert status="danger">{error}</Alert> : null}
     </form>
   );
 }

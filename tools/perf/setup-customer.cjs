@@ -96,6 +96,7 @@ async function postAuthJson(authBaseUrl, pathName, body) {
     body: JSON.stringify(body),
     headers: {
       "content-type": "application/json",
+      origin: authBaseUrl,
       ...getBypassHeaders(),
     },
     method: "POST",
@@ -278,7 +279,10 @@ async function main() {
     if (!user) {
       const signUp = await postAuthJson(authBaseUrl, "/api/auth/sign-up/email", {
         callbackURL: `${baseUrl}/${locale}/account`,
+        dateOfBirth: "1990-01-01",
         email,
+        firstName: "Performance",
+        lastName: "Runner",
         name: "Performance Runner",
         password,
       });

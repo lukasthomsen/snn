@@ -2,6 +2,7 @@ import type { ButtonHTMLAttributes, DetailsHTMLAttributes, HTMLAttributes, React
 
 import { cx } from "../cx";
 import { ChevronDownIcon, ChevronRightIcon } from "./icons";
+import { Heading } from "./layout";
 
 type AccordionProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
@@ -40,12 +41,12 @@ export function AccordionItem({
       open={(open ?? defaultOpen) ? true : undefined}
     >
       <summary className={cx("accordion__summary__SW0d4", summaryClassName)}>
-        <h2 className="accordion__heading__SW0d5">
+        <Heading as="h2" className="accordion__heading__SW0d5">
           <span>{heading}</span>
           <span aria-hidden="true" className="accordion__indicator__SW0d6">
             <ChevronDownIcon size={16} />
           </span>
-        </h2>
+        </Heading>
       </summary>
       <div className={cx("accordion__body__SW0d7", bodyClassName)}>
         {children}

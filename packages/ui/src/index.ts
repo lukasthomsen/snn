@@ -31,6 +31,7 @@ export {
   Checkbox,
   ChoiceTile,
   ColorField,
+  DatePicker,
   Field,
   Fieldset,
   Form,
@@ -45,6 +46,9 @@ export {
   Switch,
   TextField,
   Textarea,
+  type DatePickerClassNames,
+  type DatePickerCopy,
+  type DatePickerProps,
 } from "./components/forms";
 export {
   Alert,

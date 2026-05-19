@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect, useRef, useState } from "react";
 
-import { PaginationDots } from "@snn/ui";
+import { Heading, PaginationDots } from "@snn/ui";
 
 const rotationDelay = 8000;
 const textTransitionDelay = 180;
@@ -16,12 +16,14 @@ type AuthBrandCarouselProps = {
   fallbackTitle: string;
   footer: string;
   statements: AuthBrandStatement[];
+  variant?: "default" | "quote";
 };
 
 export function AuthBrandCarousel({
   fallbackTitle,
   footer,
   statements,
+  variant = "default",
 }: AuthBrandCarouselProps) {
   const fallbackStatement = { statement: fallbackTitle, substatement: "" };
   const safeStatements =
@@ -99,14 +101,20 @@ export function AuthBrandCarousel({
   }, [activeIndex, safeStatements.length, shouldRotate]);
 
   return (
-    <div className="brand__copy__SW0fg">
+    <div className="brand__copy__SW0fg" data-variant={variant}>
       <div
         className="brand__rotation__SW0hn"
         data-state={transitionState}
       >
-        <h1>{activeStatement.statement}</h1>
+        <Heading as="h2">{activeStatement.statement}</Heading>
         <div className="brand__carousel__SW0fh">
-          <p className="brand__statement__SW0fi">{activeStatement.substatement}</p>
+          {variant === "quote" ? (
+            <blockquote className="brand__quote__SW0k6">
+              <p className="brand__statement__SW0fi">{activeStatement.substatement}</p>
+            </blockquote>
+          ) : (
+            <p className="brand__statement__SW0fi">{activeStatement.substatement}</p>
+          )}
         </div>
 
         {hasMultipleStatements ? (

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Heading, Link } from "@snn/ui";
+
 import {
   AuthBrandCarousel,
   type AuthBrandStatement,
@@ -7,6 +9,7 @@ import {
 
 type AuthPageProps = {
   brandFooter: string;
+  brandPresentation?: "default" | "quote";
   brandStatements: AuthBrandStatement[];
   brandTitle: string;
   children: ReactNode;
@@ -29,6 +32,7 @@ export type AuthField = {
 
 export function AuthPage({
   brandFooter,
+  brandPresentation = "default",
   brandStatements,
   brandTitle,
   children,
@@ -45,6 +49,7 @@ export function AuthPage({
           fallbackTitle={brandTitle}
           footer={brandFooter}
           statements={brandStatements}
+          variant={brandPresentation}
         />
       </aside>
 
@@ -54,14 +59,11 @@ export function AuthPage({
             <div className="auth__header__SW0fo">
               <p className="helper__copy__SW0fq">
                 {secondaryActionText}{" "}
-                <a
-                  className="inline__link__SW0fw"
-                  href={secondaryActionHref}
-                >
+                <Link href={secondaryActionHref} variant="underline">
                   {secondaryActionLabel}
-                </a>
+                </Link>
               </p>
-              <h1 id="auth-title">{title}</h1>
+              <Heading as="h2" id="auth-title">{title}</Heading>
             </div>
 
             {children}

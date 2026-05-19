@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 
 import { cx } from "../cx";
 import { CloseButton } from "./actions";
+import { Heading } from "./layout";
 import type {
   ControlSize,
   DrawerPlacement,
@@ -390,9 +391,9 @@ export function AlertDialog({
                 </span>
               ) : null}
               <div>
-                <h2 className="alert__heading__SW0d1" id={headingId}>
+                <Heading as="h2" className="alert__heading__SW0d1" id={headingId}>
                   {title}
-                </h2>
+                </Heading>
               </div>
             </div>
             {(description || children) ? (
@@ -498,9 +499,9 @@ export function Modal({
             >
               {icon ? <span className="modal__icon__SW0db">{icon}</span> : null}
               <div>
-                <h2 className="modal__heading__SW0d2" id={headingId}>
+                <Heading as="h2" className="modal__heading__SW0d2" id={headingId}>
                   {title}
-                </h2>
+                </Heading>
               </div>
             </div>
             {(description || children) ? (
@@ -618,9 +619,9 @@ export function Drawer({
           >
             {showHandle ? <span className="drawer__handle__SW0dh" /> : null}
             <div className="drawer__header__SW0d0">
-              <h2 className="drawer__heading__SW0d3" id={headingId}>
+              <Heading as="h2" className="drawer__heading__SW0d3" id={headingId}>
                 {title}
-              </h2>
+              </Heading>
               {headerEnd ? <div className="drawer__headerEnd__SW0di">{headerEnd}</div> : null}
               {description ? <p id={descriptionId}>{description}</p> : null}
             </div>

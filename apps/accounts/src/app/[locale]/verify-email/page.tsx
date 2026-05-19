@@ -1,4 +1,5 @@
 import { isLocale } from "@snn/i18n";
+import { Link } from "@snn/ui";
 
 import {
   getAccountAuthPath,
@@ -34,8 +35,8 @@ const copy = {
     ],
     brandTitle: "Bygget til den daglige stack.",
     continueLabel: "Fortsæt til konto",
-    errorHelper: "Linket er ugyldigt eller udløbet. Log ind for at få sendt et nyt bekræftelseslink.",
-    errorTitle: "Linket kunne ikke bruges",
+    errorHelper: "Koden er ugyldig eller udløbet. Log ind for at få sendt en ny bekræftelseskode.",
+    errorTitle: "Koden kunne ikke bruges",
     signInLabel: "Tilbage til log ind",
     successHelper: "Din e-mailadresse er bekræftet, og kontoen er klar.",
     successTitle: "Email verified",
@@ -58,8 +59,8 @@ const copy = {
     ],
     brandTitle: "Built for the daily stack.",
     continueLabel: "Continue to account",
-    errorHelper: "The link is invalid or expired. Sign in to receive a new verification link.",
-    errorTitle: "Link could not be used",
+    errorHelper: "The code is invalid or expired. Sign in to receive a new verification code.",
+    errorTitle: "Code could not be used",
     signInLabel: "Back to sign in",
     successHelper: "Your email address is verified and the account is ready.",
     successTitle: "Email verified",
@@ -88,16 +89,16 @@ export default async function VerifyEmailPage({
       title={hasError ? content.errorTitle : content.successTitle}
     >
       <p className="legal__copy__SW0fy">
-        <a
-          className="inline__link__SW0fw"
+        <Link
           href={
             hasError
               ? getAccountAuthPath(safeLocale, "sign-in", callbackURL)
               : getAuthCompleteURL(safeLocale, callbackURL)
           }
+          variant="underline"
         >
           {hasError ? content.signInLabel : content.continueLabel}
-        </a>
+        </Link>
       </p>
     </AuthUtilityPage>
   );

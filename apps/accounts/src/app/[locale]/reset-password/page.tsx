@@ -33,6 +33,15 @@ const copy = {
     ],
     brandTitle: "Bygget til den daglige stack.",
     helper: "Vælg en stærk ny adgangskode.",
+    messages: {
+      confirmPasswordRequired: "Bekræft den nye adgangskode.",
+      networkError: "Vi kunne ikke kontakte login-tjenesten. Prøv igen.",
+      passwordMaxLength: "Adgangskoden må højst være 128 tegn.",
+      passwordMinLength: "Adgangskoden skal være mindst 10 tegn.",
+      passwordMismatch: "Adgangskoderne skal være ens.",
+      passwordRequired: "Ny adgangskode er påkrævet.",
+      tokenInvalid: "Dette reset-link er ugyldigt eller udløbet. Bed om et nyt link.",
+    },
     passwordConfirmLabel: "Bekræft ny adgangskode",
     passwordConfirmPlaceholder: "Gentag adgangskoden",
     passwordLabel: "Ny adgangskode",
@@ -59,6 +68,15 @@ const copy = {
     ],
     brandTitle: "Built for the daily stack.",
     helper: "Choose a strong new password.",
+    messages: {
+      confirmPasswordRequired: "Confirm the new password.",
+      networkError: "We could not reach the authentication service. Please try again.",
+      passwordMaxLength: "Password must be no more than 128 characters.",
+      passwordMinLength: "Password must be at least 10 characters.",
+      passwordMismatch: "Passwords must match.",
+      passwordRequired: "New password is required.",
+      tokenInvalid: "This password reset link is invalid or expired. Please request a new link.",
+    },
     passwordConfirmLabel: "Confirm new password",
     passwordConfirmPlaceholder: "Repeat password",
     passwordLabel: "New password",
@@ -100,6 +118,7 @@ export default async function ResetPasswordPage({
         confirmPasswordLabel={content.passwordConfirmLabel}
         confirmPasswordPlaceholder={content.passwordConfirmPlaceholder}
         errorCode={errorCode}
+        messages={content.messages}
         passwordLabel={content.passwordLabel}
         passwordPlaceholder={content.passwordPlaceholder}
         signInHref={getAccountAuthPath(safeLocale, "sign-in", callbackURL)}

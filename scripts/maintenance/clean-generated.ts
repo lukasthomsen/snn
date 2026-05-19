@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const dryRun = process.argv.includes("--dry-run");
-const removableDirectoryNames = new Set([".next", ".turbo"]);
-const skipDirectoryNames = new Set([".git", "node_modules", ".pnpm-store"]);
+const removableDirectoryNames = new Set([".lighthouseci", ".next", ".turbo", "perf-reports"]);
+const skipDirectoryNames = new Set([".codex", ".git", ".neon", ".pnpm-store", ".vercel", "node_modules"]);
 const targets = new Set<string>();
 
 function addTarget(target: string) {

@@ -12,7 +12,6 @@ import {
 
 import { cx } from "../cx";
 import type { ControlSize } from "../types";
-import { Button } from "./actions";
 
 type TabItem = {
   badge?: ReactNode;
@@ -373,19 +372,15 @@ export function PaginationDots({
   return (
     <div className="pagination-dots__root__SW1t4">
       {Array.from({ length: count }, (_, index) => (
-        <Button
+        <button
           aria-label={`${label} ${index + 1}`}
           aria-pressed={index === currentIndex}
           className="pagination-dots__dot__SW1t5"
           data-active={index === currentIndex ? "true" : undefined}
-          isIconOnly
           key={index}
           onClick={() => onChange?.(index)}
-          size="sm"
-          variant="ghost"
-        >
-          <span />
-        </Button>
+          type="button"
+        />
       ))}
     </div>
   );

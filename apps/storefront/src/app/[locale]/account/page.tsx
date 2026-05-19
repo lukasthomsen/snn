@@ -46,7 +46,7 @@ export default async function AccountPage({
   const displayName = getCustomerDisplayName(user, dashboard.profile);
 
   return (
-    <div className="accountDashboard__root__SW2i0">
+    <div className="accountDashboard__root__SW2i0" data-account-ready="true">
       <WelcomeAccountModal
         locale={safeLocale}
         open={getFirstParam(resolvedSearchParams.welcome) === "1"}

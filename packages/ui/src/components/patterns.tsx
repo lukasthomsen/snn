@@ -17,6 +17,7 @@ import { cx } from "../cx";
 import type { ComponentColor, ControlSize, VariantPickerDisplay } from "../types";
 import { IconButton, LinkButton } from "./actions";
 import { CheckIcon, MinusIcon, PlusIcon, StarIcon } from "./icons";
+import { Heading } from "./layout";
 
 type VariantPickerContextValue = {
   setHoveredLabel: (label: ReactNode | null) => void;
@@ -35,6 +36,7 @@ export function QuantityStepper({
   onChange,
   size = "md",
   value,
+  variant = "bordered",
   ...props
 }: Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
   decrementLabel?: string;
@@ -46,6 +48,7 @@ export function QuantityStepper({
   onChange?: (value: number) => void;
   size?: ControlSize;
   value: number;
+  variant?: "bordered" | "plain";
 }) {
   const canDecrease = !disabled && value > min;
   const canIncrease = !disabled && (max === undefined || value < max);
@@ -56,6 +59,7 @@ export function QuantityStepper({
       aria-label={label}
       className={cx("quantity-stepper__root__SW2u0", className)}
       data-size={size}
+      data-variant={variant}
     >
       <IconButton
         aria-label={decrementLabel}
@@ -286,7 +290,7 @@ export function CheckoutSection({
     <section {...props} className={cx("checkout-section__root__SW2u4", className)}>
       <div className="checkout-section__heading__SW2u5">
         <div>
-          <h2>{title}</h2>
+          <Heading as="h2">{title}</Heading>
           {description ? <p>{description}</p> : null}
         </div>
         {action}
@@ -334,7 +338,7 @@ export function OrderSummary({
 }) {
   return (
     <section {...props} className={cx("order-summary__root__SW2u9", className)}>
-      <h3>{title}</h3>
+      <Heading as="h3">{title}</Heading>
       {children}
     </section>
   );

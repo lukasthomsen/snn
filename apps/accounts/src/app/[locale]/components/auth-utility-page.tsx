@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Heading } from "@snn/ui";
+
 import { AuthBrandCarousel, type AuthBrandStatement } from "./auth-brand-carousel";
 
 type AuthUtilityPageProps = {
@@ -34,7 +36,7 @@ export function AuthUtilityPage({
           <div className="auth__card__SW0fn">
             <div className="auth__header__SW0fo">
               <p className="helper__copy__SW0fq">{helper}</p>
-              <h3 id="auth-title">{title}</h3>
+              <Heading as="h1" id="auth-title">{title}</Heading>
             </div>
             {children}
           </div>

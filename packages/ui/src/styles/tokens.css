@@ -136,7 +136,7 @@
   --color-action-secondary-border: var(--color-border-primary);
   --color-action-secondary-border-hover: var(--color-border-secondary);
   --color-action-secondary-text: var(--color-text-primary);
-  --color-action-tertiary-text: var(--color-text-primary);
+  --color-action-tertiary-text: var(--color-text-tertiary);
 
   --color-success-surface: #eef6ec;
   --color-success-border: #bdd1b9;
@@ -156,8 +156,8 @@
   --color-danger-foreground: #8f332d;
   --color-danger-ring: rgba(231, 190, 185, 0.88);
 
-  --color-focus-outline: var(--color-blue-primary);
-  --color-focus-ring: color-mix(in srgb, var(--color-blue-primary) 18%, transparent);
+  --color-focus-outline: var(--color-bg-inverse-subtle);
+  --color-focus-ring: color-mix(in srgb, var(--color-bg-inverse-subtle) 18%, transparent);
   --color-overlay-scrim-strong: rgba(19, 19, 19, 0.78);
   --color-overlay-scrim: rgba(19, 19, 19, 0.62);
   --color-overlay-scrim-soft: rgba(19, 19, 19, 0.42);
@@ -211,7 +211,7 @@
   --control-height-sm: 40px;
   --control-height-md: 46px;
   --control-height-lg: 52px;
-  --control-radius: var(--radius-sm);
+  --control-radius: 4px;
   --control-disabled-opacity: 0.52;
 
   /* Motion and elevation */

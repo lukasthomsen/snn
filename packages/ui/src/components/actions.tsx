@@ -1,5 +1,7 @@
 import {
+  cloneElement,
   forwardRef,
+  isValidElement,
   type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
@@ -108,10 +110,22 @@ export function Button({
   const buttonVariant = normalizeVariant(tone, variant);
   const onlyIcon = normalizeIconOnly(iconOnly, isIconOnly);
   const disabledState = disabled || isDisabled || pending;
+  const clickProps = onClick || onPress
+    ? {
+        onClick: (event: MouseEvent<HTMLButtonElement>) => {
+          onClick?.(event);
+
+          if (!event.defaultPrevented) {
+            onPress?.(event);
+          }
+        },
+      }
+    : {};
 
   return (
     <button
       {...props}
+      {...clickProps}
       className={cx("button__root__SW0b3", className)}
       {...getActionData({
         color,
@@ -125,13 +139,6 @@ export function Button({
         variant: buttonVariant,
       })}
       disabled={disabledState}
-      onClick={(event) => {
-        onClick?.(event);
-
-        if (!event.defaultPrevented) {
-          onPress?.(event);
-        }
-      }}
       type={type}
     >
       {pending ? <span aria-hidden="true" className="button__spinner__SW0b6" /> : null}
@@ -148,7 +155,7 @@ export function IconButton({ className, ...props }: IconButtonProps) {
 
 type FavoritePlacement = "card" | "detail" | "header";
 type FavoriteMotion = "idle" | "like" | "unlike";
-type FavoriteVariant = "plain" | "soft";
+type FavoriteVariant = "ghost" | "plain" | "soft";
 
 type FavoriteSharedProps = {
   isPending?: boolean | undefined;
@@ -448,76 +455,133 @@ export function BadgeAnchor({
   );
 }
 
+type LinkSize = "xs" | "sm" | "md";
+type LinkTextTransform = "none" | "uppercase";
 type LinkVariant = "default" | "muted" | "underline";
+type LinkWeight = "normal" | "semibold" | "heavy";
 
-type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "color"> & {
+type LinkVisualProps = {
   color?: ComponentColor;
+  inline?: boolean;
   isDisabled?: boolean;
+  size?: LinkSize;
+  textTransform?: LinkTextTransform;
   variant?: LinkVariant;
+  weight?: LinkWeight;
+};
+
+type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "color"> &
+  LinkVisualProps & {
+  asChild?: boolean;
 };
 
 export function Link({
+  asChild = false,
+  children,
   className,
   color = "default",
+  href,
+  inline = false,
   isDisabled = false,
   onClick,
+  size = "sm",
+  textTransform = "none",
   variant = "default",
+  weight = "semibold",
   ...props
 }: LinkProps) {
+  const handleClick = onClick
+    ? (event: MouseEvent<HTMLAnchorElement>) => {
+        if (!isDisabled) {
+          onClick(event);
+        }
+      }
+    : undefined;
+  const linkProps = {
+    ...props,
+    "aria-disabled": isDisabled ? true : undefined,
+    className: cx("link__root__SW1u1", className),
+    "data-color": color,
+    "data-disabled": isDisabled ? "true" : undefined,
+    "data-inline": inline ? "true" : undefined,
+    "data-size": size,
+    "data-text-transform": textTransform === "uppercase" ? "uppercase" : undefined,
+    "data-variant": variant,
+    "data-weight": weight,
+    ...(href ? { href: isDisabled ? undefined : href } : {}),
+    onClick: handleClick,
+  };
+
+  if (asChild && isValidElement<LinkProps>(children)) {
+    const child = children;
+    const childOnClick = child.props.onClick;
+    const childClickProps = childOnClick || handleClick
+      ? {
+          onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+            childOnClick?.(event);
+
+            if (!event.defaultPrevented) {
+              handleClick?.(event);
+            }
+          },
+        }
+      : {};
+
+    return cloneElement(child, {
+      ...linkProps,
+      ...childClickProps,
+      className: cx("link__root__SW1u1", child.props.className, className),
+    });
+  }
+
   return (
     <a
-      {...props}
-      aria-disabled={isDisabled ? true : undefined}
-      className={cx("link__root__SW1u1", className)}
-      data-color={color}
-      data-disabled={isDisabled ? "true" : undefined}
-      data-variant={variant}
-      onClick={(event) => {
-        if (isDisabled) {
-          event.preventDefault();
-          return;
-        }
-
-        onClick?.(event);
-      }}
-    />
+      {...linkProps}
+    >
+      {children}
+    </a>
   );
 }
 
-type LinkActionProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> & {
-  color?: ComponentColor;
-  isDisabled?: boolean;
-  variant?: LinkVariant;
-};
+type LinkActionProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> &
+  LinkVisualProps;
 
 export function LinkAction({
   className,
   color = "default",
   disabled,
+  inline = false,
   isDisabled = false,
   onClick,
+  size = "sm",
+  textTransform = "none",
   type = "button",
   variant = "default",
+  weight = "semibold",
   ...props
 }: LinkActionProps) {
   const disabledState = disabled || isDisabled;
+  const clickProps = onClick && !disabledState
+    ? {
+        onClick: (event: MouseEvent<HTMLButtonElement>) => {
+          onClick(event);
+        },
+      }
+    : {};
 
   return (
     <button
       {...props}
-      className={cx("link__root__SW1u1", "link-action__root__SW1u9", className)}
+      {...clickProps}
+      className={cx("link__root__SW1u1", className)}
       data-color={color}
       data-disabled={disabledState ? "true" : undefined}
+      data-inline={inline ? "true" : undefined}
+      data-size={size}
+      data-text-transform={textTransform === "uppercase" ? "uppercase" : undefined}
       data-variant={variant}
+      data-weight={weight}
       disabled={disabledState}
-      onClick={(event) => {
-        if (disabledState) {
-          event.preventDefault();
-          return;
-        }
-
-        onClick?.(event);
-      }}
       type={type}
     />
   );
@@ -543,14 +607,24 @@ export function LinkButton({
   size = "md",
   tone = "primary",
   variant,
+  href,
   ...props
 }: LinkButtonProps) {
   const linkVariant = normalizeVariant(tone, variant);
   const onlyIcon = normalizeIconOnly(iconOnly, isIconOnly);
+  const disabledState = isDisabled || isPending;
+  const clickProps = onClick && !disabledState
+    ? {
+        onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+          onClick(event);
+        },
+      }
+    : {};
 
   return (
     <a
       {...props}
+      {...clickProps}
       className={cx("button__root__SW0b3", "link-button__root__SW1u2", className)}
       {...getActionData({
         color,
@@ -563,14 +637,7 @@ export function LinkButton({
         size,
         variant: linkVariant,
       })}
-      onClick={(event) => {
-        if (isDisabled || isPending) {
-          event.preventDefault();
-          return;
-        }
-
-        onClick?.(event);
-      }}
+      href={disabledState ? undefined : href}
     >
       <span className="button__content__SW0b5">{children}</span>
     </a>

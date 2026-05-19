@@ -1,5 +1,8 @@
 const { spawn, spawnSync } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
 
+const repoRoot = process.cwd();
 const baseUrl = (process.env.PERF_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 const authBaseUrl = (process.env.PERF_AUTH_BASE_URL || "http://localhost:3002").replace(/\/$/, "");
 const childEnv = {
@@ -10,6 +13,28 @@ const childEnv = {
   PERF_LOCALE: process.env.PERF_LOCALE || "da",
 };
 const servers = [];
+
+const generatedPerfTargets = [
+  path.join(repoRoot, "perf-reports", "playwright"),
+  path.join(repoRoot, "perf-reports", "lighthouse"),
+  path.join(repoRoot, "perf-reports", "account-visual"),
+  path.join(repoRoot, "perf-reports", "server-traces.ndjson"),
+  path.join(repoRoot, "perf-reports", "vercel-traces.ndjson"),
+  path.join(repoRoot, "perf-reports", "performance-traces.ndjson"),
+];
+
+function removeGeneratedPerfOutput() {
+  for (const target of generatedPerfTargets) {
+    if (!target.startsWith(`${repoRoot}${path.sep}`)) {
+      throw new Error(`Refusing to remove path outside the repo: ${target}`);
+    }
+
+    fs.rmSync(target, {
+      force: true,
+      recursive: true,
+    });
+  }
+}
 
 function runStep(name, args) {
   console.log(`\n> ${[name, ...args].join(" ")}`);
@@ -135,6 +160,8 @@ async function stopServers() {
 }
 
 async function main() {
+  removeGeneratedPerfOutput();
+
   runStep("pnpm", ["perf:lint"]);
   runStep("pnpm", ["perf:preflight"]);
   runStep("pnpm", ["build"]);

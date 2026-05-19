@@ -109,9 +109,18 @@ h3 {
   letter-spacing: var(--tracking-flat);
 }
 
-h4,
-h5,
+h4 {
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-flat);
+}
+
+h5 {
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-flat);
+}
+
 h6 {
+  font-size: var(--text-md);
   letter-spacing: var(--tracking-flat);
 }
 

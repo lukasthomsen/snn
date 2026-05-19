@@ -2,34 +2,91 @@ export type ThemeColorTokens = {
   accent: string;
   accentSoft: string;
   actionPrimaryBg: string;
+  actionPrimaryBgHover: string;
+  actionPrimaryBorder: string;
+  actionPrimaryBorderHover: string;
   actionPrimaryText: string;
   actionSecondaryBg: string;
+  actionSecondaryBgHover: string;
   actionSecondaryBorder: string;
+  actionSecondaryBorderHover: string;
   actionSecondaryText: string;
   actionTertiaryText: string;
+  accentBorder: string;
+  accentBorderStrong: string;
+  accentContrast: string;
+  accentForeground: string;
+  accentSolid: string;
+  accentSolidHover: string;
+  accentSolidStrong: string;
+  accentSurface: string;
+  accentSurfaceStrong: string;
   backgroundPrimary: string;
   backgroundSecondary: string;
   backgroundTertiary: string;
   backgroundQuaternary: string;
   backgroundQuinary: string;
+  backgroundInverseSubtle: string;
+  backdropSoft: string;
+  black: string;
+  blueContrast: string;
   blueLighter: string;
   bluePrimary: string;
+  blueSurface: string;
+  blueGradient: string;
+  borderInverse: string;
+  borderInverseStrong: string;
+  borderPrimary: string;
+  borderSecondary: string;
   borderStrong: string;
   borderSubtle: string;
+  borderTertiary: string;
   canvas: string;
   danger: string;
+  dangerBorder: string;
+  dangerBorderStrong: string;
+  dangerContrast: string;
+  dangerForeground: string;
+  dangerRing: string;
+  dangerSolid: string;
+  dangerSolidHover: string;
+  dangerSurface: string;
+  dangerSurfaceStrong: string;
+  focusOutline: string;
   focusRing: string;
   heroOverlayEnd: string;
   heroOverlayStart: string;
+  neutral25: string;
+  neutral50: string;
+  neutral75: string;
+  neutral100: string;
+  neutral200: string;
+  neutral300: string;
+  neutral500: string;
+  neutral700: string;
+  neutral900: string;
+  overlayScrim: string;
+  overlayScrimSoft: string;
+  overlayScrimStrong: string;
   success: string;
+  successBorder: string;
+  successForeground: string;
+  successSurface: string;
   surface: string;
   surfaceMuted: string;
   surfaceStrong: string;
+  textDanger: string;
   textInverse: string;
+  textInverseMuted: string;
   textMuted: string;
   textPrimary: string;
   textSecondary: string;
+  textTertiary: string;
   warning: string;
+  warningBorder: string;
+  warningForeground: string;
+  warningSurface: string;
+  white: string;
 };
 
 export type ThemeTypographyTokens = {
@@ -44,6 +101,9 @@ export type ThemeTypographyTokens = {
   hero: string;
   label: string;
   letterSpacingCaps: string;
+  letterSpacingLarge: string;
+  letterSpacingMedium: string;
+  letterSpacingSmall: string;
   lineHeightBase: string;
   lineHeightRelaxed: string;
   lineHeightTight: string;
@@ -72,16 +132,19 @@ export type ThemeTypographyTokens = {
   sizeXsPlus: string;
   weightBold: string;
   weightHeavy: string;
+  weightLight: string;
   weightMedium: string;
   weightRegular: string;
   weightSemibold: string;
 };
 
 export type ThemeSpacingTokens = {
+  "0": string;
   "2xl": string;
   "3xl": string;
   "4xl": string;
   "5xl": string;
+  "1200": string;
   lg: string;
   md: string;
   sm: string;
@@ -91,11 +154,13 @@ export type ThemeSpacingTokens = {
 };
 
 export type ThemeRadiusTokens = {
+  "0": string;
   lg: string;
   md: string;
   pill: string;
   sm: string;
   xl: string;
+  xs: string;
 };
 
 export type ThemeBorderTokens = {
@@ -111,17 +176,22 @@ export type ThemeShadowTokens = {
 
 export type ThemeMotionTokens = {
   base: string;
+  easingEmphasis: string;
+  easingExit: string;
   easingStandard: string;
   fast: string;
   slow: string;
 };
 
 export type ThemeLayoutTokens = {
+  formWidth: string;
+  headerTopOffset: string;
   heroMinHeight: string;
   navHeight: string;
   pageMaxWidth: string;
   pagePaddingDesktop: string;
   pagePaddingMobile: string;
+  promoBannerSize: string;
 };
 
 export type ThemeZIndexTokens = {
@@ -150,56 +220,121 @@ export const monoTheme: ThemeDefinition = {
   },
   color: {
     accent: "#131313",
+    accentBorder: "#dfdfdf",
+    accentBorderStrong: "#131313",
+    accentContrast: "#ffffff",
+    accentForeground: "#131313",
     accentSoft: "#f4f4f4",
+    accentSolid: "#131313",
+    accentSolidHover: "#2c2c2c",
+    accentSolidStrong: "#131313",
+    accentSurface: "#f4f4f4",
+    accentSurfaceStrong: "#ececec",
     actionPrimaryBg: "#131313",
+    actionPrimaryBgHover: "#2c2c2c",
+    actionPrimaryBorder: "#131313",
+    actionPrimaryBorderHover: "#2c2c2c",
     actionPrimaryText: "#ffffff",
     actionSecondaryBg: "#ffffff",
+    actionSecondaryBgHover: "#fafafa",
     actionSecondaryBorder: "#dfdfdf",
+    actionSecondaryBorderHover: "#c7c7c7",
     actionSecondaryText: "#131313",
-    actionTertiaryText: "#131313",
+    actionTertiaryText: "#a1a1a1",
+    backdropSoft:
+      "linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.12))",
     backgroundPrimary: "#ffffff",
     backgroundSecondary: "#fafafa",
     backgroundTertiary: "#f4f4f4",
     backgroundQuaternary: "#ececec",
     backgroundQuinary: "#131313",
+    backgroundInverseSubtle: "#202020",
+    black: "#000000",
+    blueContrast: "#ffffff",
     blueLighter: "#7fa7ea",
     bluePrimary: "#5f8fdd",
+    blueSurface: "color-mix(in srgb, #7fa7ea 12%, #ffffff)",
+    blueGradient: "linear-gradient(90deg, #5f8fdd, #7fa7ea)",
+    borderInverse: "rgba(255, 255, 255, 0.12)",
+    borderInverseStrong: "rgba(255, 255, 255, 0.58)",
+    borderPrimary: "#dfdfdf",
+    borderSecondary: "#c7c7c7",
     borderStrong: "#a1a1a1",
-    borderSubtle: "#dfdfdf",
+    borderSubtle: "rgba(19, 19, 19, 0.08)",
+    borderTertiary: "rgba(19, 19, 19, 0.08)",
     canvas: "#ffffff",
     danger: "#8f332d",
+    dangerBorder: "#e7beb9",
+    dangerBorderStrong: "#c75d56",
+    dangerContrast: "#fff7f5",
+    dangerForeground: "#8f332d",
+    dangerRing: "rgba(231, 190, 185, 0.88)",
+    dangerSolid: "#b5443c",
+    dangerSolidHover: "#9e3730",
+    dangerSurface: "#fbe9e6",
+    dangerSurfaceStrong: "#f8dbd8",
+    focusOutline: "#5f8fdd",
     focusRing: "rgba(95, 143, 221, 0.18)",
     heroOverlayEnd: "rgba(19, 19, 19, 0.2)",
     heroOverlayStart: "rgba(19, 19, 19, 0.03)",
+    neutral25: "#fafafa",
+    neutral50: "#f4f4f4",
+    neutral75: "#ececec",
+    neutral100: "#dfdfdf",
+    neutral200: "#c7c7c7",
+    neutral300: "#a1a1a1",
+    neutral500: "#444444",
+    neutral700: "#2c2c2c",
+    neutral900: "#131313",
+    overlayScrim: "rgba(19, 19, 19, 0.62)",
+    overlayScrimSoft: "rgba(19, 19, 19, 0.42)",
+    overlayScrimStrong: "rgba(19, 19, 19, 0.78)",
     success: "#355d36",
+    successBorder: "#bdd1b9",
+    successForeground: "#355d36",
+    successSurface: "#eef6ec",
     surface: "#ffffff",
     surfaceMuted: "#fafafa",
     surfaceStrong: "#f4f4f4",
+    textDanger: "#8f332d",
     textInverse: "#ffffff",
+    textInverseMuted: "rgba(255, 255, 255, 0.76)",
     textMuted: "#a1a1a1",
     textPrimary: "#131313",
     textSecondary: "#444444",
+    textTertiary: "#a1a1a1",
     warning: "#666666",
+    warningBorder: "#c7c7c7",
+    warningForeground: "#666666",
+    warningSurface: "#f4f4f4",
+    white: "#ffffff",
   },
   layout: {
+    formWidth: "384px",
+    headerTopOffset: "max(0.8rem, env(safe-area-inset-top))",
     heroMinHeight: "41rem",
     navHeight: "4.75rem",
     pageMaxWidth: "86rem",
     pagePaddingDesktop: "1.8rem",
     pagePaddingMobile: "1rem",
+    promoBannerSize: "3rem",
   },
   motion: {
     base: "220ms",
+    easingEmphasis: "cubic-bezier(0.16, 1, 0.3, 1)",
+    easingExit: "cubic-bezier(0.4, 0, 1, 1)",
     easingStandard: "cubic-bezier(0.2, 0.8, 0.2, 1)",
     fast: "140ms",
     slow: "320ms",
   },
   radius: {
+    "0": "0px",
     lg: "18px",
     md: "12px",
     pill: "9999px",
     sm: "8px",
     xl: "24px",
+    xs: "4px",
   },
   shadow: {
     overlay:
@@ -210,10 +345,12 @@ export const monoTheme: ThemeDefinition = {
       "0 18px 40px rgba(19, 19, 19, 0.08), 0 2px 8px rgba(19, 19, 19, 0.04)",
   },
   spacing: {
+    "0": "0rem",
     "2xl": "2rem",
-    "3xl": "2.75rem",
-    "4xl": "4.5rem",
-    "5xl": "6rem",
+    "3xl": "2.5rem",
+    "4xl": "4rem",
+    "5xl": "5rem",
+    "1200": "8rem",
     lg: "1.25rem",
     md: "1rem",
     sm: "0.75rem",
@@ -235,6 +372,9 @@ export const monoTheme: ThemeDefinition = {
     hero: "2.75rem",
     label: "0.75rem",
     letterSpacingCaps: "0.08em",
+    letterSpacingLarge: "-0.015em",
+    letterSpacingMedium: "0.015em",
+    letterSpacingSmall: "0.01em",
     lineHeightBase: "1.55",
     lineHeightRelaxed: "1.72",
     lineHeightTight: "1.1",
@@ -263,13 +403,14 @@ export const monoTheme: ThemeDefinition = {
     sizeXsPlus: "0.78125rem",
     weightBold: "700",
     weightHeavy: "800",
+    weightLight: "300",
     weightMedium: "500",
     weightRegular: "400",
     weightSemibold: "600",
   },
   zIndex: {
     dropdown: 20,
-    modal: 50,
+    modal: 78,
     overlay: 40,
     sticky: 30,
   },
@@ -329,10 +470,15 @@ export function mergeThemeDefinition(candidate: unknown, baseTheme: ThemeDefinit
 }
 
 export function themeToCssVariables(theme: ThemeDefinition) {
+  /*
+    --layout-page-padding is intentionally left in tokens.css because it changes
+    inside a media query. Emitting it inline would pin descendants to one value.
+  */
   return {
     "--font-body": theme.typography.bodyFamily,
     "--font-display": theme.typography.displayFamily,
     "--font-mono": theme.typography.monoFamily,
+    "--font-weight-light": theme.typography.weightLight,
     "--font-weight-normal": theme.typography.weightRegular,
     "--font-weight-medium": theme.typography.weightMedium,
     "--font-weight-semibold": theme.typography.weightSemibold,
@@ -376,8 +522,23 @@ export function themeToCssVariables(theme: ThemeDefinition) {
     "--line-on-media": theme.typography.onMediaLineHeight,
     "--tracking-tight": theme.typography.headingLetterSpacingTight,
     "--tracking-flat": theme.typography.headingLetterSpacingFlat,
+    "--tracking-small": theme.typography.letterSpacingSmall,
+    "--tracking-medium": theme.typography.letterSpacingMedium,
+    "--tracking-large": theme.typography.letterSpacingLarge,
     "--tracking-caps": theme.typography.letterSpacingCaps,
     "--tracking-on-media": theme.typography.onMediaLetterSpacing,
+
+    "--color-white": theme.color.white,
+    "--color-black": theme.color.black,
+    "--color-neutral-25": theme.color.neutral25,
+    "--color-neutral-50": theme.color.neutral50,
+    "--color-neutral-75": theme.color.neutral75,
+    "--color-neutral-100": theme.color.neutral100,
+    "--color-neutral-200": theme.color.neutral200,
+    "--color-neutral-300": theme.color.neutral300,
+    "--color-neutral-500": theme.color.neutral500,
+    "--color-neutral-700": theme.color.neutral700,
+    "--color-neutral-900": theme.color.neutral900,
 
     "--color-bg-primary": theme.color.backgroundPrimary,
     "--color-bg-secondary": theme.color.backgroundSecondary,
@@ -385,77 +546,79 @@ export function themeToCssVariables(theme: ThemeDefinition) {
     "--color-bg-quaternary": theme.color.backgroundQuaternary,
     "--color-bg-quinary": theme.color.backgroundQuinary,
     "--color-bg-inverse": theme.color.backgroundQuinary,
-    "--color-bg-inverse-subtle": `color-mix(in srgb, ${theme.color.backgroundQuinary} 94%, ${theme.color.backgroundPrimary})`,
-    "--color-page": theme.color.backgroundPrimary,
-    "--color-page-soft": theme.color.backgroundSecondary,
-    "--color-page-muted": theme.color.backgroundTertiary,
-    "--color-surface": theme.color.backgroundPrimary,
-    "--color-surface-soft": theme.color.backgroundTertiary,
+    "--color-bg-inverse-subtle": theme.color.backgroundInverseSubtle,
+    "--color-page": theme.color.canvas,
+    "--color-page-soft": theme.color.surfaceMuted,
+    "--color-page-muted": theme.color.surfaceStrong,
+    "--color-surface": theme.color.surface,
+    "--color-surface-soft": theme.color.surfaceStrong,
     "--color-inverse": theme.color.backgroundQuinary,
-    "--color-inverse-soft": `color-mix(in srgb, ${theme.color.backgroundQuinary} 94%, ${theme.color.backgroundPrimary})`,
+    "--color-inverse-soft": theme.color.backgroundInverseSubtle,
     "--color-text-primary": theme.color.textPrimary,
     "--color-text-secondary": theme.color.textSecondary,
-    "--color-text-tertiary": theme.color.textMuted,
+    "--color-text-tertiary": theme.color.textTertiary,
     "--color-text-inverse": theme.color.textInverse,
-    "--color-text-inverse-muted": `color-mix(in srgb, ${theme.color.textInverse} 76%, transparent)`,
-    "--color-border-primary": theme.color.borderSubtle,
-    "--color-border-secondary": theme.color.borderStrong,
+    "--color-text-inverse-muted": theme.color.textInverseMuted,
+    "--color-text-danger": theme.color.textDanger,
+    "--color-border-primary": theme.color.borderPrimary,
+    "--color-border-secondary": theme.color.borderSecondary,
     "--color-border-strong": theme.color.borderStrong,
     "--color-border-subtle": theme.color.borderSubtle,
-    "--color-border-tertiary": theme.color.borderSubtle,
-    "--color-border-inverse": `color-mix(in srgb, ${theme.color.textInverse} 12%, transparent)`,
-    "--color-border-inverse-strong": `color-mix(in srgb, ${theme.color.textInverse} 58%, transparent)`,
+    "--color-border-tertiary": theme.color.borderTertiary,
+    "--color-border-inverse": theme.color.borderInverse,
+    "--color-border-inverse-strong": theme.color.borderInverseStrong,
     "--color-blue-primary": theme.color.bluePrimary,
     "--color-blue-lighter": theme.color.blueLighter,
-    "--color-blue-contrast": theme.color.textInverse,
-    "--color-blue-surface": `color-mix(in srgb, ${theme.color.blueLighter} 12%, ${theme.color.backgroundPrimary})`,
-    "--color-blue-gradient": `linear-gradient(90deg, ${theme.color.bluePrimary}, ${theme.color.blueLighter})`,
-    "--color-accent-solid": theme.color.actionPrimaryBg,
-    "--color-accent-solid-hover": theme.color.accent,
-    "--color-accent-solid-strong": theme.color.actionPrimaryBg,
-    "--color-accent-contrast": theme.color.actionPrimaryText,
-    "--color-accent-surface": theme.color.backgroundTertiary,
-    "--color-accent-surface-strong": theme.color.backgroundQuaternary,
-    "--color-accent-border": theme.color.borderSubtle,
-    "--color-accent-foreground": theme.color.actionTertiaryText,
-    "--color-accent-border-strong": theme.color.actionPrimaryBg,
+    "--color-blue-contrast": theme.color.blueContrast,
+    "--color-blue-surface": theme.color.blueSurface,
+    "--color-blue-gradient": theme.color.blueGradient,
+    "--color-accent-solid": theme.color.accentSolid,
+    "--color-accent-solid-hover": theme.color.accentSolidHover,
+    "--color-accent-solid-strong": theme.color.accentSolidStrong,
+    "--color-accent-contrast": theme.color.accentContrast,
+    "--color-accent-surface": theme.color.accentSurface,
+    "--color-accent-surface-strong": theme.color.accentSurfaceStrong,
+    "--color-accent-border": theme.color.accentBorder,
+    "--color-accent-border-strong": theme.color.accentBorderStrong,
+    "--color-accent-foreground": theme.color.accentForeground,
 
     "--color-action-primary-bg": theme.color.actionPrimaryBg,
-    "--color-action-primary-bg-hover": theme.color.accent,
-    "--color-action-primary-border": theme.color.actionPrimaryBg,
-    "--color-action-primary-border-hover": theme.color.accent,
+    "--color-action-primary-bg-hover": theme.color.actionPrimaryBgHover,
+    "--color-action-primary-border": theme.color.actionPrimaryBorder,
+    "--color-action-primary-border-hover": theme.color.actionPrimaryBorderHover,
     "--color-action-primary-text": theme.color.actionPrimaryText,
     "--color-action-secondary-bg": theme.color.actionSecondaryBg,
-    "--color-action-secondary-bg-hover": theme.color.backgroundSecondary,
+    "--color-action-secondary-bg-hover": theme.color.actionSecondaryBgHover,
     "--color-action-secondary-border": theme.color.actionSecondaryBorder,
-    "--color-action-secondary-border-hover": theme.color.borderStrong,
+    "--color-action-secondary-border-hover": theme.color.actionSecondaryBorderHover,
     "--color-action-secondary-text": theme.color.actionSecondaryText,
     "--color-action-tertiary-text": theme.color.actionTertiaryText,
 
-    "--color-success-surface": `color-mix(in srgb, ${theme.color.success} 10%, ${theme.color.backgroundPrimary})`,
-    "--color-success-border": `color-mix(in srgb, ${theme.color.success} 34%, ${theme.color.borderSubtle})`,
-    "--color-success-foreground": theme.color.success,
-    "--color-warning-surface": `color-mix(in srgb, ${theme.color.warning} 8%, ${theme.color.backgroundPrimary})`,
-    "--color-warning-border": `color-mix(in srgb, ${theme.color.warning} 28%, ${theme.color.borderSubtle})`,
-    "--color-warning-foreground": theme.color.warning,
-    "--color-danger-foreground": theme.color.danger,
-    "--color-danger-solid": theme.color.danger,
-    "--color-danger-solid-hover": theme.color.danger,
-    "--color-danger-contrast": "#fff7f5",
-    "--color-danger-surface": `color-mix(in srgb, ${theme.color.danger} 10%, ${theme.color.backgroundPrimary})`,
-    "--color-danger-surface-strong": `color-mix(in srgb, ${theme.color.danger} 16%, ${theme.color.backgroundPrimary})`,
-    "--color-danger-border": `color-mix(in srgb, ${theme.color.danger} 32%, ${theme.color.borderSubtle})`,
-    "--color-danger-border-strong": theme.color.danger,
-    "--color-danger-ring": `color-mix(in srgb, ${theme.color.danger} 28%, transparent)`,
-    "--color-focus-ring": theme.color.focusRing,
-    "--color-focus-outline": theme.color.bluePrimary,
-    "--color-overlay-scrim-strong": `color-mix(in srgb, ${theme.color.textPrimary} 78%, transparent)`,
-    "--color-overlay-scrim": `color-mix(in srgb, ${theme.color.textPrimary} 62%, transparent)`,
-    "--color-overlay-scrim-soft": `color-mix(in srgb, ${theme.color.textPrimary} 42%, transparent)`,
-    "--color-backdrop-soft": `linear-gradient(180deg, color-mix(in srgb, ${theme.color.backgroundPrimary} 58%, transparent), color-mix(in srgb, ${theme.color.backgroundPrimary} 12%, transparent))`,
+    "--color-success-surface": theme.color.successSurface,
+    "--color-success-border": theme.color.successBorder,
+    "--color-success-foreground": theme.color.successForeground,
+    "--color-warning-surface": theme.color.warningSurface,
+    "--color-warning-border": theme.color.warningBorder,
+    "--color-warning-foreground": theme.color.warningForeground,
+    "--color-danger-solid": theme.color.dangerSolid,
+    "--color-danger-solid-hover": theme.color.dangerSolidHover,
+    "--color-danger-contrast": theme.color.dangerContrast,
+    "--color-danger-surface": theme.color.dangerSurface,
+    "--color-danger-surface-strong": theme.color.dangerSurfaceStrong,
+    "--color-danger-border": theme.color.dangerBorder,
+    "--color-danger-border-strong": theme.color.dangerBorderStrong,
+    "--color-danger-foreground": theme.color.dangerForeground,
+    "--color-danger-ring": theme.color.dangerRing,
+    "--color-focus-outline": theme.color.backgroundInverseSubtle,
+    "--color-focus-ring": theme.color.backgroundInverseSubtle,
+    "--color-overlay-scrim-strong": theme.color.overlayScrimStrong,
+    "--color-overlay-scrim": theme.color.overlayScrim,
+    "--color-overlay-scrim-soft": theme.color.overlayScrimSoft,
+    "--color-backdrop-soft": theme.color.backdropSoft,
     "--hero-overlay-start": theme.color.heroOverlayStart,
     "--hero-overlay-end": theme.color.heroOverlayEnd,
 
+    "--space-0": theme.spacing["0"],
     "--space-25": theme.spacing.xxs,
     "--space-50": theme.spacing.xs,
     "--space-75": theme.spacing.sm,
@@ -466,15 +629,29 @@ export function themeToCssVariables(theme: ThemeDefinition) {
     "--space-400": theme.spacing["3xl"],
     "--space-600": theme.spacing["4xl"],
     "--space-800": theme.spacing["5xl"],
+    "--space-1200": theme.spacing["1200"],
+    "--space-xs": theme.spacing.xs,
+    "--space-sm": theme.spacing.sm,
+    "--space-md": theme.spacing.md,
+    "--space-lg": theme.spacing.lg,
+    "--space-xl": theme.spacing.xl,
+    "--space-2xl": theme.spacing["2xl"],
+    "--space-3xl": theme.spacing["3xl"],
+    "--space-4xl": theme.spacing["4xl"],
+    "--space-5xl": theme.spacing["5xl"],
 
     "--layout-page-max-width": theme.layout.pageMaxWidth,
+    "--layout-form-width": theme.layout.formWidth,
     "--layout-page-padding-mobile": theme.layout.pagePaddingMobile,
     "--layout-page-padding-desktop": theme.layout.pagePaddingDesktop,
     "--layout-header-block-size": theme.layout.navHeight,
-    "--layout-promo-banner-size": "3rem",
-    "--layout-header-clearance": `calc(${theme.layout.navHeight} + 3rem)`,
+    "--layout-promo-banner-size": theme.layout.promoBannerSize,
+    "--layout-header-clearance": `calc(${theme.layout.navHeight} + ${theme.layout.promoBannerSize})`,
+    "--layout-header-top-offset": theme.layout.headerTopOffset,
     "--layout-hero-min-height": theme.layout.heroMinHeight,
 
+    "--radius-0": theme.radius["0"],
+    "--radius-xs": theme.radius.xs,
     "--radius-sm": theme.radius.sm,
     "--radius-md": theme.radius.md,
     "--radius-lg": theme.radius.lg,
@@ -486,6 +663,8 @@ export function themeToCssVariables(theme: ThemeDefinition) {
     "--duration-standard": theme.motion.base,
     "--duration-slow": theme.motion.slow,
     "--easing-standard": theme.motion.easingStandard,
+    "--easing-emphasis": theme.motion.easingEmphasis,
+    "--easing-exit": theme.motion.easingExit,
 
     "--shadow-1": theme.shadow.soft,
     "--shadow-2": theme.shadow.raised,
@@ -495,23 +674,23 @@ export function themeToCssVariables(theme: ThemeDefinition) {
 
     "--button-font-family": theme.typography.displayFamily,
     "--button-radius": theme.radius.pill,
-    "--button-height-sm": "2.125rem",
-    "--button-height-md": "2.75rem",
-    "--button-height-lg": "3.25rem",
+    "--button-height-sm": "var(--control-height-sm)",
+    "--button-height-md": "var(--control-height-md)",
+    "--button-height-lg": "var(--control-height-lg)",
     "--control-height-sm": "40px",
     "--control-height-md": "46px",
     "--control-height-lg": "52px",
-    "--control-radius": theme.radius.sm,
+    "--control-radius": theme.radius.xs,
     "--control-disabled-opacity": "0.52",
     "--card-bg": theme.color.backgroundPrimary,
-    "--card-border": theme.color.borderSubtle,
+    "--card-border": theme.color.borderTertiary,
     "--card-radius": theme.radius.sm,
     "--card-shadow": "none",
-    "--overlay-backdrop": `color-mix(in srgb, ${theme.color.textPrimary} 62%, transparent)`,
-    "--overlay-backdrop-strong": `color-mix(in srgb, ${theme.color.textPrimary} 78%, transparent)`,
-    "--overlay-backdrop-soft": `color-mix(in srgb, ${theme.color.textPrimary} 42%, transparent)`,
+    "--overlay-backdrop": theme.color.overlayScrim,
+    "--overlay-backdrop-strong": theme.color.overlayScrimStrong,
+    "--overlay-backdrop-soft": theme.color.overlayScrimSoft,
     "--overlay-surface": theme.color.backgroundPrimary,
-    "--overlay-border": theme.color.borderSubtle,
+    "--overlay-border": theme.color.borderTertiary,
     "--overlay-radius": theme.radius.md,
     "--overlay-shadow": theme.shadow.overlay,
     "--overlay-z-modal": String(theme.zIndex.modal),
@@ -523,7 +702,7 @@ export function themeToCssVariables(theme: ThemeDefinition) {
     "--chrome-header-backdrop-filter": "saturate(180%) blur(20px)",
     "--chrome-header-shadow": "none",
     "--chrome-footer-bg": theme.color.backgroundPrimary,
-    "--chrome-footer-border": theme.color.borderSubtle,
+    "--chrome-footer-border": theme.color.borderPrimary,
   } satisfies Record<string, string>;
 }
 

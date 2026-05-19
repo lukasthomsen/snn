@@ -163,7 +163,7 @@ export function CardTitle({
   className,
   ...props
 }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 {...props} className={cx("card__title__SW1x1", className)} />;
+  return <Heading as="h3" {...props} className={cx("card__title__SW1x1", className)} />;
 }
 
 export function CardDescription({
@@ -207,15 +207,30 @@ export function Separator({
 }
 
 type HeadingProps = HTMLAttributes<HTMLHeadingElement> & {
-  as?: "h1" | "h2" | "h3" | "h4";
-  size?: "display" | "page" | "section" | "subsection" | "card";
+  as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  size?:
+    | "display"
+    | "page"
+    | "section"
+    | "subsection"
+    | "card"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "h6";
   transform?: "none" | "uppercase";
 };
+
+function getHeadingSize(level: NonNullable<HeadingProps["as"]>) {
+  return level;
+}
 
 export function Heading({
   as: Component = "h2",
   className,
-  size = "section",
+  size,
   transform = "none",
   ...props
 }: HeadingProps) {
@@ -223,7 +238,7 @@ export function Heading({
     <Component
       {...props}
       className={cx("heading__root__SW2x0", className)}
-      data-size={size}
+      data-size={size ?? getHeadingSize(Component)}
       data-transform={transform}
     />
   );

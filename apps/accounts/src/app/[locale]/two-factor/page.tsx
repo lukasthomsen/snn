@@ -32,6 +32,11 @@ const copy = {
     codeLabel: "2FA-kode",
     codePlaceholder: "123456",
     helper: "Indtast din app- eller backupkode.",
+    messages: {
+      codeInvalid: "2FA-koden kunne ikke bekræftes.",
+      codeRequired: "Indtast din 2FA-kode.",
+      networkError: "Vi kunne ikke kontakte login-tjenesten. Prøv igen.",
+    },
     submitLabel: "Bekræft",
     title: "Two-factor check",
   },
@@ -55,6 +60,11 @@ const copy = {
     codeLabel: "2FA code",
     codePlaceholder: "123456",
     helper: "Enter your authenticator or backup code.",
+    messages: {
+      codeInvalid: "The two-factor code could not be verified.",
+      codeRequired: "Enter your two-factor code.",
+      networkError: "We could not reach the authentication service. Please try again.",
+    },
     submitLabel: "Verify",
     title: "Two-factor check",
   },
@@ -84,6 +94,7 @@ export default async function TwoFactorPage({
         callbackURL={callbackURL}
         codeLabel={content.codeLabel}
         codePlaceholder={content.codePlaceholder}
+        messages={content.messages}
         submitLabel={content.submitLabel}
       />
     </AuthUtilityPage>
