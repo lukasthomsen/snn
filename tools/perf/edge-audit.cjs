@@ -106,9 +106,12 @@ function getEnv() {
   }
 
   const baseDomain = process.env.BASE_DOMAIN || "veloro.dk";
-  const storefrontHost = `${process.env.STOREFRONT_SUBDOMAIN || "www"}.${baseDomain}`;
-  const accountsHost = `${process.env.AUTH_SUBDOMAIN || "accounts"}.${baseDomain}`;
-  const adminHost = `${process.env.ADMIN_SUBDOMAIN || "admin"}.${baseDomain}`;
+  const storefrontHost = getUrlHost(process.env.PERF_BASE_URL)
+    || `${process.env.STOREFRONT_SUBDOMAIN || "www"}.${baseDomain}`;
+  const accountsHost = getUrlHost(process.env.PERF_AUTH_BASE_URL)
+    || `${process.env.AUTH_SUBDOMAIN || "accounts"}.${baseDomain}`;
+  const adminHost = getUrlHost(process.env.PERF_ADMIN_BASE_URL)
+    || `${process.env.ADMIN_SUBDOMAIN || "admin"}.${baseDomain}`;
 
   return {
     accountsHost,
@@ -116,6 +119,18 @@ function getEnv() {
     baseDomain,
     storefrontHost,
   };
+}
+
+function getUrlHost(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).host;
+  } catch {
+    return null;
+  }
 }
 
 function statusRank(status) {
@@ -186,12 +201,18 @@ function isCloudflareHeader(headers) {
 async function fetchWithTimeout(url, init = {}, timeoutMs = 15_000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const bypassToken = process.env.PERF_VERCEL_BYPASS_TOKEN || process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
   try {
     return await fetch(url, {
       ...init,
       headers: {
         "user-agent": "snn-edge-audit/1.0",
+        ...(bypassToken
+          ? {
+              "x-vercel-protection-bypass": bypassToken,
+            }
+          : {}),
         ...(init.headers ?? {}),
       },
       signal: controller.signal,
@@ -220,6 +241,10 @@ async function fetchChain(url, method = "HEAD", maxRedirects = 5) {
     });
 
     if (!nextUrl || response.status < 300 || response.status >= 400) {
+      break;
+    }
+
+    if (new URL(nextUrl).origin !== new URL(currentUrl).origin) {
       break;
     }
 
