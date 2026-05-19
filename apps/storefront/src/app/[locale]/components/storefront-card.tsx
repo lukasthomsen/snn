@@ -4,6 +4,7 @@ import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { ChevronRightIcon } from "@snn/ui";
 
 type StorefrontCardBaseProps = {
+  accountLink?: string;
   as?: "article" | "div";
   className?: string;
   description?: ReactNode;
@@ -84,6 +85,7 @@ export function StorefrontCard(props: StorefrontCardProps) {
     return (
       <Link
         className={rootClassName}
+        data-account-link={props.accountLink}
         data-size={size}
         data-surface={surface}
         href={props.href as ComponentProps<typeof Link>["href"]}
@@ -97,6 +99,7 @@ export function StorefrontCard(props: StorefrontCardProps) {
     return (
       <button
         className={rootClassName}
+        data-account-link={props.accountLink}
         data-size={size}
         data-surface={surface}
         onClick={props.onClick}
@@ -110,7 +113,12 @@ export function StorefrontCard(props: StorefrontCardProps) {
   const StaticElement = props.as ?? "article";
 
   return (
-    <StaticElement className={rootClassName} data-size={size} data-surface={surface}>
+    <StaticElement
+      className={rootClassName}
+      data-account-link={props.accountLink}
+      data-size={size}
+      data-surface={surface}
+    >
       <StorefrontCardContent {...props} showChevron={showChevron} />
     </StaticElement>
   );

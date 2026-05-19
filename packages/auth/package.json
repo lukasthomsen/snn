@@ -18,6 +18,8 @@
     "@better-auth/drizzle-adapter": "1.6.9",
     "@better-auth/infra": "^0.2.5",
     "@better-auth/passkey": "1.6.9",
+    "@simplewebauthn/browser": "13.3.0",
+    "@simplewebauthn/server": "13.3.0",
     "@snn/config": "workspace:*",
     "@snn/db": "workspace:*",
     "better-auth": "1.6.9",

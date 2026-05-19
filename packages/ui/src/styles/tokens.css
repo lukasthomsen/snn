@@ -8,8 +8,8 @@
   color-scheme: light;
 
   /* Fonts */
-  --font-body: var(--font-inter), "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-inter), "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body: var(--font-inter, system-ui), "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-inter, system-ui), "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono", "SFMono-Regular", ui-monospace, monospace;
 
   --font-weight-light: 300;

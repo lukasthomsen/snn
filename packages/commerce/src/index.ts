@@ -2847,32 +2847,28 @@ async function getCartRecommendations(
   const relatedProductIds = new Set<string>();
 
   if (uniqueCartProductIds.length > 0) {
-    const [categoryRows, collectionRows] = await Promise.all([
-      db
-        .select({ categoryId: schema.productCategories.categoryId })
-        .from(schema.productCategories)
-        .where(inArray(schema.productCategories.productId, uniqueCartProductIds)),
-      db
-        .select({ collectionId: schema.collectionProducts.collectionId })
-        .from(schema.collectionProducts)
-        .where(inArray(schema.collectionProducts.productId, uniqueCartProductIds)),
-    ]);
+    const categoryRows = await db
+      .select({ categoryId: schema.productCategories.categoryId })
+      .from(schema.productCategories)
+      .where(inArray(schema.productCategories.productId, uniqueCartProductIds));
+    const collectionRows = await db
+      .select({ collectionId: schema.collectionProducts.collectionId })
+      .from(schema.collectionProducts)
+      .where(inArray(schema.collectionProducts.productId, uniqueCartProductIds));
     const categoryIds = [...new Set(categoryRows.map((row) => row.categoryId))];
     const collectionIds = [...new Set(collectionRows.map((row) => row.collectionId))];
-    const [relatedCategories, relatedCollections] = await Promise.all([
-      categoryIds.length > 0
-        ? db
-          .select({ productId: schema.productCategories.productId })
-          .from(schema.productCategories)
-          .where(inArray(schema.productCategories.categoryId, categoryIds))
-        : [],
-      collectionIds.length > 0
-        ? db
-          .select({ productId: schema.collectionProducts.productId })
-          .from(schema.collectionProducts)
-          .where(inArray(schema.collectionProducts.collectionId, collectionIds))
-        : [],
-    ]);
+    const relatedCategories = categoryIds.length > 0
+      ? await db
+        .select({ productId: schema.productCategories.productId })
+        .from(schema.productCategories)
+        .where(inArray(schema.productCategories.categoryId, categoryIds))
+      : [];
+    const relatedCollections = collectionIds.length > 0
+      ? await db
+        .select({ productId: schema.collectionProducts.productId })
+        .from(schema.collectionProducts)
+        .where(inArray(schema.collectionProducts.collectionId, collectionIds))
+      : [];
 
     for (const row of [...relatedCategories, ...relatedCollections]) {
       if (!excludedProductIds.has(row.productId)) {
@@ -2963,8 +2959,8 @@ async function readCartSnapshot(
     locale,
     salesChannelId: cart.salesChannelId,
   };
-  const likedVariantIdsPromise = input.likedUserId && variantIds.length > 0
-    ? db
+  const likedVariantIds = input.likedUserId && variantIds.length > 0
+    ? new Set((await db
       .select({ variantId: schema.customerProductLikes.variantId })
       .from(schema.customerProductLikes)
       .where(
@@ -2972,17 +2968,12 @@ async function readCartSnapshot(
           eq(schema.customerProductLikes.userId, input.likedUserId),
           inArray(schema.customerProductLikes.variantId, variantIds),
         ),
-      )
-      .then((likedRows) => new Set(likedRows.map((row) => row.variantId)))
-    : Promise.resolve(new Set<string>());
-  const recommendationsPromise = options.includeRecommendations === false
-    ? Promise.resolve<CartRecommendation[]>([])
-    : getCartRecommendations(productIds, cartRecommendationMarket, locale, db);
-  const [likedVariantIds, mediaByProduct, recommendations] = await Promise.all([
-    likedVariantIdsPromise,
-    getProductMedia(productIds, db),
-    recommendationsPromise,
-  ]);
+      )).map((row) => row.variantId))
+    : new Set<string>();
+  const mediaByProduct = await getProductMedia(productIds, db);
+  const recommendations = options.includeRecommendations === false
+    ? []
+    : await getCartRecommendations(productIds, cartRecommendationMarket, locale, db);
   const lines = rows.map((row) => {
     const imageUrl = row.product && row.variant
       ? chooseImageUrl(row.product, row.variant, mediaByProduct.get(row.product.id) ?? [])
@@ -3019,46 +3010,85 @@ async function readCartSnapshot(
   };
 }
 
+async function withCartRecommendations(
+  snapshot: CartSnapshot,
+  input: CartIdentityInput,
+  market: CommerceMarket,
+) {
+  const productIds = snapshot.lines
+    .map((line) => line.productId)
+    .filter((productId): productId is string => Boolean(productId));
+
+  if (productIds.length === 0) {
+    return {
+      ...snapshot,
+      recommendations: [],
+    } satisfies CartSnapshot;
+  }
+
+  return {
+    ...snapshot,
+    recommendations: await getCartRecommendations(
+      productIds,
+      market,
+      getCartLocale(input, market),
+      getDb(),
+    ),
+  } satisfies CartSnapshot;
+}
+
 export async function getCartSnapshot(
   input: CartIdentityInput,
   db: CommerceDb = getDb(),
 ): Promise<CartSnapshot> {
-  let resolvedCartId = input.cartId ?? null;
+  let snapshot: CartSnapshot | null = null;
+  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
     const { cart, market } = await resolveCart(input, transactionalDb, true);
 
+    recommendationMarket = market;
     await recalculateCartTotals(cart.id, market, transactionalDb);
-    resolvedCartId = cart.id;
+    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+      includeRecommendations: false,
+    });
   });
 
-  if (!resolvedCartId) {
+  if (!snapshot) {
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return readCartSnapshot(resolvedCartId, input, db);
+  return recommendationMarket
+    ? withCartRecommendations(snapshot, input, recommendationMarket)
+    : snapshot;
 }
 
 export async function getExistingCartSnapshot(
   input: CartIdentityInput,
   db: CommerceDb = getDb(),
 ): Promise<CartSnapshot> {
-  let resolvedCartId: string | null = null;
+  let snapshot: CartSnapshot | null = null;
+  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
     const { cart, market } = await resolveCart(input, transactionalDb, false);
 
+    recommendationMarket = market;
     await recalculateCartTotals(cart.id, market, transactionalDb);
-    resolvedCartId = cart.id;
+    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+      includeRecommendations: false,
+    });
   });
 
-  if (!resolvedCartId) {
+  if (!snapshot) {
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return readCartSnapshot(resolvedCartId, input, db);
+  return recommendationMarket
+    ? withCartRecommendations(snapshot, input, recommendationMarket)
+    : snapshot;
 }
 
 export async function createCheckoutOrderFromCart(
@@ -3246,7 +3276,8 @@ export async function addCartItem(
   },
   db: CommerceDb = getDb(),
 ) {
-  let resolvedCartId: string | null = null;
+  let snapshot: CartSnapshot | null = null;
+  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
@@ -3300,15 +3331,20 @@ export async function addCartItem(
       });
     }
 
+    recommendationMarket = market;
     await recalculateCartTotals(cart.id, market, transactionalDb);
-    resolvedCartId = cart.id;
+    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+      includeRecommendations: false,
+    });
   });
 
-  if (!resolvedCartId) {
+  if (!snapshot) {
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return readCartSnapshot(resolvedCartId, input, db);
+  return recommendationMarket
+    ? withCartRecommendations(snapshot, input, recommendationMarket)
+    : snapshot;
 }
 
 export async function updateCartItemQuantity(
@@ -3318,8 +3354,9 @@ export async function updateCartItemQuantity(
   },
   db: CommerceDb = getDb(),
 ) {
-  let resolvedCartId: string | null = null;
+  let snapshot: CartSnapshot | null = null;
   const includeRecommendations = input.quantity <= 0;
+  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
@@ -3339,17 +3376,20 @@ export async function updateCartItemQuantity(
         .where(and(eq(schema.cartItems.id, input.itemId), eq(schema.cartItems.cartId, cart.id)));
     }
 
+    recommendationMarket = market;
     await recalculateCartTotalsFromStoredLines(cart.id, market.currencyCode, transactionalDb);
-    resolvedCartId = cart.id;
+    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+      includeRecommendations: false,
+    });
   });
 
-  if (!resolvedCartId) {
+  if (!snapshot) {
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return readCartSnapshot(resolvedCartId, input, db, {
-    includeRecommendations,
-  });
+  return includeRecommendations && recommendationMarket
+    ? withCartRecommendations(snapshot, input, recommendationMarket)
+    : snapshot;
 }
 
 export async function removeCartItem(

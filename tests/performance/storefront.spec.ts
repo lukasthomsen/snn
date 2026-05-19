@@ -2,6 +2,30 @@ import { promises as fs } from "node:fs";
 import * as path from "node:path";
 
 import { expect, test, type Page, type Response, type TestInfo } from "@playwright/test";
+import authState from "../../tools/perf/auth-state.cjs";
+
+type PerfAuthCookie = {
+  domain: string;
+  expires: number;
+  httpOnly: boolean;
+  name: string;
+  path: string;
+  sameSite: "Lax" | "None" | "Strict";
+  secure: boolean;
+  value: string;
+};
+
+const { createPerfAuthCookies } = authState as {
+  createPerfAuthCookies: (options?: {
+    authBaseUrl?: string | undefined;
+    baseUrl?: string | undefined;
+    email?: string | undefined;
+    repoRoot?: string | undefined;
+  }) => Promise<{
+    cookies: PerfAuthCookie[];
+    token: string;
+  }>;
+};
 
 type AuthState = "guest" | "signed-in";
 type CacheState = "cold" | "warm";
@@ -289,28 +313,36 @@ async function signInIfConfigured(page: Page, testInfo: TestInfo, callbackPath =
   await measure(testInfo, {
     authState: "guest",
     kind: "action",
-    name: "auth.signIn",
+    name: "auth.sessionBootstrap",
     page,
-    scenario: "auth.sign-in",
+    scenario: "auth.session-bootstrap",
     target: callbackPath,
   }, async () => {
     const callbackUrl = new URL(callbackPath, baseUrl);
-    const signInUrl = new URL(`/${locale}/sign-in`, authBaseUrl);
+    const authState = await createPerfAuthCookies({
+      authBaseUrl,
+      baseUrl,
+      email: customerEmail,
+    });
 
-    signInUrl.searchParams.set("callbackURL", callbackUrl.toString());
-    await page.goto(signInUrl.toString(), { waitUntil: "domcontentloaded" });
-    await page.locator('input[name="email"]').fill(customerEmail ?? "");
-    await page.locator('input[name="password"]').fill(customerPassword ?? "");
-    await page.getByRole("button", { name: /sign in|log ind/i }).click();
+    await page.context().addCookies(authState.cookies);
+    const response = await page.goto(callbackUrl.toString(), { waitUntil: "domcontentloaded" });
+
     await page.waitForURL(
       (url) => url.origin === callbackUrl.origin && url.pathname === callbackUrl.pathname,
       { timeout: 30_000 },
     );
+
+    return response;
   });
 }
 
+function getCartDrawerBag(page: Page) {
+  return page.locator('[data-perf-surface="cart-drawer-bag"]').first();
+}
+
 async function getFirstCartLineQuantity(page: Page) {
-  const line = page.locator("[data-perf-cart-line]").first();
+  const line = getCartDrawerBag(page).locator("[data-perf-cart-line]").first();
   const quantity = await line.getAttribute("data-perf-line-quantity");
 
   return Number(quantity ?? 0);
@@ -321,7 +353,7 @@ async function waitForFirstCartLineQuantity(page: Page, predicate: (quantity: nu
 }
 
 async function waitForCartLineCount(page: Page, predicate: (count: number) => boolean) {
-  await expect.poll(async () => predicate(await page.locator("[data-perf-cart-line]").count())).toBe(true);
+  await expect.poll(async () => predicate(await getCartDrawerBag(page).locator("[data-perf-cart-line]").count())).toBe(true);
 }
 
 async function ensureProductLikeState(page: Page, liked: boolean) {
@@ -428,8 +460,9 @@ test("anonymous cart mutation flow", async ({ page }, testInfo) => {
     target: productSlug,
   }, async () => {
     const previousQuantity = await getFirstCartLineQuantity(page);
+    const cartDrawerBag = getCartDrawerBag(page);
 
-    await page.getByRole("button", { name: /increase quantity/i }).first().click();
+    await cartDrawerBag.getByRole("button", { name: /increase quantity/i }).first().click();
     await waitForSurfaceIdle(page, "cart-drawer");
     await waitForFirstCartLineQuantity(page, (quantity) => quantity > previousQuantity);
   });
@@ -444,8 +477,9 @@ test("anonymous cart mutation flow", async ({ page }, testInfo) => {
     target: productSlug,
   }, async () => {
     const previousQuantity = await getFirstCartLineQuantity(page);
+    const cartDrawerBag = getCartDrawerBag(page);
 
-    await page.getByRole("button", { name: /decrease quantity/i }).first().click();
+    await cartDrawerBag.getByRole("button", { name: /decrease quantity/i }).first().click();
     await waitForSurfaceIdle(page, "cart-drawer");
     await waitForFirstCartLineQuantity(page, (quantity) => quantity < previousQuantity);
   });
@@ -459,7 +493,7 @@ test("anonymous cart mutation flow", async ({ page }, testInfo) => {
     serverTraceName: "storefront.cart.removeItem",
     target: productSlug,
   }, async () => {
-    await page.getByRole("button", { name: /decrease quantity/i }).first().click();
+    await getCartDrawerBag(page).getByRole("button", { name: /decrease quantity/i }).first().click();
     await waitForSurfaceIdle(page, "cart-drawer");
     await waitForCartLineCount(page, (count) => count === 0);
   });

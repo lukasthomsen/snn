@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Inter } from "next/font/google";
 import type { CSSProperties } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -13,12 +12,6 @@ import "./styles.css";
 
 const shouldRenderVercelInsights = process.env.VERCEL === "1";
 
-const interFont = Inter({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
 type LocaleLayoutProps = Readonly<{
   children: React.ReactNode;
   params: Promise<{
@@ -29,6 +22,14 @@ type LocaleLayoutProps = Readonly<{
 export const metadata: Metadata = {
   title: "SNN Accounts",
   description: "Central sign-in and account creation for SNN.",
+  icons: {
+    icon: [
+      {
+        type: "image/svg+xml",
+        url: "/icon.svg",
+      },
+    ],
+  },
 };
 
 export function generateStaticParams() {
@@ -43,7 +44,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   return (
-    <html className={interFont.variable} lang={locale as Locale}>
+    <html lang={locale as Locale}>
       <body
         data-theme="mono"
         style={themeToCssVariables(monoTheme) as CSSProperties}

@@ -1,59 +1,14 @@
 const { execFileSync } = require("node:child_process");
-const fs = require("node:fs");
 const net = require("node:net");
-const path = require("node:path");
 const { Pool } = require("pg");
+const { loadPerfEnv } = require("./env.cjs");
 
 const repoRoot = process.cwd();
-const envFiles = [
-  ".env.local",
-  path.join("apps", "storefront", ".env.local"),
-  path.join("apps", "accounts", ".env.local"),
-];
 const defaultBaseUrl = "http://localhost:3000";
 const defaultAuthBaseUrl = "http://localhost:3002";
 const defaultProductSlug = "essential-creatine-monohydrate";
 const allowedMutationEnvironments = new Set(["local", "preview"]);
 const checks = [];
-
-function stripOuterQuotes(value) {
-  const trimmed = value.trim();
-  const quote = trimmed[0];
-
-  if ((quote !== "\"" && quote !== "'") || trimmed[trimmed.length - 1] !== quote) {
-    return trimmed;
-  }
-
-  const unquoted = trimmed.slice(1, -1);
-
-  return quote === "\""
-    ? unquoted.replace(/\\n/g, "\n").replace(/\\"/g, "\"")
-    : unquoted;
-}
-
-function loadEnvFile(filePath) {
-  const absolutePath = path.resolve(repoRoot, filePath);
-
-  if (!fs.existsSync(absolutePath)) {
-    return;
-  }
-
-  const lines = fs.readFileSync(absolutePath, "utf8").split(/\r?\n/);
-
-  for (const line of lines) {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-
-    if (!match || line.trim().startsWith("#")) {
-      continue;
-    }
-
-    const [, key, rawValue] = match;
-
-    if (process.env[key] === undefined) {
-      process.env[key] = stripOuterQuotes(rawValue ?? "");
-    }
-  }
-}
 
 function addCheck(name, ok, details) {
   checks.push({
@@ -178,9 +133,7 @@ async function checkDatabase(productSlug) {
 }
 
 async function main() {
-  for (const filePath of envFiles) {
-    loadEnvFile(filePath);
-  }
+  loadPerfEnv({ repoRoot });
 
   const baseUrl = getUrl(process.env.PERF_BASE_URL, defaultBaseUrl);
   const authBaseUrl = getUrl(process.env.PERF_AUTH_BASE_URL, defaultAuthBaseUrl);

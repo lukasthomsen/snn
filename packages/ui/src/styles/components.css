@@ -1209,7 +1209,7 @@
   inset-inline-start: 0.85rem;
   max-width: calc(100% - 1.7rem);
   overflow: hidden;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-sm-plus);
   line-height: 1;
   pointer-events: none;

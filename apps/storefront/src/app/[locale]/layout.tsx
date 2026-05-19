@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Suspense, type CSSProperties } from "react";
@@ -18,11 +17,6 @@ import { StorefrontFooter } from "./components/storefront-footer";
 import { StorefrontHeaderShell } from "./components/storefront-header-shell";
 import "./styles.css";
 
-const interFont = Inter({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 const shouldRenderVercelInsights = process.env.VERCEL === "1";
 
 type LocaleLayoutProps = Readonly<{
@@ -35,6 +29,14 @@ type LocaleLayoutProps = Readonly<{
 export const metadata: Metadata = {
   title: "SNN Storefront",
   description: "Editorial storefront foundation for the SNN runtime.",
+  icons: {
+    icon: [
+      {
+        type: "image/svg+xml",
+        url: "/icon.svg",
+      },
+    ],
+  },
 };
 
 export function generateStaticParams() {
@@ -54,7 +56,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   ));
 
   return (
-    <html className={interFont.variable} lang={safeLocale}>
+    <html lang={safeLocale}>
       <body
         data-theme="mono"
         style={themeToCssVariables(monoTheme) as CSSProperties}

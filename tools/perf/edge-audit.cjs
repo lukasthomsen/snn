@@ -2,17 +2,12 @@ const dns = require("node:dns").promises;
 const fs = require("node:fs");
 const path = require("node:path");
 const { Pool } = require("pg");
+const { loadPerfEnv } = require("./env.cjs");
 
 const repoRoot = process.cwd();
 const outputDir = path.join(repoRoot, "perf-reports", "edge");
 const jsonReportPath = path.join(outputDir, "edge-audit.json");
 const markdownReportPath = path.join(repoRoot, "docs", "performance", "step-2-edge-setup.md");
-const envFiles = [
-  ".env.local",
-  path.join("apps", "storefront", ".env.local"),
-  path.join("apps", "accounts", ".env.local"),
-  path.join("apps", "admin", ".env.local"),
-];
 const defaultVariants = {
   thumb: {
     neverRequireSignedURLs: true,
@@ -65,45 +60,8 @@ const bypassRules = [
   "Respect origin Cache-Control for static public pages and assets only.",
 ];
 
-function stripOuterQuotes(value) {
-  const trimmed = value.trim();
-  const quote = trimmed[0];
-
-  if ((quote !== "\"" && quote !== "'") || trimmed[trimmed.length - 1] !== quote) {
-    return trimmed;
-  }
-
-  return trimmed.slice(1, -1);
-}
-
-function loadEnvFile(filePath) {
-  const absolutePath = path.resolve(repoRoot, filePath);
-
-  if (!fs.existsSync(absolutePath)) {
-    return;
-  }
-
-  const lines = fs.readFileSync(absolutePath, "utf8").split(/\r?\n/);
-
-  for (const line of lines) {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-
-    if (!match || line.trim().startsWith("#")) {
-      continue;
-    }
-
-    const [, key, rawValue] = match;
-
-    if (process.env[key] === undefined) {
-      process.env[key] = stripOuterQuotes(rawValue ?? "");
-    }
-  }
-}
-
 function getEnv() {
-  for (const filePath of envFiles) {
-    loadEnvFile(filePath);
-  }
+  loadPerfEnv({ repoRoot });
 
   const baseDomain = process.env.BASE_DOMAIN || "veloro.dk";
   const storefrontHost = getUrlHost(process.env.PERF_BASE_URL)

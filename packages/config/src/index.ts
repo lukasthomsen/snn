@@ -86,6 +86,22 @@ function getAppHost(app: SnnApp) {
   return `${cachedEnv.AUTH_SUBDOMAIN}.${cachedEnv.BASE_DOMAIN}`;
 }
 
+function normalizeDatabaseSslMode(value: string) {
+  try {
+    const url = new URL(value);
+    const sslMode = url.searchParams.get("sslmode");
+
+    if (sslMode && ["prefer", "require", "verify-ca"].includes(sslMode)) {
+      url.searchParams.set("sslmode", "verify-full");
+      return url.toString();
+    }
+  } catch {
+    return value;
+  }
+
+  return value;
+}
+
 export function getServerEnv() {
   return cachedEnv;
 }
@@ -160,11 +176,11 @@ export function getCookieDomain() {
 }
 
 export function getDatabaseUrl() {
-  return cachedEnv.DATABASE_URL;
+  return normalizeDatabaseSslMode(cachedEnv.DATABASE_URL);
 }
 
 export function getDatabaseMigrationUrl() {
-  return cachedEnv.DATABASE_URL_UNPOOLED ?? cachedEnv.DATABASE_URL;
+  return normalizeDatabaseSslMode(cachedEnv.DATABASE_URL_UNPOOLED ?? cachedEnv.DATABASE_URL);
 }
 
 export function getDatabasePoolConfig() {

@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 import { cx } from "../cx";
 
-import { Card, Heading, Stack } from "./layout";
+import { Card, Stack } from "./layout";
 
 type HeroFrameProps = HTMLAttributes<HTMLElement> & {
   actions?: ReactNode;
@@ -41,7 +41,7 @@ export function HeroFrame({
     >
       <div className="hero__layout__SW0ds">
         <div className="hero__copy__SW0dr">
-          <Heading as="h1" className="hero__title__SW0du">{title}</Heading>
+          <h1 className="hero__title__SW0du">{title}</h1>
           <p className="hero__description__SW0dv">{description}</p>
           {actions ? <div className="hero__actions__SW0dw">{actions}</div> : null}
         </div>
@@ -121,7 +121,7 @@ export function FormFrame({
   return (
     <Card {...props} className={cx("form-frame__root__SW0e7", className)}>
       <Stack gap="var(--space-sm)">
-        <Heading as="h2" className="form__title__SW0e9">{title}</Heading>
+        <h2 className="form__title__SW0e9">{title}</h2>
         {description ? <p className="form__description__SW0ea">{description}</p> : null}
       </Stack>
       <div className="form__content__SW0eb">{children}</div>

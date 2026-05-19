@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -141,6 +142,7 @@ export function CartDrawerProvider({
   const [shippingProgressEntrancePending, setShippingProgressEntrancePending] = useState(false);
   const [shippingProgressEntranceVersion, setShippingProgressEntranceVersion] = useState(0);
   const [likesState, setLikesState] = useState<LikesState>({ status: "idle" });
+  const likesStatusRef = useRef<LikesState["status"]>("idle");
 
   const syncCart = useCallback((nextCart: CartSnapshot | null) => {
     setCart(nextCart);
@@ -295,13 +297,19 @@ export function CartDrawerProvider({
   ]);
 
   useEffect(() => {
-    if (!open || activeTab !== "likes" || likesState.status !== "idle") {
-      return;
+    likesStatusRef.current = likesState.status;
+  }, [likesState.status]);
+
+  useEffect(() => {
+    if (!open || activeTab !== "likes" || likesStatusRef.current !== "idle") {
+      return undefined;
     }
 
+    const requestStatus = "loading";
     let cancelled = false;
 
     async function loadLikes() {
+      likesStatusRef.current = requestStatus;
       setLikesState({ status: "loading" });
 
       const result = await loadCartLikesAction({ locale });
@@ -311,14 +319,18 @@ export function CartDrawerProvider({
       }
 
       if (result.ok) {
+        likesStatusRef.current = "ready";
         setLikesState({
           items: result.items,
           status: "ready",
         });
       } else {
+        const status = result.code === "AUTH_REQUIRED" ? "auth" : "error";
+
+        likesStatusRef.current = status;
         setLikesState({
           message: result.message,
-          status: result.code === "AUTH_REQUIRED" ? "auth" : "error",
+          status,
         });
       }
     }
@@ -328,7 +340,7 @@ export function CartDrawerProvider({
     return () => {
       cancelled = true;
     };
-  }, [activeTab, likesState.status, locale, open]);
+  }, [activeTab, locale, open]);
 
   return (
     <CartDrawerContext.Provider value={contextValue}>

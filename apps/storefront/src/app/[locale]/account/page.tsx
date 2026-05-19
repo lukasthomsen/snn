@@ -13,6 +13,7 @@ import {
   RecentOrdersPanel,
   RewardsHero,
 } from "./account-components";
+import { signOutCustomerFormAction } from "./actions";
 import { requireAccountSession } from "./account-auth";
 import { WelcomeAccountModal } from "./welcome-account-modal";
 import { StorefrontCard } from "../components/storefront-card";
@@ -46,7 +47,12 @@ export default async function AccountPage({
   const displayName = getCustomerDisplayName(user, dashboard.profile);
 
   return (
-    <div className="accountDashboard__root__SW2i0" data-account-ready="true">
+    <div
+      className="accountDashboard__root__SW2i0"
+      data-account-ready="true"
+      data-perf-ready="true"
+      data-perf-surface="account"
+    >
       <WelcomeAccountModal
         locale={safeLocale}
         open={getFirstParam(resolvedSearchParams.welcome) === "1"}
@@ -68,6 +74,7 @@ export default async function AccountPage({
 
         <aside className="accountDashboard__menu__SW2i2" aria-label="Account menu">
           <StorefrontCard
+            accountLink="addresses"
             description={getAddressSummary(dashboard.defaultAddress ?? undefined)}
             href={`/${safeLocale}/account/addresses` as Route}
             size="medium"
@@ -86,6 +93,7 @@ export default async function AccountPage({
             title="Refer a friend"
           />
           <StorefrontCard
+            accountLink="rewards"
             description="Rewards, points history, and tier progress."
             href={`/${safeLocale}/account/rewards` as Route}
             icon="XP"
@@ -110,6 +118,18 @@ export default async function AccountPage({
             size="medium"
             title="Account settings"
           />
+          <form
+            action={signOutCustomerFormAction.bind(null, safeLocale)}
+            className="accountDashboardSignOut__root__SW4c0"
+          >
+            <button
+              className="accountDashboardSignOut__button__SW4c1"
+              data-account-sign-out="true"
+              type="submit"
+            >
+              Sign out
+            </button>
+          </form>
         </aside>
       </div>
     </div>

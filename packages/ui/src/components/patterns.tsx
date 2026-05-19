@@ -95,11 +95,14 @@ export function RatingStars({
   rating: number;
   size?: number;
 }) {
+  const isHidden = props["aria-hidden"] === true || props["aria-hidden"] === "true";
+
   return (
     <span
       {...props}
-      aria-label={props["aria-label"] ?? `${rating} out of ${max}`}
+      aria-label={isHidden ? undefined : props["aria-label"] ?? `${rating} out of ${max}`}
       className={cx("rating-stars__root__SW2u2", className)}
+      role={isHidden ? undefined : props.role ?? "img"}
     >
       {Array.from({ length: max }, (_, index) => (
         <StarIcon

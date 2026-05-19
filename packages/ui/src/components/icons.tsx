@@ -53,7 +53,9 @@ type IconoirComponent = ForwardRefExoticComponent<
   Omit<ReactSvgProps<SVGSVGElement>, "ref"> & RefAttributes<SVGSVGElement>
 >;
 
-function withIconoirDefaults(Icon: IconoirComponent) {
+function withIconoirDefaults(IconInput: unknown) {
+  const Icon = IconInput as IconoirComponent;
+
   return function IconoirWrapper({
     size = 18,
     strokeWidth = 1.8,

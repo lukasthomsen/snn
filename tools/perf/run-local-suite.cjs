@@ -14,6 +14,8 @@ const childEnv = {
 };
 const servers = [];
 
+delete childEnv.FORCE_COLOR;
+
 const generatedPerfTargets = [
   path.join(repoRoot, "perf-reports", "playwright"),
   path.join(repoRoot, "perf-reports", "lighthouse"),
@@ -53,7 +55,19 @@ function startServer(label, args) {
   const child = spawn("pnpm", args, {
     detached: process.platform !== "win32",
     env: childEnv,
-    stdio: "inherit",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  child.stdout.on("data", (chunk) => {
+    if (!child.snnExpectedStop) {
+      process.stdout.write(chunk);
+    }
+  });
+
+  child.stderr.on("data", (chunk) => {
+    if (!child.snnExpectedStop) {
+      process.stderr.write(chunk);
+    }
   });
 
   servers.push({
@@ -62,7 +76,7 @@ function startServer(label, args) {
   });
 
   child.on("exit", (code, signal) => {
-    if (!child.killed) {
+    if (!child.snnExpectedStop) {
       console.error(`${label} exited early with code=${code} signal=${signal}`);
     }
   });
@@ -140,6 +154,7 @@ async function stopServers() {
     }
 
     console.log(`Stopping ${label}...`);
+    child.snnExpectedStop = true;
     killProcessGroup(child, "SIGTERM");
 
     await new Promise((resolve) => {

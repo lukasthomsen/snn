@@ -1,5 +1,13 @@
-const emailSelector = 'input[type="email"], input[name="email"], input[autocomplete="email"]';
-const passwordSelector = 'input[type="password"], input[name="password"], input[autocomplete="current-password"]';
+const { createPerfAuthCookies } = require("./auth-state.cjs");
+
+function toPuppeteerCookie(baseUrl, cookie) {
+  const { domain: _domain, ...rest } = cookie;
+
+  return {
+    ...rest,
+    url: baseUrl,
+  };
+}
 
 module.exports = async function lighthouseAuth(browser) {
   const baseUrl = (process.env.PERF_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
@@ -17,6 +25,13 @@ module.exports = async function lighthouseAuth(browser) {
   }
 
   const page = await browser.newPage();
+  const { cookies } = await createPerfAuthCookies({
+    authBaseUrl,
+    baseUrl,
+    email: customerEmail,
+  });
+
+  await page.setCookie(...cookies.map((cookie) => toPuppeteerCookie(baseUrl, cookie)));
 
   if (vercelBypassToken) {
     await page.setExtraHTTPHeaders({
@@ -25,31 +40,7 @@ module.exports = async function lighthouseAuth(browser) {
     });
   }
 
-  const callbackUrl = `${baseUrl}/${locale}/account`;
-  const signInUrl = new URL(`/${locale}/sign-in`, authBaseUrl);
-
-  signInUrl.searchParams.set("callbackURL", callbackUrl);
-
-  await page.goto(signInUrl.toString(), { waitUntil: "domcontentloaded" });
-
-  const emailInput = await page.waitForSelector(emailSelector, { timeout: 15_000 }).catch(() => null);
-
-  if (!emailInput) {
-    await page.waitForSelector('[data-account-ready="true"]', { timeout: 30_000 });
-    await page.close();
-    return;
-  }
-
-  await emailInput.click({ clickCount: 3 });
-  await emailInput.type(customerEmail);
-  const passwordInput = await page.waitForSelector(passwordSelector, { timeout: 15_000 });
-
-  await passwordInput.click({ clickCount: 3 });
-  await passwordInput.type(customerPassword);
-  await Promise.all([
-    page.waitForNavigation({ timeout: 30_000, waitUntil: "domcontentloaded" }).catch(() => null),
-    page.click('button[type="submit"], input[type="submit"]'),
-  ]);
+  await page.goto(`${baseUrl}/${locale}/account`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('[data-account-ready="true"]', { timeout: 30_000 });
   await page.close();
 };

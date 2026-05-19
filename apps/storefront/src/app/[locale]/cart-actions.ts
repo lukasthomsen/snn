@@ -52,7 +52,7 @@ export type CartDrawerLikesResult =
       ok: true;
     }
   | {
-      code: "AUTH_REQUIRED";
+      code: "AUTH_REQUIRED" | "LOAD_FAILED";
       message: string;
       ok: false;
     };
@@ -173,37 +173,45 @@ export async function removeCartItemAction({
 
 export async function loadCartLikesAction({ locale }: CartActionInput): Promise<CartDrawerLikesResult> {
   return tracePerformance("storefront.cart.loadLikes", { locale }, async () => {
-    const session = await getCustomerSession(await headers()).catch(() => null);
+    try {
+      const session = await getCustomerSession(await headers()).catch(() => null);
 
-    if (!session?.user.emailVerified || session.user.banned) {
+      if (!session?.user.emailVerified || session.user.banned) {
+        return {
+          code: "AUTH_REQUIRED",
+          message: getCartActionMessage(locale, "AUTH_REQUIRED"),
+          ok: false,
+        };
+      }
+
+      const productList = await getProductCards({
+        countryCode: "DK",
+        likedOnlyUserId: session.user.id,
+        likedUserId: session.user.id,
+        locale,
+        limit: 12,
+      });
+
       return {
-        code: "AUTH_REQUIRED",
-        message: getCartActionMessage(locale, "AUTH_REQUIRED"),
+        items: productList.items.map((product) => ({
+          id: product.id,
+          imageUrl: product.imageUrl,
+          name: product.name,
+          price: {
+            amount: product.price.amount,
+            currencyCode: product.price.currencyCode,
+          },
+          slug: product.slug,
+          variantId: product.variantId,
+        })),
+        ok: true,
+      };
+    } catch {
+      return {
+        code: "LOAD_FAILED",
+        message: getCartActionMessage(locale, "LOAD_FAILED"),
         ok: false,
       };
     }
-
-    const productList = await getProductCards({
-      countryCode: "DK",
-      likedOnlyUserId: session.user.id,
-      likedUserId: session.user.id,
-      locale,
-      limit: 12,
-    });
-
-    return {
-      items: productList.items.map((product) => ({
-        id: product.id,
-        imageUrl: product.imageUrl,
-        name: product.name,
-        price: {
-          amount: product.price.amount,
-          currencyCode: product.price.currencyCode,
-        },
-        slug: product.slug,
-        variantId: product.variantId,
-      })),
-      ok: true,
-    };
   });
 }

@@ -1,49 +1,9 @@
-const fs = require("node:fs");
-const path = require("node:path");
+const { spawn } = require("node:child_process");
 const { Pool } = require("pg");
+const { loadPerfEnv } = require("./env.cjs");
 
 const repoRoot = process.cwd();
-const envFiles = [
-  ".env.local",
-  path.join("apps", "storefront", ".env.local"),
-  path.join("apps", "accounts", ".env.local"),
-];
 const allowedMutationEnvironments = new Set(["local", "preview"]);
-
-function stripOuterQuotes(value) {
-  const trimmed = value.trim();
-  const quote = trimmed[0];
-
-  if ((quote !== "\"" && quote !== "'") || trimmed[trimmed.length - 1] !== quote) {
-    return trimmed;
-  }
-
-  return trimmed.slice(1, -1);
-}
-
-function loadEnvFile(filePath) {
-  const absolutePath = path.resolve(repoRoot, filePath);
-
-  if (!fs.existsSync(absolutePath)) {
-    return;
-  }
-
-  const lines = fs.readFileSync(absolutePath, "utf8").split(/\r?\n/);
-
-  for (const line of lines) {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-
-    if (!match || line.trim().startsWith("#")) {
-      continue;
-    }
-
-    const [, key, rawValue] = match;
-
-    if (process.env[key] === undefined) {
-      process.env[key] = stripOuterQuotes(rawValue ?? "");
-    }
-  }
-}
 
 function normalizeBaseUrl(value, fallback) {
   return (value || fallback).replace(/\/$/, "");
@@ -89,6 +49,124 @@ function getBypassHeaders() {
     "x-vercel-protection-bypass": bypassToken,
     "x-vercel-set-bypass-cookie": "true",
   };
+}
+
+function isLocalhostUrl(value) {
+  const hostname = new URL(value).hostname;
+
+  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+}
+
+async function isAuthServerReady(authBaseUrl) {
+  try {
+    const response = await fetch(`${authBaseUrl}/api/health`, {
+      headers: getBypassHeaders(),
+      signal: globalThis.AbortSignal.timeout(5_000),
+    });
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function killProcessGroup(child, signal) {
+  try {
+    if (process.platform !== "win32") {
+      process.kill(-child.pid, signal);
+      return;
+    }
+  } catch {
+    // Fall through to direct child kill for platforms or shells without groups.
+  }
+
+  child.kill(signal);
+}
+
+function startManagedAuthServer() {
+  const child = spawn("pnpm", ["--filter", "@snn/accounts", "start"], {
+    cwd: repoRoot,
+    detached: process.platform !== "win32",
+    env: {
+      ...process.env,
+      NEXT_TELEMETRY_DISABLED: "1",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  child.stdout.on("data", (chunk) => {
+    if (!child.snnExpectedStop) {
+      process.stdout.write(chunk);
+    }
+  });
+
+  child.stderr.on("data", (chunk) => {
+    if (!child.snnExpectedStop) {
+      process.stderr.write(chunk);
+    }
+  });
+
+  return child;
+}
+
+async function waitForManagedAuthServer(authBaseUrl, child) {
+  const startedAt = Date.now();
+  let lastError = "not ready";
+
+  while (Date.now() - startedAt < 120_000) {
+    if (child.exitCode !== null) {
+      throw new Error(`Managed accounts server exited before becoming ready. Last status: ${lastError}`);
+    }
+
+    if (await isAuthServerReady(authBaseUrl)) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+
+  throw new Error(`Managed accounts server did not become ready at ${authBaseUrl}/api/health.`);
+}
+
+async function ensureAuthServer(authBaseUrl) {
+  if (await isAuthServerReady(authBaseUrl)) {
+    return null;
+  }
+
+  if (!isLocalhostUrl(authBaseUrl)) {
+    throw new Error(`Accounts auth server is not reachable at ${authBaseUrl}. Start it or use a reachable preview URL.`);
+  }
+
+  console.log(`Accounts server is not running at ${authBaseUrl}; starting @snn/accounts temporarily.`);
+  const child = startManagedAuthServer();
+
+  await waitForManagedAuthServer(authBaseUrl, child);
+
+  return child;
+}
+
+async function stopManagedAuthServer(child) {
+  if (!child || child.exitCode !== null) {
+    return;
+  }
+
+  child.snnExpectedStop = true;
+  killProcessGroup(child, "SIGTERM");
+
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      if (child.exitCode === null) {
+        killProcessGroup(child, "SIGKILL");
+      }
+
+      resolve();
+    }, 10_000);
+
+    child.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
 }
 
 async function postAuthJson(authBaseUrl, pathName, body) {
@@ -242,9 +320,7 @@ function getAuthErrorMessage(result) {
 }
 
 async function main() {
-  for (const filePath of envFiles) {
-    loadEnvFile(filePath);
-  }
+  loadPerfEnv({ repoRoot });
 
   const baseUrl = normalizeBaseUrl(process.env.PERF_BASE_URL, "http://localhost:3000");
   const authBaseUrl = normalizeBaseUrl(process.env.PERF_AUTH_BASE_URL, "http://localhost:3002");
@@ -272,8 +348,11 @@ async function main() {
     connectionString: process.env.DATABASE_URL,
     max: 1,
   });
+  let managedAuthServer = null;
 
   try {
+    managedAuthServer = await ensureAuthServer(authBaseUrl);
+
     let user = await findUser(pool, email);
 
     if (!user) {
@@ -317,6 +396,7 @@ async function main() {
 
     console.log(`Disposable performance customer is ready: ${email}`);
   } finally {
+    await stopManagedAuthServer(managedAuthServer);
     await pool.end();
   }
 }

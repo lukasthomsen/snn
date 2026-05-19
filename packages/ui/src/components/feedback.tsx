@@ -125,6 +125,14 @@ function getValueText({
   return new Intl.NumberFormat("en-US", formatOptions).format(value);
 }
 
+function getTextLabel(value: ReactNode) {
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+
+  return undefined;
+}
+
 function ProgressLike({
   animateOnVisible,
   className,
@@ -159,6 +167,8 @@ function ProgressLike({
     typeof valueText === "string" || typeof valueText === "number"
       ? String(valueText)
       : undefined;
+  const ariaLabel =
+    props["aria-label"] ?? (props["aria-labelledby"] ? undefined : getTextLabel(label));
 
   useEffect(() => {
     if (!shouldAnimateOnVisible || isIndeterminate) {
@@ -199,6 +209,7 @@ function ProgressLike({
   return (
     <div
       {...props}
+      aria-label={ariaLabel}
       aria-valuemax={isIndeterminate ? undefined : maxValue}
       aria-valuemin={isIndeterminate ? undefined : minValue}
       aria-valuenow={isIndeterminate ? undefined : value}

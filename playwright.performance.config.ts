@@ -1,4 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
+import perfEnv from "./tools/perf/env.cjs";
+
+const { loadPerfEnv } = perfEnv as {
+  loadPerfEnv: (options?: { repoRoot?: string }) => void;
+};
+
+loadPerfEnv();
+
+delete process.env.NO_COLOR;
 
 const baseURL = process.env.PERF_BASE_URL ?? "http://localhost:3000";
 const vercelBypassToken = process.env.PERF_VERCEL_BYPASS_TOKEN ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET;

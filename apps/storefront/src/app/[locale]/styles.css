@@ -1414,7 +1414,7 @@ button.storefront-card__root__SW3c0 {
 
 .catalog__count__SW3at {
   margin: 0;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-normal);
   line-height: 1;
@@ -1641,7 +1641,7 @@ button.storefront-card__root__SW3c0 {
 .product-card__copy__SW3ad del,
 .product-detail__price__SW3b7 del {
   margin-right: var(--space-50);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-weight: var(--font-weight-medium);
 }
 
@@ -2014,7 +2014,7 @@ button.storefront-card__root__SW3c0 {
 
 .product-detail__price__SW3b7 del {
   margin-right: var(--space-75);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-lg);
 }
 
@@ -2344,7 +2344,7 @@ button.storefront-card__root__SW3c0 {
 }
 
 .productReviews__item__SW3d7 small {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-xs);
 }
 
