@@ -45,9 +45,12 @@ const selectedHeaders = [
   "x-vercel-cache",
   "x-vercel-id",
 ];
-const requiredVercelEnvKeys = [
+const requiredVercelBaseEnvKeys = [
   "BASE_DOMAIN",
   "CLOUDFLARE_IMAGES_DELIVERY_HASH",
+];
+const requiredVercelAuthEnvKeys = [
+  ...requiredVercelBaseEnvKeys,
   "CF_TURNSTILE_SECRET_KEY",
   "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
 ];
@@ -665,17 +668,19 @@ async function vercelRequest(pathname, token, query) {
   };
 }
 
-async function auditVercelProject(projectId, expectedDomains, teamId, token) {
+async function auditVercelProject(project) {
   const result = {
     domains: [],
     envKeys: [],
-    expectedDomains,
-    projectId: redact(projectId, 6),
+    expectedDomains: project.expectedDomains,
+    projectId: redact(project.id, 6),
     status: "skip",
   };
 
   try {
-    const domains = await vercelRequest(`/v9/projects/${projectId}/domains`, token, { teamId });
+    const domains = await vercelRequest(`/v9/projects/${project.id}/domains`, project.token, {
+      teamId: project.teamId,
+    });
 
     if (!domains.ok) {
       result.status = "warn";
@@ -691,29 +696,39 @@ async function auditVercelProject(projectId, expectedDomains, teamId, token) {
     }));
 
     const assignedDomainNames = new Set(result.domains.map((domain) => domain.name));
-    const allExpectedDomainsAssigned = expectedDomains.every((domain) => assignedDomainNames.has(domain));
-    const env = await vercelRequest(`/v10/projects/${projectId}/env`, token, { teamId });
+    const missingDomains = project.expectedDomains.filter((domain) => !assignedDomainNames.has(domain));
+    const env = await vercelRequest(`/v10/projects/${project.id}/env`, project.token, {
+      teamId: project.teamId,
+    });
 
     if (env.ok) {
       const envRows = env.body?.envs ?? [];
       const envKeys = new Set(envRows.map((row) => row.key));
 
-      result.envKeys = requiredVercelEnvKeys.map((key) => ({
+      result.envKeys = project.requiredEnvKeys.map((key) => ({
         key,
         present: envKeys.has(key),
       }));
     } else {
-      result.envKeys = requiredVercelEnvKeys.map((key) => ({
+      result.envKeys = project.requiredEnvKeys.map((key) => ({
         key,
         present: "unknown",
       }));
       result.envSummary = `Env API returned HTTP ${env.status}.`;
     }
 
-    result.status = allExpectedDomainsAssigned ? "pass" : "warn";
-    result.summary = allExpectedDomainsAssigned
-      ? "Expected production domains are assigned to the project."
-      : "One or more expected production domains are not assigned to the project.";
+    const missingEnvKeys = result.envKeys
+      .filter((row) => row.present !== true)
+      .map((row) => row.key);
+
+    result.status = missingDomains.length === 0 && missingEnvKeys.length === 0 ? "pass" : "warn";
+    result.summary = result.status === "pass"
+      ? "Expected production domains and required environment variables are configured."
+      : [
+        missingDomains.length > 0 ? `missing domains: ${missingDomains.join(", ")}` : null,
+        missingEnvKeys.length > 0 ? `missing env: ${missingEnvKeys.join(", ")}` : null,
+        result.envSummary,
+      ].filter(Boolean).join("; ");
   } catch (error) {
     result.status = "warn";
     result.summary = error.message;
@@ -730,16 +745,19 @@ async function auditVercelApi(env) {
       expectedDomains: [env.baseDomain, env.storefrontHost],
       id: process.env.VERCEL_STOREFRONT_PROJECT_ID,
       name: "storefront",
+      requiredEnvKeys: requiredVercelAuthEnvKeys,
     },
     {
       expectedDomains: [env.accountsHost],
       id: process.env.VERCEL_ACCOUNTS_PROJECT_ID,
       name: "accounts",
+      requiredEnvKeys: requiredVercelAuthEnvKeys,
     },
     {
       expectedDomains: [env.adminHost],
       id: process.env.VERCEL_ADMIN_PROJECT_ID,
       name: "admin",
+      requiredEnvKeys: requiredVercelBaseEnvKeys,
     },
   ];
 
@@ -766,7 +784,11 @@ async function auditVercelApi(env) {
   for (const project of availableProjects) {
     projects.push({
       name: project.name,
-      ...(await auditVercelProject(project.id, project.expectedDomains, teamId, token)),
+      ...(await auditVercelProject({
+        ...project,
+        teamId,
+        token,
+      })),
     });
   }
 

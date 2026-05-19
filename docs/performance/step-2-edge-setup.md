@@ -1,6 +1,6 @@
 # Step 2 Edge Setup Audit
 
-Generated: 2026-05-19T17:35:41.205Z
+Generated: 2026-05-19T18:34:56.869Z
 
 ## Summary
 
@@ -19,19 +19,19 @@ Overall status: **PASS**
 | Cloudflare Images | PASS | 12 Cloudflare Images sample(s) checked. |
 | Turnstile | PASS | Foundation configured, widget not active yet. |
 | Cloudflare API | PASS | All expected Cloudflare Images variants are present and match repo definitions. Cloudflare Turnstile API returned 2 widget(s). |
-| Vercel API | SKIP | VERCEL_TOKEN is not configured. |
+| Vercel API | PASS | 3 Vercel project(s) checked with read-only API calls. |
 | Docs | PASS | Cloudflare docs describe Vercel-primary page delivery. |
 
 ## DNS And Page Host Headers
 
-Nameservers for `snn-storefront-4n2mt79j9-snn-commerce.vercel.app`: -
+Nameservers for `veloro.dk`: ns1.simply.com, ns3.simply.com, ns2.simply.com
 
 | Name | Host | Status | A | CNAME | Server | x-vercel-id | cf-ray |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| apex | snn-storefront-4n2mt79j9-snn-commerce.vercel.app | PASS | 216.198.79.131, 64.29.17.131 | - | Vercel | arn1::fra1::nhc8d-1779212126242-a5b2c44c7cc0 | - |
-| storefront | snn-storefront-4n2mt79j9-snn-commerce.vercel.app | PASS | 216.198.79.131, 64.29.17.131 | - | Vercel | arn1::fra1::dklpd-1779212128080-25a8e29ece43 | - |
-| accounts | snn-accounts-1s4xhx1qw-snn-commerce.vercel.app | PASS | 216.198.79.3, 64.29.17.3 | - | Vercel | arn1::fra1::hszf7-1779212129035-f86060041ee6 | - |
-| admin | snn-admin-n5622jeuj-snn-commerce.vercel.app | PASS | 64.29.17.195, 216.198.79.195 | - | Vercel | arn1::fra1::57jmp-1779212130874-d2560cc7e2dc | - |
+| apex | veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::wqjb5-1779215685824-c2a8faa72877 | - |
+| storefront | www.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::fv2hw-1779215686162-e5baeab228e9 | - |
+| accounts | accounts.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::77jdr-1779215686489-08bed1d69053 | - |
+| admin | admin.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::thlvr-1779215686928-35e349e0a1e1 | - |
 
 ## Public Route Headers
 
@@ -52,18 +52,18 @@ Configured delivery hash: present
 
 | Status | Sample URL | HTTP | Content-Type | Server | cf-ray |
 | --- | --- | --- | --- | --- | --- |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...306ec/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbf8cd2632d7-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-8...b9909/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbf93f65dce9-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...fc259/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbf9cd49fee2-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-3...6572f/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfa6de0d82d-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...ab52f/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfaefd2a50a-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e6722/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfb6a6f5000-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-b...e9ac5/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfbfae63ca8-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-c...ee9a9/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfc7cbeb354-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...9af84/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfcff945b0a-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...3a16f/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfd6d4febdd-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-7...60a08/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfde9175cce-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...dfd5a/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfe7a8b2da5-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-4...212ab/productcard | 200 | image/svg+xml | cloudflare | 9fe532b63d2ad90a-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-9...de23f/productcard | 200 | image/svg+xml | cloudflare | 9fe532b6b8b632d7-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e83b8/productcard | 200 | image/svg+xml | cloudflare | 9fe532b73d3e8aa7-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-2...cc7e4/productcard | 200 | image/svg+xml | cloudflare | 9fe532b7ccb5e034-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-8...5b57d/productcard | 200 | image/svg+xml | cloudflare | 9fe532b849367060-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...b5d34/productcard | 200 | image/svg+xml | cloudflare | 9fe532b8ded4a5a4-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-0...b9262/productcard | 200 | image/svg+xml | cloudflare | 9fe532b96bc325cf-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...d7e6c/productcard | 200 | image/svg+xml | cloudflare | 9fe532b9e8a9e034-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-b...42ad6/productcard | 200 | image/svg+xml | cloudflare | 9fe532ba6f4545f8-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-7...89e04/productcard | 200 | image/svg+xml | cloudflare | 9fe532bafccd042d-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e6722/productcard | 200 | image/svg+xml | cloudflare | 9fe532bb7fea868c-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...ab52f/productcard | 200 | image/svg+xml | cloudflare | 9fe532bbff767e5b-CPH |
 
 Cloudflare Images API: All expected Cloudflare Images variants are present and match repo definitions.
 
@@ -76,7 +76,11 @@ Cloudflare Images API: All expected Cloudflare Images variants are present and m
 
 ## Optional Vercel API
 
-VERCEL_TOKEN is not configured.
+| Project | Status | Summary |
+| --- | --- | --- |
+| storefront | PASS | Expected production domains and required environment variables are configured. |
+| accounts | PASS | Expected production domains and required environment variables are configured. |
+| admin | PASS | Expected production domains and required environment variables are configured. |
 
 ## Proxy Contingency Only
 
