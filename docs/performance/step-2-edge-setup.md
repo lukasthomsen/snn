@@ -1,6 +1,6 @@
 # Step 2 Edge Setup Audit
 
-Generated: 2026-05-16T22:11:37.338Z
+Generated: 2026-05-19T17:35:41.205Z
 
 ## Summary
 
@@ -24,14 +24,14 @@ Overall status: **PASS**
 
 ## DNS And Page Host Headers
 
-Nameservers for `veloro.dk`: ns3.simply.com, ns2.simply.com, ns1.simply.com
+Nameservers for `snn-storefront-4n2mt79j9-snn-commerce.vercel.app`: -
 
 | Name | Host | Status | A | CNAME | Server | x-vercel-id | cf-ray |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| apex | veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::wfkwg-1778969487534-d85e238fc8a7 | - |
-| storefront | www.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::wfkwg-1778969488303-9c401034e1f2 | - |
-| accounts | accounts.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::fgbz9-1778969488738-b9f21b900791 | - |
-| admin | admin.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::cb2tr-1778969490177-979c9985e516 | - |
+| apex | snn-storefront-4n2mt79j9-snn-commerce.vercel.app | PASS | 216.198.79.131, 64.29.17.131 | - | Vercel | arn1::fra1::nhc8d-1779212126242-a5b2c44c7cc0 | - |
+| storefront | snn-storefront-4n2mt79j9-snn-commerce.vercel.app | PASS | 216.198.79.131, 64.29.17.131 | - | Vercel | arn1::fra1::dklpd-1779212128080-25a8e29ece43 | - |
+| accounts | snn-accounts-1s4xhx1qw-snn-commerce.vercel.app | PASS | 216.198.79.3, 64.29.17.3 | - | Vercel | arn1::fra1::hszf7-1779212129035-f86060041ee6 | - |
+| admin | snn-admin-n5622jeuj-snn-commerce.vercel.app | PASS | 64.29.17.195, 216.198.79.195 | - | Vercel | arn1::fra1::57jmp-1779212130874-d2560cc7e2dc | - |
 
 ## Public Route Headers
 
@@ -44,7 +44,7 @@ Nameservers for `veloro.dk`: ns3.simply.com, ns2.simply.com, ns1.simply.com
 | storefront.checkout | PASS | 200 | private, no-cache, no-store, max-age=0, must-revalidate | MISS | Vercel | - |
 | storefront.wishlist | PASS | 200 | private, no-cache, no-store, max-age=0, must-revalidate | MISS | Vercel | - |
 | accounts.sign-in | PASS | 200 | private, no-cache, no-store, max-age=0, must-revalidate | MISS | Vercel | - |
-| admin.home | PASS | 200 | private, no-cache, no-store, max-age=0, must-revalidate | MISS | Vercel | - |
+| admin.home | PASS | 307 | private, no-cache, no-store, max-age=0, must-revalidate | MISS | Vercel | - |
 
 ## Cloudflare Images
 
@@ -52,24 +52,24 @@ Configured delivery hash: present
 
 | Status | Sample URL | HTTP | Content-Type | Server | cf-ray |
 | --- | --- | --- | --- | --- | --- |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-4...212ab/productcard | 200 | image/svg+xml | cloudflare | 9fcdb80e1abf2af8-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-9...de23f/productcard | 200 | image/svg+xml | cloudflare | 9fcdb80ebfb56cad-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e83b8/productcard | 200 | image/svg+xml | cloudflare | 9fcdb80f698d2c59-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-2...cc7e4/productcard | 200 | image/svg+xml | cloudflare | 9fcdb81009f0805c-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-8...5b57d/productcard | 200 | image/svg+xml | cloudflare | 9fcdb810995ac5d7-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...b5d34/productcard | 200 | image/svg+xml | cloudflare | 9fcdb8115997c394-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-0...b9262/productcard | 200 | image/svg+xml | cloudflare | 9fcdb811ffaf1dd9-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...d7e6c/productcard | 200 | image/svg+xml | cloudflare | 9fcdb8128e2c0839-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-b...42ad6/productcard | 200 | image/svg+xml | cloudflare | 9fcdb8133aef5f9e-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-7...89e04/productcard | 200 | image/svg+xml | cloudflare | 9fcdb813ecdddce1-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e6722/productcard | 200 | image/svg+xml | cloudflare | 9fcdb8149893d0c3-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...ab52f/productcard | 200 | image/svg+xml | cloudflare | 9fcdb8153b21d731-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...306ec/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbf8cd2632d7-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-8...b9909/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbf93f65dce9-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...fc259/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbf9cd49fee2-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-3...6572f/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfa6de0d82d-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...ab52f/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfaefd2a50a-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e6722/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfb6a6f5000-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-b...e9ac5/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfbfae63ca8-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-c...ee9a9/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfc7cbeb354-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...9af84/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfcff945b0a-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...3a16f/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfd6d4febdd-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-7...60a08/productcard | 200 | image/svg+xml | cloudflare | 9fe4dbfde9175cce-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...dfd5a/pdpgallery | 200 | image/svg+xml | cloudflare | 9fe4dbfe7a8b2da5-CPH |
 
 Cloudflare Images API: All expected Cloudflare Images variants are present and match repo definitions.
 
 ## Turnstile
 
-- Key pair: site key missing / secret key missing
+- Key pair: site key present / secret key present
 - Auth page: Foundation configured, widget not active yet.
 - Server validation: wired to Siteverify
 - Cloudflare API: Cloudflare Turnstile API returned 2 widget(s).
