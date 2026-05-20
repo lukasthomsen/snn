@@ -5,8 +5,7 @@ import { headers } from "next/headers";
 import {
   addCartItem,
   CartServiceError,
-  getCartSnapshot,
-  getProductCards,
+  getCartDrawerLikes,
   removeCartItem,
   updateCartItemQuantity,
   type CartErrorCode,
@@ -17,7 +16,7 @@ import { getCustomerSession } from "@snn/customer";
 import { tracePerformance } from "@snn/db";
 import type { Locale } from "@snn/i18n";
 
-import { getCartIdentity, setCartCookie } from "./cart-data";
+import { getCartIdentity, loadExistingCartSnapshot, setCartCookie } from "./cart-data";
 
 type CartActionInput = {
   locale: Locale;
@@ -90,6 +89,21 @@ function getCartActionMessage(locale: Locale, code: CartActionMessageCode) {
   return cartActionMessages[locale][code] ?? cartActionMessages[locale].UNKNOWN;
 }
 
+function isSafeEntityId(value: string) {
+  return /^[a-zA-Z0-9_-]{1,128}$/.test(value);
+}
+
+function invalidCartActionResult(
+  locale: Locale,
+  fallbackCode: "ADD_FAILED" | "REMOVE_FAILED" | "UPDATE_FAILED",
+): CartActionResult {
+  return {
+    code: "UNKNOWN",
+    message: getCartActionMessage(locale, fallbackCode),
+    ok: false,
+  };
+}
+
 async function withCartAction(
   actionName: string,
   locale: Locale,
@@ -125,8 +139,35 @@ async function withCartAction(
   });
 }
 
-export async function loadCartDrawerAction({ locale }: CartActionInput) {
-  return withCartAction("loadDrawer", locale, (identity) => getCartSnapshot(identity), "LOAD_FAILED");
+export async function loadCartDrawerAction({ locale }: CartActionInput): Promise<CartActionResult> {
+  return tracePerformance("storefront.cart.loadDrawer", { locale }, async () => {
+    try {
+      const cart = await loadExistingCartSnapshot(locale);
+
+      if (cart.id !== "empty") {
+        await setCartCookie(cart.id);
+      }
+
+      return {
+        cart,
+        ok: true,
+      };
+    } catch (error) {
+      if (error instanceof CartServiceError) {
+        return {
+          code: error.code,
+          message: getCartActionMessage(locale, error.code),
+          ok: false,
+        };
+      }
+
+      return {
+        code: "UNKNOWN",
+        message: getCartActionMessage(locale, "LOAD_FAILED"),
+        ok: false,
+      };
+    }
+  });
 }
 
 export async function addCartItemAction({
@@ -137,6 +178,10 @@ export async function addCartItemAction({
   quantity?: number | undefined;
   variantId: string;
 }) {
+  if (!isSafeEntityId(variantId) || !Number.isFinite(quantity) || quantity < 1) {
+    return invalidCartActionResult(locale, "ADD_FAILED");
+  }
+
   return withCartAction("addItem", locale, (identity) => addCartItem({
     ...identity,
     quantity,
@@ -152,6 +197,10 @@ export async function updateCartItemQuantityAction({
   itemId: string;
   quantity: number;
 }) {
+  if (!isSafeEntityId(itemId) || !Number.isFinite(quantity)) {
+    return invalidCartActionResult(locale, "UPDATE_FAILED");
+  }
+
   return withCartAction("updateQuantity", locale, (identity) => updateCartItemQuantity({
     ...identity,
     itemId,
@@ -165,6 +214,10 @@ export async function removeCartItemAction({
 }: CartActionInput & {
   itemId: string;
 }) {
+  if (!isSafeEntityId(itemId)) {
+    return invalidCartActionResult(locale, "REMOVE_FAILED");
+  }
+
   return withCartAction("removeItem", locale, (identity) => removeCartItem({
     ...identity,
     itemId,
@@ -184,26 +237,15 @@ export async function loadCartLikesAction({ locale }: CartActionInput): Promise<
         };
       }
 
-      const productList = await getProductCards({
+      const items = await getCartDrawerLikes({
         countryCode: "DK",
-        likedOnlyUserId: session.user.id,
-        likedUserId: session.user.id,
         locale,
         limit: 12,
+        userId: session.user.id,
       });
 
       return {
-        items: productList.items.map((product) => ({
-          id: product.id,
-          imageUrl: product.imageUrl,
-          name: product.name,
-          price: {
-            amount: product.price.amount,
-            currencyCode: product.price.currencyCode,
-          },
-          slug: product.slug,
-          variantId: product.variantId,
-        })),
+        items,
         ok: true,
       };
     } catch {

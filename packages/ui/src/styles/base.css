@@ -1,5 +1,4 @@
 @import "./tokens.css";
-@import "./components.css";
 
 *,
 *::before,
@@ -22,7 +21,7 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-body);
   line-height: var(--line-base);
-  text-rendering: optimizeLegibility;
+  text-rendering: auto;
   -webkit-font-smoothing: antialiased;
 }
 

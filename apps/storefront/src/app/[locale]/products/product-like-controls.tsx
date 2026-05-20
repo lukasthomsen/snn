@@ -7,7 +7,11 @@ import type { ProductCard } from "@snn/commerce";
 import type { Locale } from "@snn/i18n";
 import { FavoriteButton, FavoriteLink } from "@snn/ui";
 
-import { toggleProductLikeAction, type ProductLikeActionResult } from "../catalog-actions";
+import {
+  loadProductLikeStateAction,
+  toggleProductLikeAction,
+  type ProductLikeActionResult,
+} from "../catalog-actions";
 import { StorefrontImage } from "../components/storefront-image";
 
 export type CatalogProductCard = Pick<
@@ -27,7 +31,7 @@ export type CatalogProductCard = Pick<
   | "variantTitle"
 >;
 
-type CatalogGridCopy = {
+export type CatalogGridCopy = {
   available: string;
   empty: string;
   sale: string;
@@ -101,8 +105,10 @@ function ProductLikeControl({
   variant,
 }: ProductLikeControlProps) {
   const router = useRouter();
+  const [externalIsSignedIn, setExternalIsSignedIn] = useState<boolean | null>(null);
   const [confirmedLiked, setConfirmedLiked] = useState(initialLiked);
   const [motion, setMotion] = useState<"idle" | "like" | "unlike">("idle");
+  const resolvedIsSignedIn = externalIsSignedIn ?? isSignedIn;
   const [optimisticLiked, setOptimisticLiked] = useOptimistic(
     confirmedLiked,
     (_currentLiked, nextLiked: boolean) => nextLiked,
@@ -169,7 +175,33 @@ function ProductLikeControl({
   const text = optimisticLiked ? labels.saved : labels.save;
   const errorMessage = actionState.ok ? null : actionState.message;
 
-  if (!isSignedIn) {
+  useEffect(() => {
+    if (variant !== "card") {
+      return undefined;
+    }
+
+    function handleLikeState(event: Event) {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+
+      const detail = event.detail as {
+        isSignedIn?: boolean | undefined;
+        likedVariantIds?: string[] | undefined;
+      };
+
+      setExternalIsSignedIn(Boolean(detail.isSignedIn));
+      setConfirmedLiked(Boolean(detail.likedVariantIds?.includes(variantId)));
+    }
+
+    window.addEventListener("snn:catalog-like-state", handleLikeState);
+
+    return () => {
+      window.removeEventListener("snn:catalog-like-state", handleLikeState);
+    };
+  }, [variant, variantId]);
+
+  if (!resolvedIsSignedIn) {
     const link = (
       <FavoriteLink
         href={`/${locale}/wishlist`}
@@ -214,6 +246,73 @@ function ProductLikeControl({
         </span>
       ) : null}
     </form>
+  );
+}
+
+export function CatalogLikeStateLoader({
+  locale,
+  variantIds,
+}: {
+  locale: Locale;
+  variantIds: string[];
+}) {
+  const variantKey = useMemo(() => variantIds.join("|"), [variantIds]);
+
+  useEffect(() => {
+    if (variantIds.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadLikeState() {
+      const result = await loadProductLikeStateAction({
+        locale,
+        variantIds,
+      }).catch(() => null);
+
+      if (!cancelled && result) {
+        window.dispatchEvent(new CustomEvent("snn:catalog-like-state", {
+          detail: {
+            isSignedIn: result.isSignedIn,
+            likedVariantIds: result.likedVariantIds,
+          },
+        }));
+      }
+    }
+
+    void loadLikeState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, variantKey, variantIds]);
+
+  return null;
+}
+
+export function ProductCardLikeControl({
+  copy,
+  isSignedIn,
+  locale,
+  product,
+}: {
+  copy: CatalogGridCopy;
+  isSignedIn: boolean;
+  locale: Locale;
+  product: CatalogProductCard;
+}) {
+  return (
+    <ProductLikeControl
+      initialLiked={product.isLiked}
+      isSignedIn={isSignedIn}
+      key={`${product.id}-${product.variantId}-${product.isLiked}`}
+      labels={copy}
+      locale={locale}
+      productId={product.id}
+      variantId={product.variantId}
+      variant="card"
+    />
   );
 }
 
@@ -309,12 +408,29 @@ function ProductCardItem({
             <span className="product-card__sale__SW3ah">{copy.sale}</span>
           ) : null}
           {product.imageUrl ? (
-            <StorefrontImage alt="" src={product.imageUrl} />
+            <StorefrontImage
+              alt=""
+              fetchPriority="auto"
+              height={800}
+              loading="lazy"
+              sizes="(max-width: 42rem) calc(100vw - 2rem), (max-width: 72rem) calc(50vw - 1.5rem), 33vw"
+              src={product.imageUrl}
+              width={640}
+            />
           ) : (
             <span aria-hidden="true" className="product-card__placeholder__SW3ai" />
           )}
           {product.secondaryImageUrl ? (
-            <StorefrontImage alt="" className="product-card__secondary-image__SW3ao" src={product.secondaryImageUrl} />
+            <StorefrontImage
+              alt=""
+              className="product-card__secondary-image__SW3ao"
+              fetchPriority="low"
+              height={800}
+              loading="lazy"
+              sizes="(max-width: 42rem) calc(100vw - 2rem), (max-width: 72rem) calc(50vw - 1.5rem), 33vw"
+              src={product.secondaryImageUrl}
+              width={640}
+            />
           ) : null}
         </span>
         <span className="product-card__copy__SW3ad">
@@ -345,6 +461,19 @@ export function CatalogProductGrid({
   removeOnUnlike = false,
 }: CatalogProductGridProps) {
   const itemKey = useMemo(() => items.map((product) => product.displayId).join("|"), [items]);
+  const variantIds = useMemo(() => items.map((product) => product.variantId), [items]);
+  const initialLikedVariantIds = useMemo(() => new Set(
+    items.filter((product) => product.isLiked).map((product) => product.variantId),
+  ), [items]);
+  const [likeState, setLikeState] = useState<{
+    isSignedIn: boolean;
+    itemKey: string;
+    likedVariantIds: Set<string>;
+  }>(() => ({
+    isSignedIn,
+    itemKey,
+    likedVariantIds: initialLikedVariantIds,
+  }));
   const [removalState, setRemovalState] = useState<{
     itemKey: string;
     removedDisplayIds: Set<string>;
@@ -355,7 +484,50 @@ export function CatalogProductGrid({
   const removedDisplayIds = removalState.itemKey === itemKey
     ? removalState.removedDisplayIds
     : new Set<string>();
-  const visibleItems = items.filter((product) => !removedDisplayIds.has(product.displayId));
+  const activeLikeState = likeState.itemKey === itemKey
+    ? likeState
+    : {
+        isSignedIn,
+        itemKey,
+        likedVariantIds: initialLikedVariantIds,
+      };
+  const visibleItems = items
+    .map((product) => ({
+      ...product,
+      isLiked: activeLikeState.likedVariantIds.has(product.variantId),
+    }))
+    .filter((product) => !removedDisplayIds.has(product.displayId));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (variantIds.length === 0) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadLikeState() {
+      const result = await loadProductLikeStateAction({
+        locale,
+        variantIds,
+      }).catch(() => null);
+
+      if (!cancelled && result) {
+        setLikeState({
+          isSignedIn: result.isSignedIn,
+          itemKey,
+          likedVariantIds: new Set(result.likedVariantIds),
+        });
+      }
+    }
+
+    void loadLikeState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [itemKey, locale, variantIds]);
 
   return (
     <div className="catalog-grid__root__SW3a9">
@@ -367,7 +539,7 @@ export function CatalogProductGrid({
         visibleItems.map((product) => (
           <ProductCardItem
             copy={copy}
-            isSignedIn={isSignedIn}
+            isSignedIn={activeLikeState.isSignedIn}
             key={product.displayId}
             locale={locale}
             onRemove={(displayId) => {

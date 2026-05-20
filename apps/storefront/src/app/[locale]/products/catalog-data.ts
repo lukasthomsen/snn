@@ -87,11 +87,8 @@ export function getPersonalizedProductCards(input: ProductListInput) {
   return traceProductCards("storefront.catalog.productCards.personalized", input);
 }
 
-export function getPersonalizedRelatedProductCards(input: RelatedProductCardsInput) {
-  return tracePerformance("storefront.catalog.relatedProducts.personalized", {
-    locale: input.locale ?? null,
-    limit: input.limit ?? null,
-  }, () => getRelatedProductCards(input));
+export function getRuntimeProductCards(input: ProductListInput) {
+  return traceProductCards("storefront.catalog.productCards.runtime", input);
 }
 
 function traceProductCards(name: string, input: ProductListInput) {

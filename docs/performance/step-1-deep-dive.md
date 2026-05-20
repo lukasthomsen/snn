@@ -1,6 +1,6 @@
 # Step 1 Deep Dive: Real Bottlenecks
 
-Generated: 2026-05-19T17:28:26.089Z
+Generated: 2026-05-20T15:27:20.389Z
 
 ## How To Run
 
@@ -22,55 +22,42 @@ For preview server traces, enable `ENABLE_PERFORMANCE_TRACE=1` on the preview de
 
 ## Top Candidates
 
-| Impact | Finding | Next check |
-| --- | --- | --- |
-| high | cart.drawerLikes.load mobile p75 4,067.7 ms | Compare browser timing with storefront.cart.loadLikes server traces. |
-| high | cart.drawerLikes.load desktop p75 3,981.7 ms | Compare browser timing with storefront.cart.loadLikes server traces. |
-| high | cart.signedIn.addItem desktop p75 1,917.3 ms | Compare browser timing with storefront.cart.addItem server traces. |
-| high | cart.addItem mobile p75 1,915.1 ms | Compare browser timing with storefront.cart.addItem server traces. |
-| high | cart.signedIn.addItem mobile p75 1,903.5 ms | Compare browser timing with storefront.cart.addItem server traces. |
-| high | auth.sessionBootstrap desktop p75 1,755.5 ms | Inspect browser trace, network waterfall, and readiness marker timing. |
-| high | auth.sessionBootstrap mobile p75 1,648.2 ms | Inspect browser trace, network waterfall, and readiness marker timing. |
-| high | account.signOut desktop p75 1,552.3 ms | Inspect browser trace, network waterfall, and readiness marker timing. |
-| high | account.signOut mobile p75 1,520.7 ms | Inspect browser trace, network waterfall, and readiness marker timing. |
-| high | cart.addItem desktop p75 1,410.4 ms | Compare browser timing with storefront.cart.addItem server traces. |
-| high | account.quickLink.rewards mobile p75 1,182.1 ms | Inspect browser trace, network waterfall, and readiness marker timing. |
-| high | product.like mobile p75 1,087.7 ms | Compare browser timing with storefront.product.toggleLike server traces. |
+_No data captured yet._
 
 ## Playwright Workflow Timings
 
 | Device | Auth | Cache | Measurement | n | p50 | p75 | p95 | Failures | Transfer p75 | Server trace |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| mobile | signed-in | - | cart.drawerLikes.load | 5 | 3,955.9 ms | 4,067.7 ms | 4,337.9 ms | 0 | 29.2 KB | storefront.cart.loadLikes |
-| desktop | signed-in | - | cart.drawerLikes.load | 5 | 3,939.7 ms | 3,981.7 ms | 4,180.9 ms | 0 | 2.1 KB | storefront.cart.loadLikes |
-| desktop | signed-in | cold | route.signedIn.account | 5 | 1,377.9 ms | 2,111.3 ms | 2,491.1 ms | 0 | 7.1 KB | storefront.account.dashboard |
-| desktop | signed-in | - | cart.signedIn.addItem | 5 | 1,916.9 ms | 1,917.3 ms | 2,437.2 ms | 0 | 10.2 KB | storefront.cart.addItem |
-| mobile | guest | - | cart.addItem | 5 | 1,403.1 ms | 1,915.1 ms | 2,415.8 ms | 0 | 238.7 KB | storefront.cart.addItem |
-| mobile | signed-in | - | cart.signedIn.addItem | 5 | 1,897.1 ms | 1,903.5 ms | 1,929.5 ms | 0 | 10.2 KB | storefront.cart.addItem |
-| mobile | signed-in | cold | route.signedIn.wishlist | 5 | 1,584.8 ms | 1,853.1 ms | 2,337.6 ms | 0 | 3.9 KB | storefront.catalog.productCards.personalized |
-| mobile | signed-in | cold | route.signedIn.checkoutEntry | 5 | 1,582.8 ms | 1,802.5 ms | 2,422.8 ms | 0 | 14.7 KB | storefront.checkout.prefill |
-| desktop | guest | - | auth.sessionBootstrap | 15 | 1,617.4 ms | 1,755.5 ms | 1,921.2 ms | 0 | 228.7 KB | - |
-| desktop | signed-in | cold | route.signedIn.cartWithItems | 5 | 1,495.5 ms | 1,661.4 ms | 1,683.1 ms | 0 | 4 KB | storefront.cart.loadExisting |
-| mobile | guest | - | auth.sessionBootstrap | 15 | 1,593.5 ms | 1,648.2 ms | 2,893.3 ms | 0 | 228.7 KB | - |
-| mobile | signed-in | cold | route.signedIn.cartWithItems | 5 | 1,459.4 ms | 1,602.3 ms | 3,116.8 ms | 0 | 3.5 KB | storefront.cart.loadExisting |
-| desktop | signed-in | - | account.signOut | 5 | 1,538.6 ms | 1,552.3 ms | 1,564 ms | 0 | 26.6 KB | - |
-| desktop | signed-in | cold | route.signedIn.checkoutEntry | 5 | 1,537.8 ms | 1,543.7 ms | 1,565.5 ms | 0 | 14.7 KB | storefront.checkout.prefill |
-| mobile | signed-in | - | account.signOut | 5 | 1,519.9 ms | 1,520.7 ms | 1,532.9 ms | 0 | 25.6 KB | - |
-| desktop | signed-in | cold | route.signedIn.wishlist | 5 | 1,424.1 ms | 1,447.7 ms | 1,566.9 ms | 0 | 5.3 KB | storefront.catalog.productCards.personalized |
-| desktop | guest | - | cart.addItem | 5 | 1,405.8 ms | 1,410.4 ms | 1,883.1 ms | 0 | 238.7 KB | storefront.cart.addItem |
-| mobile | signed-in | cold | route.signedIn.account | 5 | 1,304.7 ms | 1,371.2 ms | 1,434.7 ms | 0 | 2.6 KB | storefront.account.dashboard |
-| mobile | signed-in | - | account.quickLink.rewards | 5 | 825.3 ms | 1,182.1 ms | 2,232.4 ms | 0 | 18.7 KB | - |
-| mobile | signed-in | - | product.like | 5 | 1,083.6 ms | 1,087.7 ms | 1,185.5 ms | 0 | 13.1 KB | storefront.product.toggleLike |
-| mobile | signed-in | - | product.unlike | 5 | 1,082.5 ms | 1,084.9 ms | 1,085.2 ms | 0 | 4.1 KB | storefront.product.toggleLike |
-| mobile | guest | - | cart.incrementQuantity | 5 | 858.2 ms | 868.1 ms | 872.6 ms | 0 | 244.6 KB | storefront.cart.updateQuantity |
-| desktop | guest | - | cart.incrementQuantity | 5 | 861.3 ms | 866.5 ms | 867.8 ms | 0 | 244.6 KB | storefront.cart.updateQuantity |
-| desktop | guest | - | cart.decrementQuantity | 5 | 844.7 ms | 855.1 ms | 859 ms | 0 | 293.7 KB | storefront.cart.updateQuantity |
-| mobile | guest | - | cart.decrementQuantity | 5 | 844.5 ms | 849.9 ms | 852.5 ms | 0 | 293.7 KB | storefront.cart.updateQuantity |
-| desktop | guest | - | cart.removeItem | 5 | 838 ms | 839.9 ms | 840.6 ms | 0 | 337.3 KB | storefront.cart.removeItem |
-| mobile | guest | - | cart.removeItem | 5 | 838.8 ms | 839 ms | 839.6 ms | 0 | 337.3 KB | storefront.cart.removeItem |
-| desktop | signed-in | - | account.quickLink.rewards | 5 | 826.6 ms | 831.7 ms | 832.6 ms | 0 | 19.7 KB | - |
-| desktop | signed-in | - | account.quickLink.addresses | 5 | 231.8 ms | 238.6 ms | 329 ms | 0 | 10.1 KB | - |
-| mobile | signed-in | - | account.quickLink.addresses | 5 | 233.8 ms | 238.4 ms | 335.4 ms | 0 | 11 KB | - |
+| mobile | signed-in | - | cart.drawerLikes.load | 5 | 877.9 ms | 880.5 ms | 898.5 ms | 0 | 14.5 KB | storefront.cart.loadLikes |
+| desktop | signed-in | - | cart.drawerLikes.load | 5 | 872.2 ms | 879.4 ms | 881.3 ms | 0 | 14.5 KB | storefront.cart.loadLikes |
+| mobile | signed-in | - | cart.signedIn.addItem | 5 | 864 ms | 871 ms | 876 ms | 0 | 72.7 KB | storefront.cart.addItem |
+| desktop | signed-in | - | cart.signedIn.addItem | 5 | 864.5 ms | 868.6 ms | 869.1 ms | 0 | 72.7 KB | storefront.cart.addItem |
+| mobile | guest | - | cart.addItem | 5 | 866.1 ms | 868 ms | 871.1 ms | 0 | 243.9 KB | storefront.cart.addItem |
+| desktop | guest | - | cart.addItem | 5 | 849.4 ms | 851.4 ms | 861.9 ms | 0 | 243.9 KB | storefront.cart.addItem |
+| mobile | signed-in | - | account.quickLink.rewards | 5 | 846.3 ms | 846.4 ms | 1,186.8 ms | 0 | 31.5 KB | - |
+| desktop | signed-in | - | account.quickLink.rewards | 5 | 838.2 ms | 840.5 ms | 842.8 ms | 0 | 24.8 KB | - |
+| desktop | guest | - | cart.incrementQuantity | 5 | 563.3 ms | 701 ms | 839.8 ms | 0 | 256.1 KB | storefront.cart.updateQuantity |
+| mobile | guest | - | auth.sessionBootstrap | 15 | 429.1 ms | 573.8 ms | 619.3 ms | 0 | 194.8 KB | - |
+| desktop | guest | - | auth.sessionBootstrap | 15 | 420.6 ms | 569.4 ms | 578.8 ms | 0 | 194.8 KB | - |
+| desktop | signed-in | cold | route.signedIn.checkoutEntry | 5 | 510.1 ms | 515.3 ms | 543 ms | 0 | 34.9 KB | storefront.checkout.prefill |
+| mobile | signed-in | cold | route.signedIn.checkoutEntry | 5 | 505.5 ms | 510.8 ms | 525.2 ms | 0 | 34.9 KB | storefront.checkout.prefill |
+| mobile | signed-in | cold | route.signedIn.wishlist | 5 | 435.8 ms | 436.9 ms | 436.9 ms | 0 | 8.6 KB | storefront.catalog.productCards.personalized |
+| desktop | signed-in | cold | route.signedIn.wishlist | 5 | 426.9 ms | 433.9 ms | 447.1 ms | 0 | 14.3 KB | storefront.catalog.productCards.personalized |
+| desktop | guest | - | cart.decrementQuantity | 5 | 344.3 ms | 349.7 ms | 350.9 ms | 0 | 268.3 KB | storefront.cart.updateQuantity |
+| mobile | guest | - | cart.decrementQuantity | 5 | 347.6 ms | 347.8 ms | 349.9 ms | 0 | 268.3 KB | storefront.cart.updateQuantity |
+| mobile | guest | - | cart.incrementQuantity | 5 | 341.7 ms | 342.3 ms | 349.2 ms | 0 | 256.1 KB | storefront.cart.updateQuantity |
+| mobile | guest | - | cart.removeItem | 5 | 338.1 ms | 340.1 ms | 342 ms | 0 | 279.8 KB | storefront.cart.removeItem |
+| desktop | guest | - | cart.removeItem | 5 | 326 ms | 338.6 ms | 339 ms | 0 | 279.8 KB | storefront.cart.removeItem |
+| mobile | signed-in | - | account.signOut | 5 | 286.2 ms | 300.2 ms | 301.4 ms | 0 | 0 B | - |
+| desktop | signed-in | - | account.signOut | 5 | 280.6 ms | 290.6 ms | 292.6 ms | 0 | 0 B | - |
+| mobile | signed-in | - | account.quickLink.addresses | 5 | 235.8 ms | 237.8 ms | 240.7 ms | 0 | 22.3 KB | - |
+| desktop | signed-in | - | account.quickLink.addresses | 5 | 229.7 ms | 231.2 ms | 237.1 ms | 0 | 15.6 KB | - |
+| mobile | signed-in | - | product.like | 5 | 228.2 ms | 230.5 ms | 232.6 ms | 0 | 71.5 KB | storefront.product.toggleLike |
+| desktop | signed-in | - | product.like | 5 | 219.9 ms | 229.8 ms | 235.1 ms | 0 | 71.5 KB | storefront.product.toggleLike |
+| mobile | signed-in | - | product.unlike | 5 | 210.5 ms | 219.9 ms | 220.5 ms | 0 | 11 KB | storefront.product.toggleLike |
+| desktop | signed-in | - | product.unlike | 5 | 215.7 ms | 217.3 ms | 842.3 ms | 0 | 11 KB | storefront.product.toggleLike |
+| mobile | signed-in | cold | route.signedIn.account | 5 | 209.2 ms | 210.1 ms | 211.5 ms | 0 | 0 B | storefront.account.dashboard |
+| desktop | signed-in | cold | route.signedIn.account | 5 | 205.9 ms | 206.5 ms | 212.6 ms | 0 | 0 B | storefront.account.dashboard |
 
 ## Server Trace Summary
 
@@ -78,39 +65,36 @@ _No data captured yet._
 
 ## Lighthouse Summary
 
-| Device | Route | n | Perf | FCP | LCP | TBT | CLS | Speed Index |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| mobile | /da/products | 3 | 95 | 1,355.4 ms | 2,941.1 ms | 8 ms | 0 | 1,362.1 ms |
-| mobile | /da/products?sort=newest | 3 | 95 | 1,357.3 ms | 2,930.3 ms | 11.5 ms | 0 | 1,357.3 ms |
-| mobile | /da/products/essential-creatine-monohydrate | 3 | 95 | 1,209 ms | 2,914.6 ms | 10.5 ms | 0 | 1,209 ms |
-| account-mobile | /da/account | 3 | 95 | 1,206.4 ms | 2,851.4 ms | 10 ms | 0 | 2,430 ms |
-| mobile | /da | 3 | 96 | 1,060.8 ms | 2,707.3 ms | 14.5 ms | 0 | 1,060.8 ms |
-| mobile | /da/cart | 6 | 95 | 1,060.2 ms | 2,705.2 ms | 10 ms | 0 | 1,060.2 ms |
-| mobile | /da/wishlist | 3 | 97 | 1,056.4 ms | 2,687.1 ms | 2.5 ms | 0 | 1,056.4 ms |
-| auth-mobile | /da/sign-up | 3 | 98 | 909.3 ms | 2,332.3 ms | 11.5 ms | 0 | 909.3 ms |
-| auth-mobile | /da/sign-in | 3 | 98 | 909.1 ms | 2,327.2 ms | 19 ms | 0 | 909.1 ms |
-| auth-mobile | /da/forgot-password | 3 | 98 | 907.6 ms | 2,326.4 ms | 18 ms | 0 | 907.6 ms |
-| desktop | /da/products | 3 | 100 | 366.7 ms | 684.7 ms | 0 ms | 0 | 366.7 ms |
-| desktop | /da/products?sort=newest | 3 | 100 | 367.6 ms | 650.3 ms | 0 ms | 0 | 367.6 ms |
-| desktop | /da/products/essential-creatine-monohydrate | 3 | 100 | 326.2 ms | 624.2 ms | 0 ms | 0 | 326.2 ms |
-| desktop | /da | 3 | 100 | 287.2 ms | 591.9 ms | 0 ms | 0 | 287.2 ms |
-| account-desktop | /da/account | 3 | 100 | 327 ms | 587 ms | 0 ms | 0 | 937.8 ms |
-| desktop | /da/cart | 6 | 100 | 288.8 ms | 586.5 ms | 0 ms | 0 | 309.7 ms |
-| desktop | /da/wishlist | 3 | 100 | 286.7 ms | 562.8 ms | 0 ms | 0 | 286.7 ms |
-| auth-desktop | /da/sign-in | 3 | 100 | 249.2 ms | 507.2 ms | 0 ms | 0 | 249.2 ms |
-| auth-desktop | /da/forgot-password | 3 | 100 | 248.6 ms | 506.5 ms | 0 ms | 0 | 248.6 ms |
-| auth-desktop | /da/sign-up | 3 | 100 | 246.8 ms | 503.9 ms | 0 ms | 0 | 246.8 ms |
+| Device | Route | n | Perf | FCP | LCP | TBT | CLS | Speed Index | LCP element | LCP resource | LCP subparts |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| account-mobile | /da/account | 5 | 98 | 1,076.1 ms | 2,489.6 ms | 26 ms | 0 | 1,521.3 ms | div.accountDashboard__root__SW2i0 > section.accountHero__root__SW2a0 > div.accountHero__name_... | - | TTFB: 710.1 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 1,781.8 ms |
+| mobile | /da/products/essential-creatine-monohydrate | 5 | 98 | 909.1 ms | 2,482.5 ms | 18 ms | 0 | 909.1 ms | body > main.product-detail__root__SW3b0 > div.product-detail__mobile-headline__SW3ca > h1.pro... | - | TTFB: 453.5 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 2,338.1 ms |
+| mobile | /da/products?sort=newest | 5 | 98 | 907.4 ms | 2,477.7 ms | 10 ms | 0 | 958.7 ms | main.catalog__root__SW3a0 > div > section.catalog-hero__root__SW3a1 > h1 | - | TTFB: 453.7 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 2,026.7 ms |
+| mobile | /da | 5 | 98 | 760.9 ms | 2,477.6 ms | 41.4 ms | 0 | 760.9 ms | div.hero__stage__SW0g1 > div.hero__inner__SW0g2 > div.hero__copy__SW0g3 > h1.hero__title__SW0g5 | - | TTFB: 455.5 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 2,024.5 ms |
+| mobile | /da/checkout | 5 | 98 | 908.6 ms | 2,476.2 ms | 9 ms | 0 | 908.6 ms | main.cartPage__root__SW6a0 > section.cartPage__empty__SW6a7 > div > p | - | TTFB: 453.1 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 2,026.1 ms |
+| auth-mobile | /da/sign-up | 5 | 98 | 906.6 ms | 2,409 ms | 20.5 ms | 0 | 906.6 ms | div.auth__card-frame__SW0fm > div.auth__card__SW0fn > div.auth__header__SW0fo > h2#auth-title | - | TTFB: 453 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 1,956.1 ms |
+| mobile | /da/cart | 5 | 98 | 758.3 ms | 2,330.3 ms | 11 ms | 0 | 758.3 ms | main.cartPage__root__SW6a0 > section.cartPage__empty__SW6a7 > div > p | - | TTFB: 453.2 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 1,909.2 ms |
+| mobile | /da/products | 5 | 98 | 908.4 ms | 2,328.8 ms | 11 ms | 0 | 920.4 ms | main.catalog__root__SW3a0 > div > section.catalog-hero__root__SW3a1 > h1 | - | TTFB: 453.7 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 2,025.7 ms |
+| auth-mobile | /da/sign-in | 5 | 98 | 908.1 ms | 2,325.1 ms | 19 ms | 0 | 908.1 ms | div.auth__card-frame__SW0fm > div.auth__card__SW0fn > div.auth__header__SW0fo > h2#auth-title | - | TTFB: 453.5 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 1,872.5 ms |
+| auth-mobile | /da/forgot-password | 5 | 98 | 908.4 ms | 2,324.6 ms | 51 ms | 0 | 908.4 ms | div.auth__card-frame__SW0fm > div.auth__card__SW0fn > div.auth__header__SW0fo > h1#auth-title | - | TTFB: 455.5 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 1,906.5 ms |
+| mobile | /da/wishlist | 5 | 98 | 756.7 ms | 2,323.8 ms | 9 ms | 0 | 756.7 ms | body > main.wishlistPrompt__root__SW4a0 > section.wishlistPrompt__panel__SW4a1 > h1 | - | TTFB: 453.6 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 1,876.6 ms |
+| account-desktop | /da/account | 5 | 100 | 253.1 ms | 554.4 ms | 0 ms | 0 | 567.5 ms | div.accountDashboard__root__SW2i0 > section.accountHero__root__SW2a0 > div.accountHero__name_... | - | TTFB: 680.3 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: -119.7 ms |
+| auth-desktop | /da/sign-in | 5 | 100 | 251 ms | 536.5 ms | 0 ms | 0 | 251 ms | aside.brand__panel__SW0fe > div.brand__copy__SW0fg > div.brand__rotation__SW0hn > h2.heading_... | - | TTFB: 125.8 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 411.6 ms |
+| auth-desktop | /da/forgot-password | 5 | 100 | 248.3 ms | 505.3 ms | 0 ms | 0 | 248.3 ms | aside.brand__panel__SW0fe > div.brand__copy__SW0fg > div.brand__rotation__SW0hn > h2.heading_... | - | TTFB: 124.7 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 381.7 ms |
+| auth-desktop | /da/sign-up | 5 | 100 | 246.6 ms | 504.8 ms | 0 ms | 0 | 246.6 ms | aside.brand__panel__SW0fe > div.brand__copy__SW0fg > div.brand__rotation__SW0hn > h2.heading_... | - | TTFB: 122.9 ms; Load Delay: 0 ms; Load Time: 0 ms; Render Delay: 405.8 ms |
 
 ## Targets
 
 - LCP p75: <= 2500 ms
 - INP p75: <= 200 ms in field data; use Playwright click-to-feedback timings and Lighthouse TBT as lab proxies
 - CLS p75: <= 0.1
-- Interaction p75 for cart/likes/checkout feedback: <= 200 ms
-- Server action p75 investigation threshold: > 200 ms or query p75 >= 10
+- Instant optimistic feedback p75: <= 200 ms where separately measured
+- Full browser action p75 after server completion/readiness marker: <= 1000 ms
+- Server action p75 investigation threshold: > 1000 ms or query p75 >= 10
 
 ## Notes
 
 - Playwright rows use deterministic `data-perf-*` readiness markers rather than `networkidle`.
+- Response-backed auth teardown rows use endpoint response timing when available, so the report tracks server/session work instead of Playwright locator auto-wait noise.
 - Browser timings and server traces are intentionally separate raw inputs; this report joins them by measurement name and `serverTraceName` so slow UI waits can be separated from slow database work.
 - Production smoke should stay limited to public cache/header checks unless production mutations are explicitly approved.

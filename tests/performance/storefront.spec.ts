@@ -63,6 +63,7 @@ type Measurement = BrowserTelemetry & {
   productSlug: string;
   project: string;
   repeatIndex: number;
+  responseDurationMs?: number | undefined;
   runIndex: number;
   scenario: string;
   schemaVersion: 1;
@@ -90,7 +91,7 @@ const baseUrl = (process.env.PERF_BASE_URL ?? "http://localhost:3000").replace(/
 const productSlug = process.env.PERF_PRODUCT_SLUG ?? "essential-creatine-monohydrate";
 const customerEmail = process.env.PERF_CUSTOMER_EMAIL;
 const customerPassword = process.env.PERF_CUSTOMER_PASSWORD;
-const authBaseUrl = process.env.PERF_AUTH_BASE_URL?.replace(/\/$/, "");
+const authBaseUrl = (process.env.PERF_AUTH_BASE_URL ?? "http://localhost:3002").replace(/\/$/, "");
 const measurementFile = path.join("perf-reports", "playwright", "measurements.ndjson");
 const environment = process.env.PERF_ENVIRONMENT
   ?? (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")
@@ -165,6 +166,14 @@ function normalizeError(error: unknown) {
   }
 
   return String(error).slice(0, 500);
+}
+
+function getResponseDurationMs(response: Response | null | undefined) {
+  const timing = response?.request().timing();
+
+  return typeof timing?.responseEnd === "number" && timing.responseEnd >= 0
+    ? roundDuration(timing.responseEnd)
+    : undefined;
 }
 
 function assertStripeTestPaymentPrep() {
@@ -269,6 +278,7 @@ async function measure<T>(
       productSlug,
       project: testInfo.project.name,
       repeatIndex: testInfo.repeatEachIndex,
+      responseDurationMs: getResponseDurationMs(response),
       runIndex: testInfo.repeatEachIndex + 1,
       scenario: input.scenario,
       schemaVersion: 1,
@@ -531,6 +541,10 @@ test("signed-in like, wishlist, and cart drawer likes flow", async ({ page }, te
     target: `/${locale}/wishlist`,
   }, () => gotoAndWait(page, `/${locale}/wishlist`, "wishlist"));
 
+  await gotoAndWait(page, `/${locale}/products/${productSlug}`, "product-detail");
+  await page.getByRole("button", { name: /add to bag|læg i kurv/i }).first().click();
+  await waitForSurfaceIdle(page, "cart-drawer");
+
   await measure(testInfo, {
     authState: "signed-in",
     kind: "action",
@@ -540,9 +554,6 @@ test("signed-in like, wishlist, and cart drawer likes flow", async ({ page }, te
     serverTraceName: "storefront.cart.loadLikes",
     target: productSlug,
   }, async () => {
-    await gotoAndWait(page, `/${locale}/products/${productSlug}`, "product-detail");
-    await page.getByRole("button", { name: /add to bag|læg i kurv/i }).first().click();
-    await waitForSurfaceIdle(page, "cart-drawer");
     await page.getByRole("tab", { name: /likes/i }).click();
     await waitForSurfaceIdle(page, "cart-drawer-likes");
   });
@@ -619,8 +630,15 @@ test("signed-in account dashboard and sign-out flow", async ({ page }, testInfo)
     scenario: "account.sign-out",
     target: `/${locale}`,
   }, async () => {
-    await page.locator('[data-account-sign-out="true"]').click();
+    const signOutResponse = page.waitForResponse((response) => (
+      response.url() === `${baseUrl}/${locale}/account/sign-out` &&
+      response.request().method() === "POST"
+    ));
+
+    await page.locator('[data-account-sign-out="true"]').click({ noWaitAfter: true });
     await page.waitForURL(new RegExp(`/${locale}/?$`), { timeout: 30_000 });
+
+    return signOutResponse;
   });
 
   await measure(testInfo, {

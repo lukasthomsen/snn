@@ -2,14 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { and, eq, inArray } from "drizzle-orm";
 
 import {
   CustomerAuthError,
+  getCustomerSession,
   likeCustomerProduct,
   requireCustomerSession,
   unlikeCustomerProduct,
 } from "@snn/customer";
-import { tracePerformance } from "@snn/db";
+import { getDb, schema, tracePerformance } from "@snn/db";
 import type { Locale } from "@snn/i18n";
 
 type ProductLikeActionInput = {
@@ -24,6 +26,16 @@ type ProductLikeActionErrorCode =
   | "BANNED"
   | "EMAIL_UNVERIFIED"
   | "UNKNOWN";
+
+type ProductLikeStateInput = {
+  locale: Locale;
+  variantIds: string[];
+};
+
+export type ProductLikeStateResult = {
+  isSignedIn: boolean;
+  likedVariantIds: string[];
+};
 
 export type ProductLikeActionResult =
   | {
@@ -59,6 +71,18 @@ const actionMessages = {
 
 function getWishlistPath(locale: Locale) {
   return `/${locale}/wishlist`;
+}
+
+function isSafeEntityId(value: string) {
+  return /^[a-zA-Z0-9_-]{1,128}$/.test(value);
+}
+
+function normalizeVariantIds(variantIds: string[]) {
+  return [...new Set(
+    variantIds
+      .map((variantId) => variantId.trim())
+      .filter(isSafeEntityId),
+  )].slice(0, 96);
 }
 
 async function getLikeSession(locale: Locale, previousLiked: boolean): Promise<{
@@ -107,9 +131,53 @@ async function getLikeSession(locale: Locale, previousLiked: boolean): Promise<{
 }
 
 function revalidateLikedSurfaces(locale: Locale) {
-  revalidatePath(`/${locale}/account`);
   revalidatePath(`/${locale}/account/liked`);
   revalidatePath(`/${locale}/wishlist`);
+}
+
+export async function loadProductLikeStateAction({
+  locale,
+  variantIds,
+}: ProductLikeStateInput): Promise<ProductLikeStateResult> {
+  const safeVariantIds = normalizeVariantIds(variantIds);
+
+  return tracePerformance("storefront.product.likeState", {
+    count: safeVariantIds.length,
+    locale,
+  }, async () => {
+    if (safeVariantIds.length === 0) {
+      return {
+        isSignedIn: false,
+        likedVariantIds: [],
+      };
+    }
+
+    const session = await getCustomerSession(await headers()).catch(() => null);
+
+    if (!session?.user.emailVerified || session.user.banned) {
+      return {
+        isSignedIn: false,
+        likedVariantIds: [],
+      };
+    }
+
+    const rows = await getDb()
+      .select({
+        variantId: schema.customerProductLikes.variantId,
+      })
+      .from(schema.customerProductLikes)
+      .where(
+        and(
+          eq(schema.customerProductLikes.userId, session.user.id),
+          inArray(schema.customerProductLikes.variantId, safeVariantIds),
+        ),
+      );
+
+    return {
+      isSignedIn: true,
+      likedVariantIds: rows.map((row) => row.variantId),
+    };
+  });
 }
 
 export async function toggleProductLikeAction({
@@ -123,6 +191,18 @@ export async function toggleProductLikeAction({
     locale,
   }, async () => {
     const previousLiked = !liked;
+
+    if (!isSafeEntityId(productId) || !isSafeEntityId(variantId)) {
+      return {
+        code: "UNKNOWN",
+        liked: previousLiked,
+        message: actionMessages[locale].unknown,
+        ok: false,
+        productId,
+        variantId,
+      };
+    }
+
     const session = await getLikeSession(locale, previousLiked);
 
     if (session.result) {

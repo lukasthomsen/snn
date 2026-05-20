@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import { isLocale } from "@snn/i18n";
+import "@snn/ui/styles/components.css";
 
-import { requireAccountSession } from "./account-auth";
+import "./styles.css";
 
 type AccountLayoutProps = {
   children: ReactNode;
@@ -11,12 +11,7 @@ type AccountLayoutProps = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountLayout({ children, params }: AccountLayoutProps) {
-  const { locale } = (await params) as { locale?: string };
-  const safeLocale = typeof locale === "string" && isLocale(locale) ? locale : "da";
-
-  await requireAccountSession(safeLocale, `/${safeLocale}/account`);
-
+export default function AccountLayout({ children }: AccountLayoutProps) {
   return (
     <main className="account__shell__SW1a0">
       {children}

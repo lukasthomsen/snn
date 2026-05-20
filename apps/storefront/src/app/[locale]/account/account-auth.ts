@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -40,9 +41,13 @@ export function getAccountSignInURL(locale: Locale, callbackURL = getAccountCall
   return url.toString();
 }
 
+const getRequestCustomerSession = cache(async () => {
+  return requireCustomerSession(await headers());
+});
+
 export async function requireAccountSession(locale: Locale, pathname?: string) {
   try {
-    return await requireCustomerSession(await headers());
+    return await getRequestCustomerSession();
   } catch (error) {
     if (
       error instanceof CustomerAuthError &&

@@ -3364,7 +3364,7 @@
 }
 
 .heading__root__SW2x0[data-size="page"] {
-  font-size: clamp(2rem, 3vw, var(--text-h1));
+  font-size: var(--text-h1);
 }
 
 .heading__root__SW2x0[data-size="section"] {

@@ -1,6 +1,10 @@
 const { assertions, extraHeaders, locale, runs } = require("./lighthouserc.shared.cjs");
+const { cleanLighthouseOutputDir } = require("./lighthouse-output.cjs");
 
 const authBaseUrl = (process.env.PERF_AUTH_BASE_URL || "http://localhost:3002").replace(/\/$/, "");
+const outputDir = "perf-reports/lighthouse/auth-mobile";
+
+cleanLighthouseOutputDir(outputDir);
 
 module.exports = {
   ci: {
@@ -24,7 +28,7 @@ module.exports = {
       },
     },
     upload: {
-      outputDir: "perf-reports/lighthouse/auth-mobile",
+      outputDir,
       target: "filesystem",
     },
   },

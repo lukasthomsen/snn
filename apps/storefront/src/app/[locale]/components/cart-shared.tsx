@@ -19,94 +19,11 @@ import {
 } from "@snn/ui";
 
 import { toggleProductLikeAction } from "../catalog-actions";
+import { cartCopy, type CartCopy } from "./cart-copy";
+import { withAmount } from "./cart-optimistic";
 import { StorefrontImage } from "./storefront-image";
 
-export const cartCopy = {
-  da: {
-    addExtra: "Tilfoj lidt ekstra",
-    addToBag: "Tilfoj",
-    applyDiscount: "Anvend",
-    bag: "Kurv",
-    checkout: "Sikker checkout",
-    continueShopping: "Shop produkter",
-    discount: "Rabatkode",
-    discountPlaceholder: "Indtast kode",
-    emptyBag: "Din kurv er tom.",
-    emptyBagLong: "Gem dine favoritter til senere, eller find noget nyt til rutinen.",
-    orderSummary: "Ordreoversigt",
-    quantity: "Antal",
-    remove: "Fjern",
-    saveProduct: "Gem produkt",
-    savedProduct: "Gemt produkt",
-    shipping: "Fragt",
-    shippingCalculated: "Beregnes ved checkout",
-    shippingExpress: "Express levering",
-    shippingExpressEstimate: "1-3 hverdage",
-    shippingExpressFreeOver: "Gratis over 1.300 DKK",
-    shippingExpressPrice: "125 DKK",
-    shippingFree: "Gratis",
-    shippingInfoLabel: "Leveringsinformation",
-    shippingInfoReturns: "Gratis 30 dages returret.",
-    shippingInfoTitle: "Leveringsmuligheder",
-    shippingMilestoneExpress: "Gratis express",
-    shippingMilestoneStandard: "Gratis fragt",
-    shippingProgressExpress: "Du er {amount} fra gratis express levering",
-    shippingProgress: "Du er {amount} fra gratis fragt",
-    shippingReadyExpress: "Du har nu opnaet gratis express levering",
-    shippingReady: "Du har nu opnaet gratis fragt",
-    shippingStandard: "Standard levering",
-    shippingStandardEstimate: "3-5 hverdage",
-    shippingStandardFreeOver: "Gratis over 550 DKK",
-    shippingStandardPrice: "45 DKK",
-    subtotal: "Subtotal",
-    total: "Total",
-    unsaveProduct: "Fjern fra gemte",
-    updatingBag: "Opdaterer kurv",
-  },
-  en: {
-    addExtra: "Add a little extra",
-    addToBag: "Add",
-    applyDiscount: "Apply",
-    bag: "Bag",
-    checkout: "Secure checkout",
-    continueShopping: "Shop products",
-    discount: "Discount code",
-    discountPlaceholder: "Enter code",
-    emptyBag: "Your bag is empty.",
-    emptyBagLong: "Save your favorites for later, or find something new for the routine.",
-    orderSummary: "Order summary",
-    quantity: "Quantity",
-    remove: "Remove",
-    saveProduct: "Save product",
-    savedProduct: "Saved product",
-    shipping: "Shipping",
-    shippingCalculated: "Calculated at checkout",
-    shippingExpress: "Express shipping",
-    shippingExpressEstimate: "1-3 working days",
-    shippingExpressFreeOver: "Free over 1,300 DKK",
-    shippingExpressPrice: "125 DKK",
-    shippingFree: "Free",
-    shippingInfoLabel: "Delivery information",
-    shippingInfoReturns: "Free 30-day returns.",
-    shippingInfoTitle: "Delivery options",
-    shippingMilestoneExpress: "Free express",
-    shippingMilestoneStandard: "Free shipping",
-    shippingProgressExpress: "You are {amount} away from Free Express Shipping",
-    shippingProgress: "You are {amount} away from Free Shipping",
-    shippingReadyExpress: "You have now unlocked Free Express Shipping",
-    shippingReady: "You have now unlocked Free Shipping",
-    shippingStandard: "Standard shipping",
-    shippingStandardEstimate: "3-5 working days",
-    shippingStandardFreeOver: "Free over 550 DKK",
-    shippingStandardPrice: "45 DKK",
-    subtotal: "Subtotal",
-    total: "Total",
-    unsaveProduct: "Remove from saved",
-    updatingBag: "Updating bag",
-  },
-} as const;
-
-export type CartCopy = Record<keyof typeof cartCopy.en, string>;
+export { cartCopy, type CartCopy };
 
 export function formatCartMoney(money: CartMoney, locale: Locale) {
   return new Intl.NumberFormat(locale === "da" ? "da-DK" : "en-DK", {
@@ -121,72 +38,6 @@ function formatCartMilestoneAmount(money: CartMoney, locale: Locale) {
   }).format(money.amount / 100);
 
   return `${amount} kr.`;
-}
-
-export function withAmount(money: CartMoney, amount: number): CartMoney {
-  return {
-    ...money,
-    amount: Math.max(Math.trunc(amount), 0),
-  };
-}
-
-export function recalculateOptimisticCart(cart: CartSnapshot, lines: CartLineItem[]) {
-  const subtotalAmount = lines.reduce((sum, line) => sum + line.lineTotal.amount, 0);
-  const remainingAmount = Math.max(
-    cart.shipping.freeShippingThreshold.amount - subtotalAmount,
-    0,
-  );
-  const remainingExpressAmount = Math.max(
-    cart.shipping.freeExpressShippingThreshold.amount - subtotalAmount,
-    0,
-  );
-
-  return {
-    ...cart,
-    itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
-    lines,
-    shipping: {
-      ...cart.shipping,
-      amount: remainingAmount === 0 ? withAmount(cart.shipping.freeShippingThreshold, 0) : null,
-      expressProgressPercent: Math.min(
-        Math.round((subtotalAmount / cart.shipping.freeExpressShippingThreshold.amount) * 100),
-        100,
-      ),
-      label: remainingAmount === 0 ? "free" : "calculated_at_checkout",
-      progressPercent: Math.min(
-        Math.round((subtotalAmount / cart.shipping.freeShippingThreshold.amount) * 100),
-        100,
-      ),
-      qualifiedForFreeExpressShipping: remainingExpressAmount === 0,
-      qualifiedForFreeShipping: remainingAmount === 0,
-      remainingExpressAmount: withAmount(cart.shipping.remainingExpressAmount, remainingExpressAmount),
-      remainingAmount: withAmount(cart.shipping.remainingAmount, remainingAmount),
-    },
-    subtotal: withAmount(cart.subtotal, subtotalAmount),
-    total: withAmount(cart.total, subtotalAmount),
-  } satisfies CartSnapshot;
-}
-
-export function updateLineQuantityOptimistically(
-  cart: CartSnapshot,
-  itemId: string,
-  quantity: number,
-) {
-  const lines = cart.lines
-    .map((line) => {
-      if (line.id !== itemId) {
-        return line;
-      }
-
-      return {
-        ...line,
-        lineTotal: withAmount(line.lineTotal, line.unitPrice.amount * quantity),
-        quantity,
-      };
-    })
-    .filter((line) => line.quantity > 0);
-
-  return recalculateOptimisticCart(cart, lines);
 }
 
 export function getShippingText(cart: CartSnapshot, copy: CartCopy, locale: Locale) {
@@ -919,7 +770,9 @@ function CartLineFavoriteToggle({
   const [likedState, setLikedState] = useState<{ lineId: string; liked: boolean } | null>(null);
   const [isPending, startTransition] = useTransition();
   const canToggle = Boolean(line.productId && line.variantId);
-  const isLiked = likedState?.lineId === line.id ? likedState.liked : line.isLiked;
+  const isLiked = likedState && likedState.lineId === line.id
+    ? likedState.liked
+    : line.isLiked;
 
   if (!canToggle || !line.productId || !line.variantId) {
     return (

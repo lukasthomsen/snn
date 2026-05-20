@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 
 import { isThemeLabEnabled } from "@snn/config";
 import { isLocale } from "@snn/i18n";
+import "@snn/ui/styles/components.css";
 
 import { ThemeLabClient } from "./theme-lab-client";
+import "./styles.css";
 
 type ThemeLabPageProps = {
   params: Promise<{

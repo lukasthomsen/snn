@@ -1,16 +1,22 @@
 import type { Route } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { preload } from "react-dom";
 
 import type { ProductSort } from "@snn/commerce";
 import type { Locale } from "@snn/i18n";
-import { Accordion, AccordionItem } from "@snn/ui";
 
-import { getCachedCatalogFilters, getCachedProductCards, getPersonalizedProductCards } from "./catalog-data";
+import {
+  getCachedCatalogFilters,
+  getCachedProductCards,
+  getPersonalizedProductCards,
+  getRuntimeProductCards,
+} from "./catalog-data";
 import { CatalogHeroIntro } from "./catalog-hero-intro";
-import { CatalogSortControl, type CatalogSortOption } from "./catalog-filter-controls";
-import { CatalogProductGrid } from "./product-like-controls";
+import { CatalogProductGrid } from "./catalog-product-grid";
 
 type CatalogSearchParams = Record<string, string | string[] | undefined>;
+type CatalogSearchParamsInput = CatalogSearchParams | Promise<CatalogSearchParams>;
 type CatalogSort = ProductSort | "relevance";
 
 type CatalogViewProps = {
@@ -20,7 +26,7 @@ type CatalogViewProps = {
   likedOnlyUserId?: string | undefined;
   likedUserId?: string | undefined;
   locale: Locale;
-  query: CatalogSearchParams;
+  query: CatalogSearchParamsInput;
   title?: string | undefined;
 };
 
@@ -36,7 +42,7 @@ const pageCopy = {
       "Ingen produkter matcher filtrene endnu. Når kataloget fyldes fra admin, dukker de op her.",
     filters: "Filtre",
     intro:
-      "Udforsk produkter kurateret til hverdagsrutiner, træning og restitution med priser, varianter og lagerstatus direkte fra commerce-laget. Brug sortering, kategorier og produktvalg til at indsnævre sortimentet, sammenligne de relevante muligheder og finde det, der passer til din næste ordre uden at miste overblikket.",
+      "Udforsk produkter til hverdagsrutiner, træning og restitution med live priser, varianter og lagerstatus.",
     liked: "Gemt",
     onlyAvailable: "Kun produkter på lager",
     options: "Valgmuligheder",
@@ -70,7 +76,7 @@ const pageCopy = {
       "No products match these filters yet. Once the catalog is populated from admin, they will appear here.",
     filters: "Filters",
     intro:
-      "Explore products curated for daily routines, training, and recovery with live prices, variants, and availability from the commerce layer. Use sorting, categories, and product options to narrow the assortment, compare the most relevant choices, and find what fits your next order without losing the shape of the collection.",
+      "Explore products for daily routines, training, and recovery with live prices, variants, and availability.",
     liked: "Saved",
     onlyAvailable: "Only in-stock products",
     options: "Options",
@@ -210,7 +216,15 @@ function getProductCountCopy(
   return copy.productCountMany.replace("{count}", String(count));
 }
 
-export async function CatalogView({
+function getPublicCardImageUrl(url: string | null) {
+  if (!url || url.startsWith("data:")) {
+    return null;
+  }
+
+  return url;
+}
+
+export function CatalogView({
   basePath,
   emptyCopy,
   intro,
@@ -221,11 +235,83 @@ export async function CatalogView({
   title,
 }: CatalogViewProps) {
   const copy = pageCopy[locale];
-  const categorySlug = getSingleValue(query.category);
-  const collectionSlug = getSingleValue(query.collection);
-  const onlyAvailable = getSingleValue(query.availability) === "in-stock";
-  const optionValues = getOptionValues(query);
-  const sort = getSort(query.sort);
+  const resolvedTitle = title ?? copy.title;
+
+  return (
+    <div data-perf-ready="true" data-perf-surface={likedOnlyUserId ? "wishlist" : "catalog-results"}>
+      <section className="catalog-hero__root__SW3a1">
+        <h1>{resolvedTitle}</h1>
+        <p className="catalog__count__SW3at">{copy.allProducts}</p>
+        <CatalogHeroIntro
+          seeLessLabel={copy.seeLess}
+          seeMoreLabel={copy.seeMore}
+          text={intro ?? copy.intro}
+        />
+      </section>
+
+      <Suspense fallback={<CatalogResultsFallback copy={copy} title={resolvedTitle} />}>
+        <CatalogResults
+          basePath={basePath}
+          copy={copy}
+          emptyCopy={emptyCopy}
+          likedOnlyUserId={likedOnlyUserId}
+          likedUserId={likedUserId}
+          locale={locale}
+          query={query}
+          title={resolvedTitle}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+function CatalogResultsFallback({
+  copy,
+  title,
+}: {
+  copy: typeof pageCopy[Locale];
+  title: string;
+}) {
+  return (
+    <section className="catalog__layout__SW3a3" aria-label={title}>
+      <p className="catalog__count__SW3at catalog__count--results__SW3ax">
+        {copy.allProducts}
+      </p>
+      <div className="catalog-grid__root__SW3a9" aria-hidden="true">
+        <span className="catalog-card-skeleton__SW3ay" />
+        <span className="catalog-card-skeleton__SW3ay" />
+      </div>
+    </section>
+  );
+}
+
+type CatalogResultsProps = {
+  basePath: `/${Locale}/${string}`;
+  copy: typeof pageCopy[Locale];
+  emptyCopy?: string | undefined;
+  likedOnlyUserId?: string | undefined;
+  likedUserId?: string | undefined;
+  locale: Locale;
+  query: CatalogSearchParamsInput;
+  title: string;
+};
+
+async function CatalogResults({
+  basePath,
+  copy,
+  emptyCopy,
+  likedOnlyUserId,
+  likedUserId,
+  locale,
+  query,
+  title,
+}: CatalogResultsProps) {
+  const resolvedQuery = await query;
+  const categorySlug = getSingleValue(resolvedQuery.category);
+  const collectionSlug = getSingleValue(resolvedQuery.collection);
+  const onlyAvailable = getSingleValue(resolvedQuery.availability) === "in-stock";
+  const optionValues = getOptionValues(resolvedQuery);
+  const sort = getSort(resolvedQuery.sort);
   const productSort = sort === "relevance" ? undefined : sort;
   const hasActiveFilters = Boolean(
       categorySlug ||
@@ -234,24 +320,24 @@ export async function CatalogView({
       sort !== "relevance" ||
       Object.keys(optionValues).length > 0,
   );
-  const sortOptions: CatalogSortOption[] = [
+  const sortOptions = [
     {
-      href: asRoute(getHref(basePath, query, { sort: "price-asc" })),
+      href: asRoute(getHref(basePath, resolvedQuery, { sort: "price-asc" })),
       label: copy.sortPriceAsc,
       value: "price-asc",
     },
     {
-      href: asRoute(getHref(basePath, query, { sort: "price-desc" })),
+      href: asRoute(getHref(basePath, resolvedQuery, { sort: "price-desc" })),
       label: copy.sortPriceDesc,
       value: "price-desc",
     },
     {
-      href: asRoute(getHref(basePath, query, { sort: null })),
+      href: asRoute(getHref(basePath, resolvedQuery, { sort: null })),
       label: copy.sortRelevance,
       value: "relevance",
     },
     {
-      href: asRoute(getHref(basePath, query, { sort: "newest" })),
+      href: asRoute(getHref(basePath, resolvedQuery, { sort: "newest" })),
       label: copy.sortNewest,
       value: "newest",
     },
@@ -272,7 +358,9 @@ export async function CatalogView({
     getCachedCatalogFilters({ locale }),
     shouldUseCachedCards
       ? getCachedProductCards(productCardInput)
-      : getPersonalizedProductCards(productCardInput),
+      : likedOnlyUserId || likedUserId
+        ? getPersonalizedProductCards(productCardInput)
+        : getRuntimeProductCards(productCardInput),
   ]);
   const { items } = productList;
   const productCountCopy = getProductCountCopy(copy, items.length);
@@ -290,30 +378,27 @@ export async function CatalogView({
     description: product.description,
     displayId: product.displayId,
     id: product.id,
-    imageUrl: product.imageUrl,
+    imageUrl: getPublicCardImageUrl(product.imageUrl),
     isLiked: product.isLiked,
     name: product.name,
     price: product.price,
-    secondaryImageUrl: product.secondaryImageUrl,
+    secondaryImageUrl: getPublicCardImageUrl(product.secondaryImageUrl),
     slug: product.slug,
     status: product.status,
     variantId: product.variantId,
     variantTitle: product.variantTitle,
   }));
+  const firstImageUrl = gridItems[0]?.imageUrl;
+
+  if (firstImageUrl) {
+    preload(firstImageUrl, { as: "image" });
+  }
 
   return (
-    <div data-perf-ready="true" data-perf-surface={likedOnlyUserId ? "wishlist" : "catalog-results"}>
-      <section className="catalog-hero__root__SW3a1">
-        <h1>{title ?? copy.title}</h1>
-        <p className="catalog__count__SW3at">{productCountCopy}</p>
-        <CatalogHeroIntro
-          seeLessLabel={copy.seeLess}
-          seeMoreLabel={copy.seeMore}
-          text={intro ?? copy.intro}
-        />
-      </section>
-
-      <section className="catalog__layout__SW3a3" aria-label={title ?? copy.allProducts}>
+      <section className="catalog__layout__SW3a3" aria-label={title}>
+        <p className="catalog__count__SW3at catalog__count--results__SW3ax">
+          {productCountCopy}
+        </p>
         <aside className="catalog-filter__root__SW3a4" aria-label={copy.filters}>
           <div className="catalog-filter__header__SW3ai">
             <h2>{copy.sortAndFilter}</h2>
@@ -332,30 +417,34 @@ export async function CatalogView({
             )}
           </div>
 
-          <Accordion>
-            <AccordionItem
-              defaultOpen
-              heading={copy.sort}
-            >
+          <div className="catalog-filter__groups__SW3az">
+            <details className="catalog-filter__group__SW3ao" open>
+              <summary className="catalog-filter__summary__SW3ap">{copy.sort}</summary>
               <div className="catalog-filter__panel__SW3al">
-                <CatalogSortControl
-                  label={copy.sort}
-                  options={sortOptions}
-                  value={sort}
-                />
+                <div className="catalog-filter__choices__SW3am" aria-label={copy.sort}>
+                  {sortOptions.map((option) => (
+                    <Link
+                      className="catalog-filter__choice__SW3an"
+                      data-active={sort === option.value ? "true" : undefined}
+                      href={option.href}
+                      key={option.value}
+                      scroll={false}
+                    >
+                      {option.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </AccordionItem>
+            </details>
 
-            <AccordionItem
-              heading={copy.availability}
-              open={onlyAvailable}
-            >
+            <details className="catalog-filter__group__SW3ao" open={onlyAvailable || undefined}>
+              <summary className="catalog-filter__summary__SW3ap">{copy.availability}</summary>
               <div className="catalog-filter__panel__SW3al">
                 <div className="catalog-filter__choices__SW3am">
                   <Link
                     className="catalog-filter__choice__SW3an"
                     data-active={!onlyAvailable ? "true" : undefined}
-                    href={asRoute(getHref(basePath, query, { availability: null }))}
+                    href={asRoute(getHref(basePath, resolvedQuery, { availability: null }))}
                     scroll={false}
                   >
                     {copy.allProducts}
@@ -364,7 +453,7 @@ export async function CatalogView({
                     className="catalog-filter__choice__SW3an"
                     data-active={onlyAvailable ? "true" : undefined}
                     href={asRoute(
-                      getHref(basePath, query, {
+                      getHref(basePath, resolvedQuery, {
                         availability: onlyAvailable ? null : "in-stock",
                       }),
                     )}
@@ -374,13 +463,11 @@ export async function CatalogView({
                   </Link>
                 </div>
               </div>
-            </AccordionItem>
+            </details>
 
             {filters.categories.length > 0 ? (
-              <AccordionItem
-                heading={copy.categories}
-                open={Boolean(categorySlug)}
-              >
+              <details className="catalog-filter__group__SW3ao" open={Boolean(categorySlug) || undefined}>
+                <summary className="catalog-filter__summary__SW3ap">{copy.categories}</summary>
                 <div className="catalog-filter__panel__SW3al">
                   <div className="catalog-filter__choices__SW3am">
                     {filters.categories.map((category) => {
@@ -391,7 +478,7 @@ export async function CatalogView({
                           className="catalog-filter__choice__SW3an"
                           data-active={active ? "true" : undefined}
                           href={asRoute(
-                            getHref(basePath, query, {
+                            getHref(basePath, resolvedQuery, {
                               category: active ? null : category.slug,
                             }),
                           )}
@@ -404,14 +491,12 @@ export async function CatalogView({
                     })}
                   </div>
                 </div>
-              </AccordionItem>
+              </details>
             ) : null}
 
             {filters.collections.length > 0 ? (
-              <AccordionItem
-                heading={copy.collections}
-                open={Boolean(collectionSlug)}
-              >
+              <details className="catalog-filter__group__SW3ao" open={Boolean(collectionSlug) || undefined}>
+                <summary className="catalog-filter__summary__SW3ap">{copy.collections}</summary>
                 <div className="catalog-filter__panel__SW3al">
                   <div className="catalog-filter__choices__SW3am">
                     {filters.collections.map((collection) => {
@@ -422,7 +507,7 @@ export async function CatalogView({
                           className="catalog-filter__choice__SW3an"
                           data-active={active ? "true" : undefined}
                           href={asRoute(
-                            getHref(basePath, query, {
+                            getHref(basePath, resolvedQuery, {
                               collection: active ? null : collection.slug,
                             }),
                           )}
@@ -435,18 +520,19 @@ export async function CatalogView({
                     })}
                   </div>
                 </div>
-              </AccordionItem>
+              </details>
             ) : null}
 
             {filters.options.map((option) => {
               const activeValues = optionValues[option.code] ?? [];
 
               return (
-                <AccordionItem
-                  heading={option.name}
+                <details
+                  className="catalog-filter__group__SW3ao"
                   key={option.code}
-                  open={activeValues.length > 0}
+                  open={activeValues.length > 0 || undefined}
                 >
+                  <summary className="catalog-filter__summary__SW3ap">{option.name}</summary>
                   <div className="catalog-filter__panel__SW3al">
                     <div className="catalog-filter__choices__SW3am">
                       {option.values.map((value) => {
@@ -456,7 +542,7 @@ export async function CatalogView({
                           <Link
                             className="catalog-filter__choice__SW3an"
                             data-active={active ? "true" : undefined}
-                            href={asRoute(getToggleMultiHref(basePath, query, option.code, value))}
+                            href={asRoute(getToggleMultiHref(basePath, resolvedQuery, option.code, value))}
                             key={`${option.code}-${value}`}
                             scroll={false}
                           >
@@ -466,10 +552,10 @@ export async function CatalogView({
                       })}
                     </div>
                   </div>
-                </AccordionItem>
+                </details>
               );
             })}
-          </Accordion>
+          </div>
         </aside>
 
         <div className="catalog__results__SW3as">
@@ -482,6 +568,5 @@ export async function CatalogView({
           />
         </div>
       </section>
-    </div>
   );
 }

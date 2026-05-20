@@ -203,6 +203,7 @@ export const products = pgTable(
   },
   (table) => [
     uniqueIndex("product_slug_unique").on(table.slug),
+    index("product_status_publish_created_idx").on(table.status, table.publishAt, table.createdAt),
   ],
 );
 

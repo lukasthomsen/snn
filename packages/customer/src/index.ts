@@ -359,8 +359,6 @@ export async function ensureCustomerProfile(user: CustomerUser) {
       return profile;
     }
 
-    await claimVerifiedEmailOrders(user, profileByEmail.id);
-
     return profileByEmail;
   }
 
@@ -943,45 +941,52 @@ export async function getCustomerAccountDashboard(user: CustomerUser) {
   const profile = await ensureCustomerProfile(user);
   const orderVisibility = getCustomerOrderVisibility(user, profile);
 
-  const defaultAddressRows = await db
-    .select({
-      addressCount: sql<number>`(count(*) over())::int`,
-      city: schema.addresses.city,
-      countryCode: schema.addresses.countryCode,
-      firstName: schema.addresses.firstName,
-      lastName: schema.addresses.lastName,
-      line1: schema.addresses.line1,
-      postalCode: schema.addresses.postalCode,
-      updatedAt: schema.addresses.updatedAt,
-    })
-    .from(schema.addresses)
-    .where(eq(schema.addresses.customerId, profile.id))
-    .orderBy(desc(schema.addresses.isDefaultShipping), desc(schema.addresses.updatedAt))
-    .limit(1);
-  const recentOrderRows = await db
-    .select({
-      currencyCode: schema.orders.currencyCode,
-      email: schema.orders.email,
-      id: schema.orders.id,
-      orderCount: sql<number>`(count(*) over())::int`,
-      orderNumber: schema.orders.orderNumber,
-      placedAt: schema.orders.placedAt,
-      status: schema.orders.status,
-      totalAmount: schema.orders.totalAmount,
-      totalOrderAmount: sql<number>`coalesce(sum(${schema.orders.totalAmount}) over(), 0)::int`,
-    })
-    .from(schema.orders)
-    .where(orderVisibility)
-    .orderBy(desc(schema.orders.placedAt))
-    .limit(2);
-  const likedProductCountRows = await db
-    .select({ value: count() })
-    .from(schema.customerProductLikes)
-    .where(eq(schema.customerProductLikes.userId, user.id));
-  const passkeyCountRows = await db
-    .select({ value: count() })
-    .from(schema.passkeys)
-    .where(eq(schema.passkeys.userId, user.id));
+  const [
+    defaultAddressRows,
+    recentOrderRows,
+    likedProductCountRows,
+    passkeyCountRows,
+  ] = await Promise.all([
+    db
+      .select({
+        addressCount: sql<number>`(count(*) over())::int`,
+        city: schema.addresses.city,
+        countryCode: schema.addresses.countryCode,
+        firstName: schema.addresses.firstName,
+        lastName: schema.addresses.lastName,
+        line1: schema.addresses.line1,
+        postalCode: schema.addresses.postalCode,
+        updatedAt: schema.addresses.updatedAt,
+      })
+      .from(schema.addresses)
+      .where(eq(schema.addresses.customerId, profile.id))
+      .orderBy(desc(schema.addresses.isDefaultShipping), desc(schema.addresses.updatedAt))
+      .limit(1),
+    db
+      .select({
+        currencyCode: schema.orders.currencyCode,
+        email: schema.orders.email,
+        id: schema.orders.id,
+        orderCount: sql<number>`(count(*) over())::int`,
+        orderNumber: schema.orders.orderNumber,
+        placedAt: schema.orders.placedAt,
+        status: schema.orders.status,
+        totalAmount: schema.orders.totalAmount,
+        totalOrderAmount: sql<number>`coalesce(sum(${schema.orders.totalAmount}) over(), 0)::int`,
+      })
+      .from(schema.orders)
+      .where(orderVisibility)
+      .orderBy(desc(schema.orders.placedAt))
+      .limit(2),
+    db
+      .select({ value: count() })
+      .from(schema.customerProductLikes)
+      .where(eq(schema.customerProductLikes.userId, user.id)),
+    db
+      .select({ value: count() })
+      .from(schema.passkeys)
+      .where(eq(schema.passkeys.userId, user.id)),
+  ]);
 
   const [defaultAddressWithCount] = defaultAddressRows;
   const addressCount = Number(defaultAddressWithCount?.addressCount ?? 0);

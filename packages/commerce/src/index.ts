@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import { and, asc, desc, eq, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 
 import { getDb, schema } from "@snn/db";
 
@@ -173,6 +173,15 @@ export type CartRecommendation = {
   slug: string;
   variantId: string;
   variantTitle: string;
+};
+
+export type CartDrawerLikeProduct = {
+  id: string;
+  imageUrl: string | null;
+  name: string;
+  price: CartMoney;
+  slug: string;
+  variantId: string;
 };
 
 export type CartShippingProgress = {
@@ -383,6 +392,11 @@ const fallbackMarket: CommerceMarket = {
   pricesIncludeTax: true,
   salesChannelId: null,
 };
+const marketCacheTtlMs = 5 * 60 * 1000;
+const marketCache = new Map<string, {
+  expiresAt: number;
+  market: CommerceMarket;
+}>();
 
 function normalizeCode(value: string | null | undefined, fallback: string) {
   const normalized = value?.trim();
@@ -444,6 +458,25 @@ async function resolveMarket(
   db: CommerceDb = getDb(),
 ): Promise<CommerceMarket> {
   const requestedCountryCode = input.countryCode ? normalizeCode(input.countryCode, "DK") : null;
+  const cacheKey = [
+    input.marketCode ? normalizeSlug(input.marketCode) : "",
+    requestedCountryCode ?? "",
+    input.locale ?? "",
+  ].join(":");
+  const cached = marketCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.market;
+  }
+
+  const cacheMarket = (market: CommerceMarket) => {
+    marketCache.set(cacheKey, {
+      expiresAt: Date.now() + marketCacheTtlMs,
+      market,
+    });
+
+    return market;
+  };
 
   if (input.marketCode) {
     const [market] = await db
@@ -453,10 +486,10 @@ async function resolveMarket(
       .limit(1);
 
     if (market) {
-      return {
+      return cacheMarket({
         ...marketFromRecord(market, requestedCountryCode),
         locale: input.locale ?? market.defaultLocale,
-      };
+      });
     }
   }
 
@@ -477,10 +510,10 @@ async function resolveMarket(
       .limit(1);
 
     if (row) {
-      return {
+      return cacheMarket({
         ...marketFromRecord(row.market, row.countryCode),
         locale: input.locale ?? row.market.defaultLocale,
-      };
+      });
     }
   }
 
@@ -492,16 +525,16 @@ async function resolveMarket(
     .limit(1);
 
   if (!market) {
-    return {
+    return cacheMarket({
       ...fallbackMarket,
       locale: input.locale ?? fallbackMarket.locale,
-    };
+    });
   }
 
-  return {
+  return cacheMarket({
     ...marketFromRecord(market, requestedCountryCode),
     locale: input.locale ?? market.defaultLocale,
-  };
+  });
 }
 
 function chooseTranslation<T extends { locale: string }>(
@@ -1031,22 +1064,25 @@ async function getAvailabilityByVariantId(
   }
 
   const inventoryItemIds = [...new Set(variantItems.map((item) => item.inventoryItemId))];
-  const locationRows = market.salesChannelId
-    ? await db
-      .select({ locationId: schema.salesChannelInventoryLocations.locationId })
-      .from(schema.salesChannelInventoryLocations)
-      .where(eq(schema.salesChannelInventoryLocations.salesChannelId, market.salesChannelId))
-    : [];
-  const scopedLocationIds = locationRows.map((row) => row.locationId);
-
   const levels = await db
     .select()
     .from(schema.inventoryLevels)
     .where(
       and(
         inArray(schema.inventoryLevels.inventoryItemId, inventoryItemIds),
-        scopedLocationIds.length > 0
-          ? inArray(schema.inventoryLevels.locationId, scopedLocationIds)
+        market.salesChannelId
+          ? sql`(
+            not exists (
+              select 1
+              from ${schema.salesChannelInventoryLocations}
+              where ${schema.salesChannelInventoryLocations.salesChannelId} = ${market.salesChannelId}
+            )
+            or ${schema.inventoryLevels.locationId} in (
+              select ${schema.salesChannelInventoryLocations.locationId}
+              from ${schema.salesChannelInventoryLocations}
+              where ${schema.salesChannelInventoryLocations.salesChannelId} = ${market.salesChannelId}
+            )
+          )`
           : undefined,
       ),
     );
@@ -1400,6 +1436,109 @@ export async function getProductCards(input: ProductListInput = {}, db: Commerce
     items: sortProductCards(cards, input.sort).slice(offset, offset + limit),
     market,
   };
+}
+
+export async function getCartDrawerLikes(
+  input: {
+    countryCode?: string | undefined;
+    locale?: string | undefined;
+    limit?: number | undefined;
+    marketCode?: string | undefined;
+    userId: string;
+  },
+  db: CommerceDb = getDb(),
+): Promise<CartDrawerLikeProduct[]> {
+  const market = await resolveMarket(input, db);
+  const locale = input.locale ?? market.locale;
+  const limit = Math.min(Math.max(input.limit ?? 12, 1), 24);
+  const likedRows = await db
+    .select({
+      productId: schema.customerProductLikes.productId,
+      variantId: schema.customerProductLikes.variantId,
+    })
+    .from(schema.customerProductLikes)
+    .where(eq(schema.customerProductLikes.userId, input.userId))
+    .orderBy(desc(schema.customerProductLikes.createdAt))
+    .limit(limit);
+
+  if (likedRows.length === 0) {
+    return [];
+  }
+
+  const productIds = [...new Set(likedRows.map((row) => row.productId))];
+  const variantIds = [...new Set(likedRows.map((row) => row.variantId))];
+  const [rows, mediaByProduct] = await Promise.all([
+    db
+      .select({
+        product: schema.products,
+        translation: schema.productTranslations,
+        variant: schema.productVariants,
+      })
+      .from(schema.productVariants)
+      .innerJoin(schema.products, eq(schema.productVariants.productId, schema.products.id))
+      .leftJoin(
+        schema.productTranslations,
+        and(
+          eq(schema.productTranslations.productId, schema.products.id),
+          eq(schema.productTranslations.locale, locale),
+        ),
+      )
+      .where(inArray(schema.productVariants.id, variantIds)),
+    getProductMedia(productIds, db),
+  ]);
+
+  let scopedProductIds = new Set(productIds);
+
+  if (market.salesChannelId && productIds.length > 0) {
+    const channelRows = await db
+      .select({ productId: schema.productSalesChannels.productId })
+      .from(schema.productSalesChannels)
+      .where(
+        and(
+          inArray(schema.productSalesChannels.productId, productIds),
+          eq(schema.productSalesChannels.salesChannelId, market.salesChannelId),
+        ),
+      );
+
+    scopedProductIds = new Set(channelRows.map((row) => row.productId));
+  }
+
+  const pricesByPriceSetId = await getActivePricesByPriceSetId(
+    rows
+      .map((row) => row.variant.priceSetId)
+      .filter((priceSetId): priceSetId is string => Boolean(priceSetId)),
+    market,
+    db,
+  );
+  const rowsByVariantId = new Map(rows.map((row) => [row.variant.id, row]));
+  const items: CartDrawerLikeProduct[] = [];
+
+  for (const likedRow of likedRows) {
+    const row = rowsByVariantId.get(likedRow.variantId);
+
+    if (!row || !isVisibleProduct(row.product) || !scopedProductIds.has(row.product.id)) {
+      continue;
+    }
+
+    const price = row.variant.priceSetId
+      ? pricesByPriceSetId.get(row.variant.priceSetId) ?? null
+      : null;
+
+    if (!price) {
+      continue;
+    }
+
+    items.push({
+      id: row.product.id,
+      imageUrl: chooseImageUrl(row.product, row.variant, mediaByProduct.get(row.product.id) ?? []),
+      name: row.translation?.name ?? row.variant.title,
+      price: cartMoney(price.amount, price.currencyCode),
+      slug: row.translation?.slug ?? row.product.slug,
+      variantId: row.variant.id,
+    });
+  }
+
+  return items;
 }
 
 export async function getRelatedProductCards(
@@ -2645,6 +2784,7 @@ async function getValidatedCartVariant(
 ) {
   const [row] = await db
     .select({
+      channelProductId: schema.productSalesChannels.productId,
       product: schema.products,
       translation: schema.productTranslations,
       variant: schema.productVariants,
@@ -2658,28 +2798,24 @@ async function getValidatedCartVariant(
         eq(schema.productTranslations.locale, locale),
       ),
     )
+    .leftJoin(
+      schema.productSalesChannels,
+      and(
+        eq(schema.productSalesChannels.productId, schema.products.id),
+        market.salesChannelId
+          ? eq(schema.productSalesChannels.salesChannelId, market.salesChannelId)
+          : undefined,
+      ),
+    )
     .where(eq(schema.productVariants.id, variantId))
     .limit(1);
 
-  if (!row || !isVisibleProduct(row.product)) {
+  if (
+    !row ||
+    !isVisibleProduct(row.product) ||
+    (market.salesChannelId && !row.channelProductId)
+  ) {
     throw new CartServiceError("VARIANT_NOT_FOUND", "This product is unavailable.");
-  }
-
-  if (market.salesChannelId) {
-    const [channel] = await db
-      .select({ id: schema.productSalesChannels.id })
-      .from(schema.productSalesChannels)
-      .where(
-        and(
-          eq(schema.productSalesChannels.productId, row.product.id),
-          eq(schema.productSalesChannels.salesChannelId, market.salesChannelId),
-        ),
-      )
-      .limit(1);
-
-    if (!channel) {
-      throw new CartServiceError("VARIANT_NOT_FOUND", "This product is unavailable.");
-    }
   }
 
   const price = row.variant.priceSetId
@@ -2690,11 +2826,17 @@ async function getValidatedCartVariant(
     throw new CartServiceError("VARIANT_NOT_FOUND", "This product is missing an active price.");
   }
 
-  const availability = (await getAvailabilityByVariantId([row.variant.id], market, db)).get(row.variant.id) ?? {
-    availableQuantity: null,
-    isAvailable: true,
-    isTracked: false,
-  };
+  const availability = row.variant.manageInventory
+    ? (await getAvailabilityByVariantId([row.variant.id], market, db)).get(row.variant.id) ?? {
+      availableQuantity: null,
+      isAvailable: true,
+      isTracked: false,
+    }
+    : {
+      availableQuantity: null,
+      isAvailable: true,
+      isTracked: false,
+    };
 
   if (!availability.isAvailable) {
     throw new CartServiceError("VARIANT_UNAVAILABLE", "This product is sold out.");
@@ -2807,33 +2949,23 @@ async function recalculateCartTotalsFromStoredLines(
   currencyCode: string,
   db: CommerceDb,
 ) {
-  const lines = await db
-    .select({
-      quantity: schema.cartItems.quantity,
-      unitPriceAmount: schema.cartItems.unitPriceAmount,
-    })
-    .from(schema.cartItems)
-    .where(eq(schema.cartItems.cartId, cartId));
-  const subtotalAmount = lines.reduce(
-    (sum, line) => sum + line.quantity * line.unitPriceAmount,
-    0,
-  );
-  const totalAmount = subtotalAmount;
-
-  await db
+  const subtotalAmount = sql<number>`coalesce((
+    select sum(${schema.cartItems.quantity} * ${schema.cartItems.unitPriceAmount})
+    from ${schema.cartItems}
+    where ${schema.cartItems.cartId} = ${cartId}
+  ), 0)`;
+  const [updatedCart] = await db
     .update(schema.carts)
     .set({
       currencyCode,
       subtotalAmount,
-      totalAmount,
+      totalAmount: subtotalAmount,
       updatedAt: new Date(),
     })
-    .where(eq(schema.carts.id, cartId));
+    .where(eq(schema.carts.id, cartId))
+    .returning();
 
-  return {
-    subtotalAmount,
-    totalAmount,
-  };
+  return updatedCart ?? null;
 }
 
 async function getCartRecommendations(
@@ -2909,22 +3041,12 @@ type ReadCartSnapshotOptions = {
   includeRecommendations?: boolean;
 };
 
-async function readCartSnapshot(
-  cartId: string,
+async function readCartSnapshotFromCart(
+  cart: CartRecord,
   input: CartIdentityInput,
   db: CommerceDb,
   options: ReadCartSnapshotOptions = {},
 ): Promise<CartSnapshot> {
-  const [cart] = await db
-    .select()
-    .from(schema.carts)
-    .where(eq(schema.carts.id, cartId))
-    .limit(1);
-
-  if (!cart) {
-    throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
-  }
-
   const locale = input.locale ?? cart.locale;
   const currencyCode = cart.currencyCode;
   const rows = await db
@@ -3049,8 +3171,8 @@ export async function getCartSnapshot(
     const { cart, market } = await resolveCart(input, transactionalDb, true);
 
     recommendationMarket = market;
-    await recalculateCartTotals(cart.id, market, transactionalDb);
-    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+    const updatedCart = await recalculateCartTotalsFromStoredLines(cart.id, market.currencyCode, transactionalDb);
+    snapshot = await readCartSnapshotFromCart(updatedCart ?? cart, input, transactionalDb, {
       includeRecommendations: false,
     });
   });
@@ -3069,15 +3191,13 @@ export async function getExistingCartSnapshot(
   db: CommerceDb = getDb(),
 ): Promise<CartSnapshot> {
   let snapshot: CartSnapshot | null = null;
-  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
     const { cart, market } = await resolveCart(input, transactionalDb, false);
 
-    recommendationMarket = market;
-    await recalculateCartTotals(cart.id, market, transactionalDb);
-    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+    const updatedCart = await recalculateCartTotalsFromStoredLines(cart.id, market.currencyCode, transactionalDb);
+    snapshot = await readCartSnapshotFromCart(updatedCart ?? cart, input, transactionalDb, {
       includeRecommendations: false,
     });
   });
@@ -3086,9 +3206,7 @@ export async function getExistingCartSnapshot(
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return recommendationMarket
-    ? withCartRecommendations(snapshot, input, recommendationMarket)
-    : snapshot;
+  return snapshot;
 }
 
 export async function createCheckoutOrderFromCart(
@@ -3277,7 +3395,6 @@ export async function addCartItem(
   db: CommerceDb = getDb(),
 ) {
   let snapshot: CartSnapshot | null = null;
-  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
@@ -3293,47 +3410,29 @@ export async function addCartItem(
       throw new CartServiceError("VARIANT_UNAVAILABLE", "Requested quantity is not available.");
     }
 
-    const [existingLine] = await transactionalDb
-      .select()
-      .from(schema.cartItems)
-      .where(
-        and(
-          eq(schema.cartItems.cartId, cart.id),
-          eq(schema.cartItems.variantId, input.variantId),
-        ),
-      )
-      .limit(1);
-
-    if (existingLine) {
-      const nextQuantity = Math.min(
-        clampCartQuantity(existingLine.quantity + quantity),
-        availableQuantity,
-      );
-
-      await transactionalDb
-        .update(schema.cartItems)
-        .set({
-          quantity: nextQuantity,
-          skuSnapshot: validated.variant.sku,
-          titleSnapshot: validated.titleSnapshot,
-          unitPriceAmount: validated.price.amount,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.cartItems.id, existingLine.id));
-    } else {
-      await transactionalDb.insert(schema.cartItems).values({
+    await transactionalDb
+      .insert(schema.cartItems)
+      .values({
         cartId: cart.id,
         quantity,
         skuSnapshot: validated.variant.sku,
         titleSnapshot: validated.titleSnapshot,
         unitPriceAmount: validated.price.amount,
         variantId: validated.variant.id,
+      })
+      .onConflictDoUpdate({
+        target: [schema.cartItems.cartId, schema.cartItems.variantId],
+        set: {
+          quantity: sql`least(${schema.cartItems.quantity} + ${quantity}, ${availableQuantity})`,
+          skuSnapshot: validated.variant.sku,
+          titleSnapshot: validated.titleSnapshot,
+          unitPriceAmount: validated.price.amount,
+          updatedAt: new Date(),
+        },
       });
-    }
 
-    recommendationMarket = market;
-    await recalculateCartTotals(cart.id, market, transactionalDb);
-    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+    const updatedCart = await recalculateCartTotalsFromStoredLines(cart.id, market.currencyCode, transactionalDb);
+    snapshot = await readCartSnapshotFromCart(updatedCart ?? cart, input, transactionalDb, {
       includeRecommendations: false,
     });
   });
@@ -3342,9 +3441,7 @@ export async function addCartItem(
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return recommendationMarket
-    ? withCartRecommendations(snapshot, input, recommendationMarket)
-    : snapshot;
+  return snapshot;
 }
 
 export async function updateCartItemQuantity(
@@ -3355,8 +3452,6 @@ export async function updateCartItemQuantity(
   db: CommerceDb = getDb(),
 ) {
   let snapshot: CartSnapshot | null = null;
-  const includeRecommendations = input.quantity <= 0;
-  let recommendationMarket: CommerceMarket | null = null;
 
   await db.transaction(async (tx) => {
     const transactionalDb = tx as unknown as CommerceDb;
@@ -3376,9 +3471,8 @@ export async function updateCartItemQuantity(
         .where(and(eq(schema.cartItems.id, input.itemId), eq(schema.cartItems.cartId, cart.id)));
     }
 
-    recommendationMarket = market;
-    await recalculateCartTotalsFromStoredLines(cart.id, market.currencyCode, transactionalDb);
-    snapshot = await readCartSnapshot(cart.id, input, transactionalDb, {
+    const updatedCart = await recalculateCartTotalsFromStoredLines(cart.id, market.currencyCode, transactionalDb);
+    snapshot = await readCartSnapshotFromCart(updatedCart ?? cart, input, transactionalDb, {
       includeRecommendations: false,
     });
   });
@@ -3387,9 +3481,7 @@ export async function updateCartItemQuantity(
     throw new CartServiceError("CART_NOT_FOUND", "Cart not found.");
   }
 
-  return includeRecommendations && recommendationMarket
-    ? withCartRecommendations(snapshot, input, recommendationMarket)
-    : snapshot;
+  return snapshot;
 }
 
 export async function removeCartItem(

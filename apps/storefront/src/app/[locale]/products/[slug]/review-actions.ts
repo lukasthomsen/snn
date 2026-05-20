@@ -5,14 +5,18 @@ import { headers } from "next/headers";
 
 import {
   createProductReview,
+  getProductReviewEligibility,
   ProductReviewServiceError,
   type ProductReviewErrorCode,
+  type ProductReviewEligibility,
 } from "@snn/commerce";
 import {
   CustomerAuthError,
   ensureCustomerProfile,
+  getCustomerSession,
   requireCustomerSession,
 } from "@snn/customer";
+import { tracePerformance } from "@snn/db";
 import type { Locale } from "@snn/i18n";
 
 import { catalogCacheTags } from "../catalog-data";
@@ -21,6 +25,11 @@ type SubmitProductReviewInput = {
   locale: Locale;
   productId: string;
   productSlug: string;
+};
+
+type ReviewEligibilityInput = {
+  locale: Locale;
+  productId: string;
 };
 
 export type ProductReviewActionState = {
@@ -75,6 +84,39 @@ function getNumber(formData: FormData, name: string) {
 
 function getReviewMessage(locale: Locale, code: ProductReviewErrorCode | "AUTH_REQUIRED" | "BANNED" | "EMAIL_UNVERIFIED") {
   return reviewActionMessages[locale][code] ?? reviewActionMessages[locale].UNKNOWN;
+}
+
+function isSafeProductId(value: string) {
+  return /^[a-zA-Z0-9_-]{1,128}$/.test(value);
+}
+
+export async function loadProductReviewEligibilityAction({
+  locale,
+  productId,
+}: ReviewEligibilityInput): Promise<ProductReviewEligibility> {
+  return tracePerformance("storefront.product.reviewEligibility", {
+    locale,
+  }, async () => {
+    if (!isSafeProductId(productId)) {
+      return getProductReviewEligibility({ productId: "" });
+    }
+
+    const session = await getCustomerSession(await headers()).catch(() => null);
+    const verifiedCustomer = session?.user.emailVerified && !session.user.banned
+      ? session.user
+      : null;
+
+    if (!verifiedCustomer) {
+      return getProductReviewEligibility({ productId });
+    }
+
+    const profile = await ensureCustomerProfile(verifiedCustomer);
+
+    return getProductReviewEligibility({
+      customerId: profile.id,
+      productId,
+    });
+  });
 }
 
 export async function submitProductReviewAction(

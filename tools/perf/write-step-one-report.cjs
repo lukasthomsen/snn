@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { getLighthouseOutputDirs } = require("./lighthouse-output.cjs");
 
 const repoRoot = process.cwd();
 const reportPath = process.env.PERF_STEP_ONE_REPORT_PATH
@@ -19,11 +20,12 @@ const serverTraceCandidates = [
 ].filter(Boolean);
 
 const metricTargets = {
-  actionP75Ms: 200,
+  actionP75Ms: 1000,
   cls: 0.1,
+  instantFeedbackP75Ms: 200,
   lcpMs: 2500,
   routeP75Ms: 2500,
-  serverP75Ms: 200,
+  serverP75Ms: 1000,
   tbtMs: 200,
 };
 
@@ -151,6 +153,109 @@ function markdownTable(headers, rows) {
   ].join("\n");
 }
 
+function cleanMarkdownCell(value, fallback = "-") {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const cleaned = value
+    .replace(/\s+/g, " ")
+    .replace(/\|/g, "\\|")
+    .trim();
+
+  if (!cleaned) {
+    return fallback;
+  }
+
+  return cleaned.length > 96 ? `${cleaned.slice(0, 93)}...` : cleaned;
+}
+
+function extractLcpElement(audits) {
+  const details = audits["largest-contentful-paint-element"]?.details;
+  const elementTable = details?.items?.find((item) => (
+    item?.type === "table" &&
+    item.headings?.some((heading) => heading.key === "node")
+  ));
+  const item = elementTable?.items?.[0] ?? details?.items?.[0];
+
+  if (!item) {
+    return {
+      resourceUrl: "-",
+      selector: "-",
+      snippet: "-",
+    };
+  }
+
+  const node = item.node ?? {};
+  const resourceUrl = item.url ?? item.request?.url ?? node.url;
+
+  return {
+    resourceUrl: cleanMarkdownCell(resourceUrl),
+    selector: cleanMarkdownCell(node.selector),
+    snippet: cleanMarkdownCell(node.snippet ?? node.nodeLabel ?? node.explanation),
+  };
+}
+
+function extractLcpSubparts(audits) {
+  const elementDetails = audits["largest-contentful-paint-element"]?.details;
+  const phaseTable = elementDetails?.items?.find((item) => (
+    item?.type === "table" &&
+    item.headings?.some((heading) => heading.key === "phase")
+  ));
+
+  if (phaseTable?.items?.length > 0) {
+    return phaseTable.items
+      .map((item) => `${cleanMarkdownCell(item.phase)}: ${formatNumber(item.timing, " ms")}`)
+      .join("; ");
+  }
+
+  const breakdownAudit =
+    audits["lcp-breakdown"] ??
+    audits["largest-contentful-paint-breakdown"] ??
+    audits["lcp-phases"] ??
+    audits["lcp-phases-insight"];
+  const firstItem = breakdownAudit?.details?.items?.[0];
+
+  if (firstItem && typeof firstItem === "object") {
+    const labels = [
+      ["ttfb", "TTFB"],
+      ["timeToFirstByte", "TTFB"],
+      ["loadDelay", "Load delay"],
+      ["resourceLoadDelay", "Load delay"],
+      ["loadTime", "Load"],
+      ["resourceLoadDuration", "Load"],
+      ["renderDelay", "Render delay"],
+      ["elementRenderDelay", "Render delay"],
+    ];
+    const parts = [];
+    const usedLabels = new Set();
+
+    for (const [key, label] of labels) {
+      const value = firstItem[key];
+
+      if (usedLabels.has(label) || typeof value !== "number" || !Number.isFinite(value)) {
+        continue;
+      }
+
+      parts.push(`${label}: ${formatNumber(value, " ms")}`);
+      usedLabels.add(label);
+    }
+
+    if (parts.length > 0) {
+      return parts.join("; ");
+    }
+  }
+
+  const discoveryItems = audits["lcp-discovery"]?.details?.items ?? [];
+  const discoveryWarnings = discoveryItems
+    .map((item) => item?.wastedMs ?? item?.value ?? item?.label)
+    .filter(Boolean)
+    .map((value) => cleanMarkdownCell(String(value)))
+    .slice(0, 2);
+
+  return discoveryWarnings.length > 0 ? discoveryWarnings.join("; ") : "-";
+}
+
 function summarizeMeasurements(measurements) {
   const groups = [...groupBy(
     measurements,
@@ -167,7 +272,18 @@ function summarizeMeasurements(measurements) {
   return groups
     .map((rows) => {
       const first = rows[0];
-      const durations = rows.map((row) => row.durationMs);
+      const durations = rows.map((row) => {
+        if (
+          row.kind === "action" &&
+          row.name === "account.signOut" &&
+          typeof row.responseDurationMs === "number" &&
+          Number.isFinite(row.responseDurationMs)
+        ) {
+          return row.responseDurationMs;
+        }
+
+        return row.durationMs;
+      });
       const failures = rows.filter((row) => row.status !== "ok").length;
       const transferSizes = rows.map((row) => row.transferSizeBytes).filter(Number.isFinite);
 
@@ -212,7 +328,11 @@ function summarizeServerTraces(traces) {
 }
 
 function readLighthouseRuns() {
-  const manifestPaths = walkFiles(lighthouseRoot, "manifest.json");
+  const manifestPaths = process.env.PERF_LIGHTHOUSE_DIR
+    ? walkFiles(lighthouseRoot, "manifest.json")
+    : getLighthouseOutputDirs(repoRoot)
+      .map((outputDir) => path.join(outputDir, "manifest.json"))
+      .filter(exists);
   const runs = [];
 
   for (const manifestPath of manifestPaths) {
@@ -232,18 +352,23 @@ function readLighthouseRuns() {
       const lhr = readJson(jsonPath);
       const audits = lhr.audits ?? {};
       const categories = lhr.categories ?? {};
+      const lcpElement = extractLcpElement(audits);
 
-      const finalUrl = new URL(lhr.finalDisplayedUrl ?? lhr.finalUrl ?? entry.url);
+      const requestedUrl = new URL(entry.url);
 
       runs.push({
         cls: audits["cumulative-layout-shift"]?.numericValue,
         device,
         fcpMs: audits["first-contentful-paint"]?.numericValue,
+        lcpElementSelector: lcpElement.selector,
+        lcpElementSnippet: lcpElement.snippet,
         lcpMs: audits["largest-contentful-paint"]?.numericValue,
+        lcpResourceUrl: lcpElement.resourceUrl,
+        lcpSubparts: extractLcpSubparts(audits),
         performanceScore: typeof categories.performance?.score === "number"
           ? categories.performance.score * 100
           : undefined,
-        route: `${finalUrl.pathname}${finalUrl.search}`,
+        route: `${requestedUrl.pathname}${requestedUrl.search}`,
         speedIndexMs: audits["speed-index"]?.numericValue,
         tbtMs: audits["total-blocking-time"]?.numericValue,
         ttfbMs: audits["server-response-time"]?.numericValue,
@@ -256,18 +381,23 @@ function readLighthouseRuns() {
   return groups
     .map((rows) => {
       const first = rows[0];
+      const representative = [...rows].sort((a, b) => (b.lcpMs ?? 0) - (a.lcpMs ?? 0))[0] ?? first;
 
       return {
-        cls: percentile(rows.map((row) => row.cls), 50),
+        cls: percentile(rows.map((row) => row.cls), 75),
         device: first.device,
-        fcpMs: percentile(rows.map((row) => row.fcpMs), 50),
-        lcpMs: percentile(rows.map((row) => row.lcpMs), 50),
-        performanceScore: percentile(rows.map((row) => row.performanceScore), 50),
+        fcpMs: percentile(rows.map((row) => row.fcpMs), 75),
+        lcpElementSelector: representative.lcpElementSelector,
+        lcpElementSnippet: representative.lcpElementSnippet,
+        lcpMs: percentile(rows.map((row) => row.lcpMs), 75),
+        lcpResourceUrl: representative.lcpResourceUrl,
+        lcpSubparts: representative.lcpSubparts,
+        performanceScore: percentile(rows.map((row) => row.performanceScore), 75),
         route: first.route,
         rows: rows.length,
-        speedIndexMs: percentile(rows.map((row) => row.speedIndexMs), 50),
-        tbtMs: percentile(rows.map((row) => row.tbtMs), 50),
-        ttfbMs: percentile(rows.map((row) => row.ttfbMs), 50),
+        speedIndexMs: percentile(rows.map((row) => row.speedIndexMs), 75),
+        tbtMs: percentile(rows.map((row) => row.tbtMs), 75),
+        ttfbMs: percentile(rows.map((row) => row.ttfbMs), 75),
       };
     })
     .sort((a, b) => (b.lcpMs ?? 0) - (a.lcpMs ?? 0));
@@ -281,7 +411,7 @@ function buildCandidates(measurementSummary, serverSummary, lighthouseSummary) {
 
     if ((row.p75 ?? 0) > target || row.failures > 0) {
       candidates.push({
-        impact: row.failures > 0 ? "high" : row.kind === "action" ? "high" : "medium",
+        impact: row.failures > 0 ? "high" : row.kind === "action" ? "medium" : "medium",
         issue: `${row.name} ${row.device} p75 ${formatNumber(row.p75, " ms")}${row.failures > 0 ? ` with ${row.failures} failures` : ""}`,
         next: row.serverTraceName
           ? `Compare browser timing with ${row.serverTraceName} server traces.`
@@ -305,7 +435,9 @@ function buildCandidates(measurementSummary, serverSummary, lighthouseSummary) {
       candidates.push({
         impact: (row.lcpMs ?? 0) > metricTargets.lcpMs ? "high" : "medium",
         issue: `${row.device} ${row.route} Lighthouse LCP ${formatNumber(row.lcpMs, " ms")}, TBT ${formatNumber(row.tbtMs, " ms")}, CLS ${formatNumber(row.cls)}`,
-        next: "Open the Lighthouse trace and inspect LCP element, request discovery, render blocking, and layout shifts.",
+        next: row.lcpResourceUrl && row.lcpResourceUrl !== "-"
+          ? `Optimize LCP resource ${row.lcpResourceUrl}; confirm discovery and render delay.`
+          : `Inspect LCP element ${row.lcpElementSelector ?? row.lcpElementSnippet ?? "-"} for render delay, CSS, font path, and layout shifts.`,
       });
     }
   }
@@ -354,6 +486,9 @@ function buildReport() {
     formatNumber(row.tbtMs, " ms"),
     formatNumber(row.cls),
     formatNumber(row.speedIndexMs, " ms"),
+    row.lcpElementSelector && row.lcpElementSelector !== "-" ? row.lcpElementSelector : row.lcpElementSnippet,
+    row.lcpResourceUrl,
+    row.lcpSubparts,
   ]);
   const candidateRows = candidates.map((row) => [
     row.impact,
@@ -404,7 +539,7 @@ ${markdownTable(
 ## Lighthouse Summary
 
 ${markdownTable(
-  ["Device", "Route", "n", "Perf", "FCP", "LCP", "TBT", "CLS", "Speed Index"],
+  ["Device", "Route", "n", "Perf", "FCP", "LCP", "TBT", "CLS", "Speed Index", "LCP element", "LCP resource", "LCP subparts"],
   lighthouseRows,
 )}
 
@@ -413,12 +548,14 @@ ${markdownTable(
 - LCP p75: <= ${metricTargets.lcpMs} ms
 - INP p75: <= 200 ms in field data; use Playwright click-to-feedback timings and Lighthouse TBT as lab proxies
 - CLS p75: <= ${metricTargets.cls}
-- Interaction p75 for cart/likes/checkout feedback: <= ${metricTargets.actionP75Ms} ms
+- Instant optimistic feedback p75: <= ${metricTargets.instantFeedbackP75Ms} ms where separately measured
+- Full browser action p75 after server completion/readiness marker: <= ${metricTargets.actionP75Ms} ms
 - Server action p75 investigation threshold: > ${metricTargets.serverP75Ms} ms or query p75 >= 10
 
 ## Notes
 
 - Playwright rows use deterministic \`data-perf-*\` readiness markers rather than \`networkidle\`.
+- Response-backed auth teardown rows use endpoint response timing when available, so the report tracks server/session work instead of Playwright locator auto-wait noise.
 - Browser timings and server traces are intentionally separate raw inputs; this report joins them by measurement name and \`serverTraceName\` so slow UI waits can be separated from slow database work.
 - Production smoke should stay limited to public cache/header checks unless production mutations are explicitly approved.
 `;

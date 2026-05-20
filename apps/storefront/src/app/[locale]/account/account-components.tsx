@@ -119,7 +119,11 @@ function OrderThumbs({ order }: { order: CustomerOrderCard }) {
 
 export function BackToAccountLink({ locale }: { locale: Locale }) {
   return (
-    <Link className="accountBack__link__SW2b0" href={`/${locale}/account` as Route}>
+    <Link
+      className="accountBack__link__SW2b0"
+      href={`/${locale}/account` as Route}
+      prefetch={false}
+    >
       <span aria-hidden="true">‹</span>
       Back to account
     </Link>
@@ -161,6 +165,7 @@ export function RewardsHero({
         <Link
           className="accountHero__rewardLink__SW2a6"
           href={`/${locale}/account/rewards` as Route}
+          prefetch={false}
         >
           {rewards.isLocked ? "Unlock XP & rewards" : "View rewards"}
         </Link>
@@ -190,8 +195,8 @@ export function EmptyOrdersPanel({ locale }: { locale: Locale }) {
       </div>
       <p>You haven’t made any orders yet. When you make an order it’ll show up here.</p>
       <div className="accountOrdersEmpty__actions__SW2e2">
-        <Link href={`/${locale}/#hero` as Route}>Shop women</Link>
-        <Link href={`/${locale}/#hero` as Route}>Shop men</Link>
+        <Link href={`/${locale}/#hero` as Route} prefetch={false}>Shop women</Link>
+        <Link href={`/${locale}/#hero` as Route} prefetch={false}>Shop men</Link>
       </div>
     </section>
   );
@@ -208,7 +213,7 @@ export function RecentOrdersPanel({
     <section className="accountRecentOrders__root__SW2f0">
       <div className="accountRecentOrders__header__SW2f1">
         <h2>Orders</h2>
-        <Link href={`/${locale}/account/orders` as Route}>View all</Link>
+        <Link href={`/${locale}/account/orders` as Route} prefetch={false}>View all</Link>
       </div>
       <div className="accountRecentOrders__list__SW2f2">
         {orders.slice(0, 2).map((order) => (
@@ -243,7 +248,9 @@ export function OrderCard({
       </div>
       <div className="accountOrderCard__side__SW2g3">
         <OrderThumbs order={order} />
-        <Link href={`/${locale}/account/orders#${order.id}` as Route}>View order</Link>
+        <Link href={`/${locale}/account/orders#${order.id}` as Route} prefetch={false}>
+          View order
+        </Link>
       </div>
     </article>
   );
