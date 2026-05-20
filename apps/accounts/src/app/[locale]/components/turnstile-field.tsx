@@ -71,6 +71,7 @@ export function TurnstileField({
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const hasResetSignalMounted = useRef(false);
+  const [isInteractive, setIsInteractive] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
 
   useEffect(() => {
@@ -88,18 +89,28 @@ export function TurnstileField({
         }
 
         setMessage(undefined);
+        setIsInteractive(false);
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           action: challenge.action,
           appearance: "interaction-only",
+          "after-interactive-callback"() {
+            setIsInteractive(false);
+          },
+          "before-interactive-callback"() {
+            setIsInteractive(true);
+          },
           callback(token: string) {
+            setIsInteractive(false);
             setMessage(undefined);
             onTokenChange(token);
           },
           "error-callback"() {
+            setIsInteractive(false);
             onTokenChange(null);
             setMessage(challenge.unavailableMessage);
           },
           "expired-callback"() {
+            setIsInteractive(false);
             onTokenChange(null);
           },
           sitekey: challenge.siteKey,
@@ -108,6 +119,7 @@ export function TurnstileField({
       })
       .catch(() => {
         if (isMounted) {
+          setIsInteractive(false);
           onTokenChange(null);
           setMessage(challenge.unavailableMessage);
         }
@@ -146,6 +158,7 @@ export function TurnstileField({
       aria-busy={disabled}
       className="turnstile__root__SW0m0"
       data-disabled={disabled ? "true" : undefined}
+      data-visible={isInteractive || message ? "true" : undefined}
     >
       <div className="turnstile__widget__SW0m1" ref={containerRef} />
       {message ? (
