@@ -403,16 +403,11 @@
 .turnstile__root__SW0m0 {
   display: grid;
   justify-items: center;
-  min-height: 4.1rem;
 }
 
 .turnstile__root__SW0m0[data-disabled="true"] {
   opacity: 0.72;
   pointer-events: none;
-}
-
-.turnstile__widget__SW0m1 {
-  min-height: 4.1rem;
 }
 
 .legal__copy__SW0fy {

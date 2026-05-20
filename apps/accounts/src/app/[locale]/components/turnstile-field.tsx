@@ -90,6 +90,7 @@ export function TurnstileField({
         setMessage(undefined);
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           action: challenge.action,
+          appearance: "interaction-only",
           callback(token: string) {
             setMessage(undefined);
             onTokenChange(token);
