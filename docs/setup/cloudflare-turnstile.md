@@ -31,6 +31,7 @@ Use separate widgets per environment boundary.
 - Mode: `managed`
 - Hostnames:
   - `accounts.veloro.dk`
+  - `auth.veloro.dk` temporary legacy redirect hostname
 
 ## Preview Policy
 
@@ -51,18 +52,24 @@ Map the widget keys like this:
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 - `CF_TURNSTILE_SECRET_KEY`
 
-### Local storefront
+### Local apps
 
-Use the development widget keys in:
+Use the development widget keys in local apps that render Turnstile-protected
+auth forms, for example:
 
+- root `.env.local`
 - `apps/storefront/.env.local`
 
-### Vercel storefront
+### Vercel auth-facing apps
 
-Use:
+Use the matching widget keys in every Vercel project that renders
+Turnstile-protected auth forms:
 
 - Development: development widget keys
 - Production: production widget keys
+
+The production `snn-accounts` project must use the `snn-auth-prod` key pair so
+`accounts.veloro.dk` is authorized by the live widget.
 
 The admin app does not need Turnstile keys yet.
 

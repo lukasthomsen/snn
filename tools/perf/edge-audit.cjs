@@ -559,7 +559,7 @@ function compareVariant(actual, expected) {
     && options.height === expected.options.height;
 }
 
-async function auditCloudflareApi() {
+async function auditCloudflareApi({ accountsHost, authHtml }) {
   const imageAccountId = process.env.CLOUDFLARE_IMAGES_ACCOUNT_ID || process.env.CLOUDFLARE_ACCOUNT_ID;
   const imageApiToken = process.env.CLOUDFLARE_IMAGES_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -613,13 +613,42 @@ async function auditCloudflareApi() {
       } else {
         const widgets = Array.isArray(response.body.result) ? response.body.result : [];
 
-        turnstile.status = "pass";
-        turnstile.summary = `Cloudflare Turnstile API returned ${widgets.length} widget(s).`;
+        const liveSiteKey = authHtml.match(/0x4[A-Za-z0-9_-]+/)?.[0] ?? null;
+        const matchingLiveWidget = liveSiteKey
+          ? widgets.find((widget) => widget.sitekey === liveSiteKey)
+          : null;
+        const widgetForAccountsHost = widgets.find((widget) => {
+          const domains = widget.domains ?? widget.hostnames ?? [];
+
+          return domains.includes(accountsHost);
+        });
+        const liveWidgetDomains = matchingLiveWidget
+          ? matchingLiveWidget.domains ?? matchingLiveWidget.hostnames ?? []
+          : [];
+
         turnstile.widgets = widgets.map((widget) => ({
           domains: widget.domains ?? widget.hostnames ?? [],
+          matchesLiveAuthPage: liveSiteKey ? widget.sitekey === liveSiteKey : false,
           mode: widget.mode,
           name: widget.name,
         }));
+
+        if (matchingLiveWidget && liveWidgetDomains.includes(accountsHost)) {
+          turnstile.status = "pass";
+          turnstile.summary = `Cloudflare Turnstile API returned ${widgets.length} widget(s); live auth page uses ${matchingLiveWidget.name} and authorizes ${accountsHost}.`;
+        } else if (liveSiteKey && matchingLiveWidget) {
+          turnstile.status = "warn";
+          turnstile.summary = `Live auth page uses ${matchingLiveWidget.name}, but that widget does not authorize ${accountsHost}.`;
+        } else if (liveSiteKey && !matchingLiveWidget) {
+          turnstile.status = "warn";
+          turnstile.summary = "Live auth page uses a Turnstile site key that was not found in the configured Cloudflare account.";
+        } else if (!widgetForAccountsHost) {
+          turnstile.status = "warn";
+          turnstile.summary = `Cloudflare Turnstile API returned ${widgets.length} widget(s), but none authorize ${accountsHost}.`;
+        } else {
+          turnstile.status = "pass";
+          turnstile.summary = `Cloudflare Turnstile API returned ${widgets.length} widget(s); ${widgetForAccountsHost.name} authorizes ${accountsHost}.`;
+        }
       }
     } catch (error) {
       turnstile.status = "warn";
@@ -804,6 +833,7 @@ function auditTurnstileConfig(authHtml, sourceText) {
   const hasSecretKey = hasValue(process.env.CF_TURNSTILE_SECRET_KEY);
   const pairStatus = hasSiteKey === hasSecretKey ? "pass" : "fail";
   const authLoadsScript = /challenges\.cloudflare\.com\/turnstile/.test(authHtml);
+  const authHasAnySiteKey = /0x4[A-Za-z0-9_-]+/.test(authHtml);
   const authHasSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
     ? authHtml.includes(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
     : false;
@@ -816,7 +846,7 @@ function auditTurnstileConfig(authHtml, sourceText) {
       : "warn";
 
   return {
-    authPage: authLoadsScript || authHasSiteKey
+    authPage: authLoadsScript || authHasSiteKey || authHasAnySiteKey
       ? "Turnstile widget appears on the production auth page."
       : "Foundation configured, widget not active yet.",
     keyPair: {
@@ -1086,9 +1116,12 @@ async function main() {
   const imageStatus = sampleAudits.length === 0
     ? "warn"
     : worstStatus(sampleAudits);
-  const cloudflareApi = await auditCloudflareApi();
   const vercelApi = await auditVercelApi(env);
   const authHtml = await readAuthHtml(env.accountsHost);
+  const cloudflareApi = await auditCloudflareApi({
+    accountsHost: env.accountsHost,
+    authHtml,
+  });
   const turnstile = auditTurnstileConfig(authHtml, readTurnstileSource());
   const docs = auditDocs();
   const report = {
