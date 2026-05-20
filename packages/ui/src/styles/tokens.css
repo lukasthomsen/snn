@@ -57,13 +57,13 @@
   --line-relaxed: 1.72;
   --line-on-media: 0.92;
 
-  --tracking-tight: -0.005em;
+  --tracking-tight: 0em;
   --tracking-flat: 0em;
   --tracking-small: 0.01em;
   --tracking-medium: 0.015em;
-  --tracking-large: -0.015em;
+  --tracking-large: 0em;
   --tracking-caps: 0.08em;
-  --tracking-on-media: -0.03em;
+  --tracking-on-media: 0em;
 
   /* Color */
   --color-white: #ffffff;

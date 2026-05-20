@@ -1,7 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { MouseEvent } from "react";
-import { Fragment, useActionState, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import type {
   ProductDetail,
@@ -14,29 +15,17 @@ import type { Locale } from "@snn/i18n";
 import {
   Accordion,
   AccordionActionItem,
-  Alert,
   BadgePercentIcon,
   Button,
-  Checkbox,
-  CheckIcon,
   Drawer,
-  EmptyState,
   Heading,
-  Meter,
   MediaButton,
   PackageOpenIcon,
   RatingSummaryInline,
-  RatingStars,
-  Radio,
-  RadioGroup,
   RulerIcon,
-  SearchField,
-  Select,
   ShareIcon,
   ShieldCheckIcon,
   Text,
-  Textarea,
-  TextField,
   TruckIcon,
   VariantPicker,
   VariantPickerOption,
@@ -44,10 +33,15 @@ import {
 
 import { useCartDrawer } from "../../components/cart-drawer";
 import { StorefrontImage } from "../../components/storefront-image";
-import { CatalogProductGrid, ProductDetailLikeControl, type CatalogProductCard } from "../product-like-controls";
-import { submitProductReviewAction, type ProductReviewActionState } from "./review-actions";
+import { loadProductLikeStateAction } from "../../catalog-actions";
+import { ProductDetailLikeControl, type CatalogProductCard } from "../product-like-controls";
 
-type ProductDetailCopy = {
+const ProductDetailDeferredSections = dynamic(
+  () => import("./product-detail-deferred-sections").then((mod) => mod.ProductDetailDeferredSections),
+  { ssr: false },
+);
+
+export type ProductDetailCopy = {
   addToBag: string;
   addingToBag: string;
   available: string;
@@ -101,7 +95,6 @@ type ProductDetailCopy = {
 
 type ProductDetailClientProps = {
   copy: ProductDetailCopy;
-  initialVariantId?: string | undefined;
   isSignedIn: boolean;
   likedVariantIds: string[];
   locale: Locale;
@@ -220,13 +213,6 @@ const productInfoCopy = {
   },
 } as const;
 
-const initialReviewActionState: ProductReviewActionState = {
-  message: null,
-  ok: false,
-};
-
-const reviewScoreValues = [5, 4, 3, 2, 1] as const;
-
 function formatMoney(amount: number, currencyCode: string, locale: Locale) {
   return new Intl.NumberFormat(locale === "da" ? "da-DK" : "en-DK", {
     currency: currencyCode,
@@ -286,6 +272,10 @@ function isPlayableVideoSource(url: string) {
   return url.startsWith("data:video/") || /\.(?:mp4|m4v|mov|webm|ogg)(?:[?#].*)?$/i.test(url);
 }
 
+function getPublicProductImageUrl(url: string) {
+  return url.startsWith("data:") ? null : url;
+}
+
 function getGalleryMedia(product: ProductDetail, displayVariant: ProductVariant | null) {
   const gallery = new Map<string, GalleryMedia>();
   const variantMedia = displayVariant
@@ -294,37 +284,63 @@ function getGalleryMedia(product: ProductDetail, displayVariant: ProductVariant 
   const sharedMedia = product.media.filter((media) => !media.variantId && media.role !== "swatch");
 
   for (const media of variantMedia) {
-    if (!media.url || gallery.has(media.url)) {
+    if (!media.url) {
       continue;
     }
 
-    gallery.set(media.url, {
+    const mediaType = getMediaType(media.url, media.mimeType);
+    const mediaUrl = mediaType === "image" ? getPublicProductImageUrl(media.url) : media.url;
+
+    if (!mediaUrl) {
+      continue;
+    }
+
+    if (gallery.has(mediaUrl)) {
+      continue;
+    }
+
+    gallery.set(mediaUrl, {
       altText: media.altText ?? product.name,
       id: media.id,
-      mediaType: getMediaType(media.url, media.mimeType),
-      url: media.url,
+      mediaType,
+      url: mediaUrl,
     });
   }
 
-  if (displayVariant?.imageUrl && !gallery.has(displayVariant.imageUrl)) {
-    gallery.set(displayVariant.imageUrl, {
-      altText: product.name,
-      id: `${displayVariant.id}-selected`,
-      mediaType: getMediaType(displayVariant.imageUrl),
-      url: displayVariant.imageUrl,
-    });
+  if (displayVariant?.imageUrl) {
+    const mediaUrl = getPublicProductImageUrl(displayVariant.imageUrl);
+
+    if (mediaUrl && !gallery.has(mediaUrl)) {
+      gallery.set(mediaUrl, {
+        altText: product.name,
+        id: `${displayVariant.id}-selected`,
+        mediaType: getMediaType(displayVariant.imageUrl),
+        url: mediaUrl,
+      });
+    }
   }
 
   for (const media of sharedMedia) {
-    if (!media.url || gallery.has(media.url)) {
+    if (!media.url) {
       continue;
     }
 
-    gallery.set(media.url, {
+    const mediaType = getMediaType(media.url, media.mimeType);
+    const mediaUrl = mediaType === "image" ? getPublicProductImageUrl(media.url) : media.url;
+
+    if (!mediaUrl) {
+      continue;
+    }
+
+    if (gallery.has(mediaUrl)) {
+      continue;
+    }
+
+    gallery.set(mediaUrl, {
       altText: media.altText ?? product.name,
       id: media.id,
-      mediaType: getMediaType(media.url, media.mimeType),
-      url: media.url,
+      mediaType,
+      url: mediaUrl,
     });
   }
 
@@ -349,44 +365,6 @@ function getGalleryMediaSpan(index: number, count: number) {
   }
 
   return "full";
-}
-
-function ProductRatingStars({ rating }: { rating: number }) {
-  return <RatingStars rating={rating} size={18} />;
-}
-
-function formatReviewDate(date: Date, locale: Locale) {
-  return new Intl.DateTimeFormat(locale === "da" ? "da-DK" : "en-DK", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-function formatReviewCount(count: number, locale: Locale) {
-  if (locale === "da") {
-    return count === 1 ? "1 anmeldelse" : `${count} anmeldelser`;
-  }
-
-  return count === 1 ? "1 review" : `${count} reviews`;
-}
-
-function formatRecommendation(summary: ProductReviewSummary, locale: Locale) {
-  if (summary.recommendationPercent === null) {
-    return null;
-  }
-
-  return locale === "da"
-    ? `${summary.recommendationPercent}% anbefaler dette produkt`
-    : `${summary.recommendationPercent}% recommend this product`;
-}
-
-function snapshotPercent(value: number | null) {
-  if (value === null) {
-    return 0;
-  }
-
-  return Math.round((Math.min(Math.max(value, 1), 5) / 5) * 100);
 }
 
 function normalizeInfoKey(value: string) {
@@ -693,17 +671,8 @@ function ProductInfoDrawerContent({ sections }: { sections: ProductInfoSection[]
   );
 }
 
-function getReviewEligibilityCopy(copy: ProductDetailCopy, eligibility: ProductReviewEligibility) {
-  if (eligibility.hasReviewed) {
-    return copy.reviewAlreadySubmitted;
-  }
-
-  return copy.reviewIneligibleCopy;
-}
-
 export function ProductDetailClient({
   copy,
-  initialVariantId,
   isSignedIn,
   likedVariantIds,
   locale,
@@ -713,21 +682,14 @@ export function ProductDetailClient({
   reviewSummary,
   reviews,
 }: ProductDetailClientProps) {
-  const [selectedOptions, setSelectedOptions] = useState(() => getInitialOptions(product, initialVariantId));
+  const [selectedOptions, setSelectedOptions] = useState(() => getInitialOptions(product));
   const [likedVariantIdSet, setLikedVariantIdSet] = useState(() => new Set(likedVariantIds));
+  const [resolvedIsSignedIn, setResolvedIsSignedIn] = useState(isSignedIn);
   const [addingToBag, setAddingToBag] = useState(false);
   const [activeInfoPanelId, setActiveInfoPanelId] = useState<ProductInfoPanelId | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [zoomedImageId, setZoomedImageId] = useState<string | null>(null);
-  const [reviewQuery, setReviewQuery] = useState("");
-  const [reviewActionState, reviewFormAction, isReviewPending] = useActionState(
-    submitProductReviewAction.bind(null, {
-      locale,
-      productId: product.id,
-      productSlug: product.slug,
-    }),
-    initialReviewActionState,
-  );
+  const [deferredSectionsReady, setDeferredSectionsReady] = useState(false);
   const { addVariantToCart } = useCartDrawer();
   const defaultVariant = product.variants.find((variant) => variant.isDefault)
     ?? product.variants[0]
@@ -736,10 +698,59 @@ export function ProductDetailClient({
   const displayVariant = selectedVariant ?? defaultVariant;
   const selectedVariantId = displayVariant?.id ?? null;
   const isSelectedVariantLiked = selectedVariantId ? likedVariantIdSet.has(selectedVariantId) : false;
+  const productVariantIds = useMemo(
+    () => product.variants.map((variant) => variant.id),
+    [product.variants],
+  );
   const galleryMedia = useMemo(
     () => getGalleryMedia(product, displayVariant),
     [displayVariant, product],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (productVariantIds.length === 0) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadLikeState() {
+      const result = await loadProductLikeStateAction({
+        locale,
+        variantIds: productVariantIds,
+      }).catch(() => null);
+
+      if (!cancelled && result) {
+        setResolvedIsSignedIn(result.isSignedIn);
+        setLikedVariantIdSet(new Set(result.likedVariantIds));
+      }
+    }
+
+    void loadLikeState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, productVariantIds]);
+
+  useEffect(() => {
+    const requestedVariantId = new URLSearchParams(window.location.search).get("variant");
+
+    if (!requestedVariantId) {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setSelectedOptions(getInitialOptions(product, requestedVariantId));
+      setZoomedImageId(null);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [product]);
 
   useEffect(() => {
     if (!zoomedImageId) {
@@ -773,6 +784,64 @@ export function ProductDetailClient({
     };
   }, [zoomedImageId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    let completed = false;
+    let idleId: number | null = null;
+    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+    const minDelay = window.matchMedia("(max-width: 42rem)").matches ? 2200 : 700;
+
+    function clearScheduledWork() {
+      if (idleId !== null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+        idleId = null;
+      }
+
+      if (timeoutId !== null) {
+        globalThis.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    }
+
+    function complete() {
+      if (cancelled || completed) {
+        return;
+      }
+
+      completed = true;
+      clearScheduledWork();
+      window.removeEventListener("pointerdown", complete);
+      window.removeEventListener("touchstart", complete);
+      window.removeEventListener("keydown", complete);
+      setDeferredSectionsReady(true);
+    }
+
+    function scheduleIdleLoad() {
+      if (cancelled || completed) {
+        return;
+      }
+
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(complete, { timeout: 1200 });
+      } else {
+        timeoutId = globalThis.setTimeout(complete, 400);
+      }
+    }
+
+    timeoutId = globalThis.setTimeout(scheduleIdleLoad, minDelay);
+    window.addEventListener("pointerdown", complete, { once: true, passive: true });
+    window.addEventListener("touchstart", complete, { once: true, passive: true });
+    window.addEventListener("keydown", complete, { once: true });
+
+    return () => {
+      cancelled = true;
+      clearScheduledWork();
+      window.removeEventListener("pointerdown", complete);
+      window.removeEventListener("touchstart", complete);
+      window.removeEventListener("keydown", complete);
+    };
+  }, []);
+
   const formattedPrice = formatPrice(displayVariant, locale);
   const compareAtPrice = displayVariant?.price?.compareAtAmount &&
     displayVariant.price.compareAtAmount > displayVariant.price.amount
@@ -790,33 +859,7 @@ export function ProductDetailClient({
     selectedVariant?.price &&
     selectedVariant.availability.isAvailable,
   );
-  const visibleReviews = reviews.filter((review) => {
-    const query = reviewQuery.trim().toLowerCase();
-
-    if (!query) {
-      return true;
-    }
-
-    return `${review.title} ${review.body} ${review.authorName}`.toLowerCase().includes(query);
-  });
   const averageRating = reviewSummary.averageRating ?? 0;
-  const reviewCountLabel = formatReviewCount(reviewSummary.reviewCount, locale);
-  const recommendationLabel = formatRecommendation(reviewSummary, locale);
-  const relatedCopy = {
-    available: copy.available,
-    empty: copy.emptyRelated,
-    sale: copy.sale,
-    save: copy.save,
-    saved: copy.saved,
-    unavailable: copy.soldOut,
-    unsave: copy.unsave,
-  };
-  const reviewSnapshots = [
-    { label: copy.reviewQuality, value: reviewSummary.snapshots.quality },
-    { label: copy.reviewValue, value: reviewSummary.snapshots.value },
-    { label: copy.reviewComfort, value: reviewSummary.snapshots.comfort },
-    { label: copy.reviewRoutineFit, value: reviewSummary.snapshots.routineFit },
-  ];
   const productInfoPanels = [
     {
       id: "details",
@@ -840,12 +883,6 @@ export function ProductDetailClient({
     },
   ] satisfies ProductInfoPanel[];
   const activeInfoPanel = productInfoPanels.find((panel) => panel.id === activeInfoPanelId) ?? null;
-
-  useEffect(() => {
-    if (reviewActionState.ok) {
-      window.location.reload();
-    }
-  }, [reviewActionState.ok]);
 
   function selectOption(
     optionCode: string,
@@ -1021,6 +1058,17 @@ export function ProductDetailClient({
                   preload="metadata"
                   src={isPlayableVideoSource(media.url) ? media.url : undefined}
                 />
+              ) : index === 0 ? (
+                <StorefrontImage
+                  alt={media.altText}
+                  fetchPriority="high"
+                  height={1200}
+                  loading="eager"
+                  priority
+                  sizes="(max-width: 42rem) calc(100vw - 2rem), 50vw"
+                  src={media.url}
+                  width={960}
+                />
               ) : (
                 <MediaButton
                   aria-label={zoomedImageId === media.id ? copy.imageZoomOut : copy.imageZoomIn}
@@ -1035,7 +1083,16 @@ export function ProductDetailClient({
                   onPointerLeave={() => setZoomedImageId(null)}
                   type="button"
                 >
-                  <StorefrontImage alt={media.altText} eager src={media.url} />
+                  <StorefrontImage
+                    alt={media.altText}
+                    fetchPriority={index === 0 ? "high" : "low"}
+                    height={1200}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    priority={index === 0}
+                    sizes="(max-width: 42rem) calc(100vw - 2rem), 50vw"
+                    src={media.url}
+                    width={960}
+                  />
                 </MediaButton>
               )}
             </figure>
@@ -1047,7 +1104,7 @@ export function ProductDetailClient({
         </div>
 
         <aside className="product-detail__panel__SW3b4" aria-label={product.name}>
-          <div className="product-detail__headline__SW3bm">
+          <div className="product-detail__headline__SW3bm product-detail__headline--desktop__SW3cb">
             <div>
               <Heading as="h1" size="page" transform="uppercase">{product.name}</Heading>
               {product.shortDescription ? (
@@ -1064,7 +1121,7 @@ export function ProductDetailClient({
               {selectedVariantId ? (
                 <ProductDetailLikeControl
                   isLiked={isSelectedVariantLiked}
-                  isSignedIn={isSignedIn}
+                  isSignedIn={resolvedIsSignedIn}
                   locale={locale}
                   onLikedChange={(variantId, liked) => {
                     setLikedVariantIdSet((current) => {
@@ -1202,168 +1259,20 @@ export function ProductDetailClient({
         {activeInfoPanel ? <ProductInfoDrawerContent sections={activeInfoPanel.sections} /> : null}
       </Drawer>
 
-      {relatedProducts.length > 0 ? (
-        <section className="product-detail__recommendations__SW3bx">
-          <div className="product-detail__section-heading__SW3by">
-            <h2>{copy.relatedTitle}</h2>
-          </div>
-          <CatalogProductGrid
-            copy={relatedCopy}
-            isSignedIn={isSignedIn}
-            items={relatedProducts}
-            locale={locale}
-          />
-        </section>
+      {deferredSectionsReady ? (
+        <ProductDetailDeferredSections
+          copy={copy}
+          isSignedIn={resolvedIsSignedIn}
+          locale={locale}
+          productId={product.id}
+          productSlug={product.slug}
+          relatedProducts={relatedProducts}
+          reviewEligibility={reviewEligibility}
+          reviewSummary={reviewSummary}
+          reviews={reviews}
+          selectedVariantId={selectedVariantId}
+        />
       ) : null}
-
-      <section className="productReviews__root__SW3d0" aria-labelledby="product-reviews-heading">
-        <div className="product-detail__section-heading__SW3by">
-          <h2 id="product-reviews-heading">{copy.reviews}</h2>
-          <p>{reviewCountLabel}</p>
-        </div>
-
-        <div className="productReviews__summary__SW3d1">
-          <div className="productReviews__score__SW3d2">
-            <strong>{averageRating.toFixed(1)}</strong>
-            <ProductRatingStars rating={Math.round(averageRating)} />
-            <span>{reviewCountLabel}</span>
-            {recommendationLabel ? <p><CheckIcon size={16} /> {recommendationLabel}</p> : null}
-          </div>
-
-          <div className="productReviews__bars__SW3d3" aria-label="Rating snapshot">
-            {reviewSummary.ratingBars.map((bar) => (
-              <Meter
-                key={bar.rating}
-                label={bar.rating}
-                maxValue={100}
-                showValueLabel={false}
-                value={bar.percent}
-              />
-            ))}
-          </div>
-
-          <div className="productReviews__snapshot__SW3d4">
-            {reviewSnapshots.map((snapshot) => (
-              <Meter
-                key={snapshot.label}
-                label={snapshot.label}
-                maxValue={100}
-                showValueLabel={false}
-                value={snapshotPercent(snapshot.value)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {reviewEligibility.canReview ? (
-          <form action={reviewFormAction} className="productReviews__form__SW3da">
-            <div>
-              <h3>{copy.reviewFormTitle}</h3>
-              <p>{copy.reviewFormBody}</p>
-            </div>
-            <input name="variantId" type="hidden" value={displayVariant?.id ?? ""} />
-            <RadioGroup
-              label={copy.reviewRatingLabel}
-              orientation="horizontal"
-            >
-              {reviewScoreValues.map((score) => (
-                <Radio
-                  defaultChecked={score === 5}
-                  key={score}
-                  label={String(score)}
-                  name="rating"
-                  required
-                  value={score}
-                />
-              ))}
-            </RadioGroup>
-            <TextField
-              fullWidth
-              label={copy.reviewTitleLabel}
-              maxLength={120}
-              name="title"
-              required
-            />
-            <Textarea
-              fullWidth
-              label={copy.reviewBodyLabel}
-              maxLength={1400}
-              name="body"
-              required
-              rows={5}
-            />
-            <div className="productReviews__scoreGrid__SW3dd">
-              {[
-                ["qualityScore", copy.reviewQuality],
-                ["valueScore", copy.reviewValue],
-                ["comfortScore", copy.reviewComfort],
-                ["routineFitScore", copy.reviewRoutineFit],
-              ].map(([name, label]) => (
-                <Select defaultValue="5" fullWidth key={name} label={label} name={name} required>
-                  {reviewScoreValues.map((score) => (
-                    <option key={score} value={score}>{score}</option>
-                  ))}
-                </Select>
-              ))}
-            </div>
-            <Checkbox
-              defaultChecked
-              label={copy.reviewRecommendLabel}
-              name="wouldRecommend"
-            />
-            {reviewActionState.message ? (
-              <Alert
-                status={reviewActionState.ok ? "success" : "danger"}
-              >
-                {reviewActionState.message}
-              </Alert>
-            ) : null}
-            <Button disabled={isReviewPending || reviewActionState.ok} loading={isReviewPending} type="submit">
-              {isReviewPending ? copy.reviewSubmitting : copy.reviewSubmit}
-            </Button>
-          </form>
-        ) : (
-          <p className="productReviews__eligibility__SW3dg">
-            {getReviewEligibilityCopy(copy, reviewEligibility)}
-          </p>
-        )}
-
-        <div className="productReviews__toolbar__SW3d5">
-          <SearchField
-            aria-label={copy.reviewSearch}
-            fullWidth
-            onChange={(event) => setReviewQuery(event.target.value)}
-            placeholder={copy.reviewSearch}
-            value={reviewQuery}
-          />
-          <span>{copy.sortRecent}</span>
-          <span>{copy.reviews}</span>
-          <span>{copy.verifiedBuyers}</span>
-        </div>
-
-        {reviews.length === 0 ? (
-          <EmptyState description={copy.reviewEmptyBody} title={copy.reviewEmptyTitle} />
-        ) : visibleReviews.length === 0 ? (
-          <EmptyState title={copy.reviewNoMatches} />
-        ) : (
-          <div className="productReviews__list__SW3d6">
-            {visibleReviews.map((review) => (
-              <article className="productReviews__item__SW3d7" key={review.id}>
-                <div>
-                  <strong>{review.authorName}</strong>
-                  <span><CheckIcon size={14} /> {copy.reviewVerifiedPurchase}</span>
-                  <small>{formatReviewDate(review.createdAt, locale)}</small>
-                </div>
-                <div>
-                  <ProductRatingStars rating={review.rating} />
-                  <h3>{review.title}</h3>
-                  <p>{review.body}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
 
       <div className="product-detail__mobile-bar__SW3bz">
         <span>

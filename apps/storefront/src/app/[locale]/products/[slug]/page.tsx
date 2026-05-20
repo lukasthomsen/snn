@@ -1,28 +1,24 @@
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { preload } from "react-dom";
 
-import { getProductReviewEligibility } from "@snn/commerce";
-import { ensureCustomerProfile, getCustomerLikedProductVariantIds, getCustomerSession } from "@snn/customer";
+import type { ProductDetail, ProductReviewEligibility } from "@snn/commerce";
 import { isLocale, type Locale } from "@snn/i18n";
 
+import { createEmptyCartSnapshot } from "../../cart-data";
+import { CartDrawerProvider } from "../../components/cart-drawer";
+import { ProductDetailDeferredStyles } from "./product-detail-deferred-styles";
 import { ProductDetailClient } from "./product-detail-client";
 import {
   getCachedProductDetailBySlug,
   getCachedProductReviews,
   getCachedProductReviewSummary,
   getCachedRelatedProductCards,
-  getPersonalizedRelatedProductCards,
 } from "../catalog-data";
-
-export const dynamic = "force-dynamic";
 
 type ProductDetailPageProps = {
   params: Promise<{
     locale: string;
     slug: string;
-  }>;
-  searchParams: Promise<{
-    variant?: string | string[] | undefined;
   }>;
 };
 
@@ -137,12 +133,40 @@ const detailCopy = {
   },
 } as const;
 
-function getSingleSearchValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
+export const revalidate = 300;
+
+const signedOutReviewEligibility: ProductReviewEligibility = {
+  canReview: false,
+  customerId: null,
+  hasPurchased: false,
+  hasReviewed: false,
+  orderItemId: null,
+  reason: "AUTH_REQUIRED",
+  variantId: null,
+};
+
+function getPublicCardImageUrl(url: string | null) {
+  if (!url || url.startsWith("data:")) {
+    return null;
+  }
+
+  return url;
 }
 
-export default async function ProductDetailPage({ params, searchParams }: ProductDetailPageProps) {
-  const [{ locale, slug }, query] = await Promise.all([params, searchParams]);
+function getProductDetailPreloadImage(product: ProductDetail) {
+  const defaultVariant = product.variants.find((variant) => variant.isDefault)
+    ?? product.variants[0]
+    ?? null;
+  const candidate = defaultVariant?.imageUrl
+    ?? defaultVariant?.media.find((media) => media.role !== "swatch" && media.url)?.url
+    ?? product.media.find((media) => media.role !== "swatch" && media.url)?.url
+    ?? null;
+
+  return getPublicCardImageUrl(candidate);
+}
+
+export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
+  const { locale, slug } = await params;
   const safeLocale: Locale = isLocale(locale) ? locale : "da";
   const copy = detailCopy[safeLocale];
   const product = await getCachedProductDetailBySlug({
@@ -155,22 +179,15 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     notFound();
   }
 
-  const session = await getCustomerSession(await headers());
-  const isSignedIn = Boolean(session?.user.emailVerified && !session.user.banned);
-  const customerProfile = isSignedIn && session ? await ensureCustomerProfile(session.user) : null;
-  const [likedVariantIds, relatedProducts, reviewSummary, reviews, reviewEligibility] = await Promise.all([
-    isSignedIn && session
-      ? getCustomerLikedProductVariantIds(session.user, product.id)
-      : [],
-    isSignedIn && session
-      ? getPersonalizedRelatedProductCards({
-        countryCode: "DK",
-        likedUserId: session.user.id,
-        limit: 8,
-        locale: safeLocale,
-        productId: product.id,
-      })
-      : getCachedRelatedProductCards({
+  const preloadImageUrl = getProductDetailPreloadImage(product);
+
+  if (preloadImageUrl) {
+    preload(preloadImageUrl, { as: "image" });
+  }
+
+  const [likedVariantIds, relatedProducts, reviewSummary, reviews] = await Promise.all([
+    Promise.resolve([]),
+    getCachedRelatedProductCards({
       countryCode: "DK",
       limit: 8,
       locale: safeLocale,
@@ -180,41 +197,46 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     getCachedProductReviews({
       productId: product.id,
     }),
-    getProductReviewEligibility({
-      customerId: customerProfile?.id,
-      productId: product.id,
-    }),
   ]);
   const relatedGridItems = relatedProducts.map((relatedProduct) => ({
     availability: relatedProduct.availability,
     description: relatedProduct.description,
     displayId: relatedProduct.displayId,
     id: relatedProduct.id,
-    imageUrl: relatedProduct.imageUrl,
+    imageUrl: getPublicCardImageUrl(relatedProduct.imageUrl),
     isLiked: relatedProduct.isLiked,
     name: relatedProduct.name,
     price: relatedProduct.price,
-    secondaryImageUrl: relatedProduct.secondaryImageUrl,
+    secondaryImageUrl: getPublicCardImageUrl(relatedProduct.secondaryImageUrl),
     slug: relatedProduct.slug,
     status: relatedProduct.status,
     variantId: relatedProduct.variantId,
     variantTitle: relatedProduct.variantTitle,
   }));
+  const initialCart = createEmptyCartSnapshot();
 
   return (
     <main className="product-detail__root__SW3b0">
-      <ProductDetailClient
-        copy={copy}
-        isSignedIn={isSignedIn}
-        initialVariantId={getSingleSearchValue(query.variant)}
-        likedVariantIds={likedVariantIds}
-        locale={safeLocale}
-        product={product}
-        relatedProducts={relatedGridItems}
-        reviewEligibility={reviewEligibility}
-        reviewSummary={reviewSummary}
-        reviews={reviews}
-      />
+      <div className="product-detail__mobile-headline__SW3ca">
+        <h1 className="product-detail__mobile-title__SW3cc">{product.name}</h1>
+        {product.shortDescription ? (
+          <p className="product-detail__mobile-copy__SW3cd">{product.shortDescription}</p>
+        ) : null}
+      </div>
+      <CartDrawerProvider initialCart={initialCart} locale={safeLocale}>
+        <ProductDetailClient
+          copy={copy}
+          isSignedIn={false}
+          likedVariantIds={likedVariantIds}
+          locale={safeLocale}
+          product={product}
+          relatedProducts={relatedGridItems}
+          reviewEligibility={signedOutReviewEligibility}
+          reviewSummary={reviewSummary}
+          reviews={reviews}
+        />
+        <ProductDetailDeferredStyles />
+      </CartDrawerProvider>
     </main>
   );
 }

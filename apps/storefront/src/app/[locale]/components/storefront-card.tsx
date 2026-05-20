@@ -20,6 +20,7 @@ type StorefrontCardHref = ComponentProps<typeof Link>["href"] | string;
 type StorefrontCardLinkProps = StorefrontCardBaseProps & {
   href: StorefrontCardHref;
   onClick?: never;
+  prefetch?: ComponentProps<typeof Link>["prefetch"];
   type?: never;
 };
 
@@ -82,6 +83,10 @@ export function StorefrontCard(props: StorefrontCardProps) {
   const showChevron = props.showChevron ?? (hasHref || hasAction);
 
   if (hasHref) {
+    const prefetchProps = props.prefetch === undefined
+      ? {}
+      : { prefetch: props.prefetch };
+
     return (
       <Link
         className={rootClassName}
@@ -89,6 +94,7 @@ export function StorefrontCard(props: StorefrontCardProps) {
         data-size={size}
         data-surface={surface}
         href={props.href as ComponentProps<typeof Link>["href"]}
+        {...prefetchProps}
       >
         <StorefrontCardContent {...props} showChevron={showChevron} />
       </Link>

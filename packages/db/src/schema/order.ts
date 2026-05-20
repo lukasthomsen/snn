@@ -42,6 +42,7 @@ export const carts = pgTable(
   },
   (table) => [
     index("cart_customer_idx").on(table.customerId),
+    index("cart_customer_status_updated_idx").on(table.customerId, table.status, table.updatedAt),
   ],
 );
 

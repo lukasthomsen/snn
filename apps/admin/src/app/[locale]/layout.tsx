@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import type { CSSProperties } from "react";
 
 import { getAppOrigin } from "@snn/config";
 import { CustomerAuthError, getStaffAccess } from "@snn/customer";
 import { isLocale, locales, type Locale } from "@snn/i18n";
-import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
+import "@snn/ui/styles/components.css";
 import "./styles.css";
 
 type LocaleLayoutProps = Readonly<{
@@ -62,27 +61,22 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <html lang={locale as Locale}>
-      <body
-        data-theme="mono"
-        style={themeToCssVariables(monoTheme) as CSSProperties}
-      >
-        <ThemeScope theme={monoTheme}>
-          {accessError ? (
-            <main className="admin__guard__SW1b0">
-              <section className="admin__guard-card__SW1b1">
-                <p>Admin access</p>
-                <h1>{accessError.code === "MFA_REQUIRED" ? "MFA required" : "Staff access required"}</h1>
-                <span>
-                  {accessError.code === "MFA_REQUIRED"
-                    ? "Enable two-factor authentication before opening the admin runtime."
-                    : "Your account does not have an active staff assignment."}
-                </span>
-              </section>
-            </main>
-          ) : (
-            children
-          )}
-        </ThemeScope>
+      <body data-theme="mono">
+        {accessError ? (
+          <main className="admin__guard__SW1b0">
+            <section className="admin__guard-card__SW1b1">
+              <p>Admin access</p>
+              <h1>{accessError.code === "MFA_REQUIRED" ? "MFA required" : "Staff access required"}</h1>
+              <span>
+                {accessError.code === "MFA_REQUIRED"
+                  ? "Enable two-factor authentication before opening the admin runtime."
+                  : "Your account does not have an active staff assignment."}
+              </span>
+            </section>
+          </main>
+        ) : (
+          children
+        )}
       </body>
     </html>
   );

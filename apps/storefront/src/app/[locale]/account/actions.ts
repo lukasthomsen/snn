@@ -624,11 +624,3 @@ export async function signOutCustomerAction(locale: Locale) {
 
   redirect(`/${locale}`);
 }
-
-export async function signOutCustomerFormAction(locale: Locale) {
-  const result = await signOutCustomerAction(locale);
-
-  if (result && !result.ok) {
-    throw new Error(result.message);
-  }
-}

@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: preview-database-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   NEON_BRANCH_NAME: pr-${{ github.event.pull_request.number }}
@@ -25,6 +25,7 @@ jobs:
   provision:
     if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -54,7 +55,8 @@ jobs:
 
           if vercel project inspect "$VERCEL_ACCOUNTS_PROJECT_ID" \
             --scope "$VERCEL_ORG_ID_VALUE" \
-            --token "$VERCEL_TOKEN" >/dev/null 2>&1; then
+            --token "$VERCEL_TOKEN" \
+            --non-interactive >/dev/null 2>&1; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -120,6 +122,7 @@ jobs:
 
       - name: Apply branch-scoped preview database URLs
         if: steps.vercel-access.outputs.enabled == 'true'
+        timeout-minutes: 6
         env:
           DATABASE_URL: ${{ steps.runtime-db.outputs.db_url_pooled }}
           DATABASE_URL_UNPOOLED: ${{ steps.migrator-db.outputs.db_url }}
@@ -136,26 +139,29 @@ jobs:
             export VERCEL_ORG_ID="$VERCEL_ORG_ID_VALUE"
             export VERCEL_PROJECT_ID="$project_id"
 
-            vercel env add DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
+            timeout 60s vercel env add DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
               --value "$DATABASE_URL" \
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_ORG_ID_VALUE"
+              --scope "$VERCEL_ORG_ID_VALUE" \
+              --non-interactive
 
-            vercel env add DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
+            timeout 60s vercel env add DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --value "$DATABASE_URL_UNPOOLED" \
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_ORG_ID_VALUE"
+              --scope "$VERCEL_ORG_ID_VALUE" \
+              --non-interactive
 
-            vercel env add ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
+            timeout 60s vercel env add ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
               --value "1" \
               --yes \
               --force \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_ORG_ID_VALUE"
+              --scope "$VERCEL_ORG_ID_VALUE" \
+              --non-interactive
           }
 
           upsert_branch_envs "$VERCEL_ACCOUNTS_PROJECT_ID"
@@ -164,6 +170,7 @@ jobs:
 
       - name: Redeploy first PR previews after env bootstrap
         if: steps.vercel-access.outputs.enabled == 'true' && (github.event.action == 'opened' || github.event.action == 'reopened')
+        timeout-minutes: 5
         env:
           VERCEL_ORG_ID_VALUE: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -182,6 +189,7 @@ jobs:
                   --environment=preview \
                   --meta "githubCommitRef=$PREVIEW_GIT_BRANCH" \
                   --format json \
+                  --non-interactive \
                 | python3 -c 'import json,sys; data=json.load(sys.stdin); deployments=data.get("deployments") or []; print(deployments[0]["url"] if deployments else "")'
               )"
 
@@ -190,6 +198,7 @@ jobs:
                   --target preview \
                   --scope "$VERCEL_ORG_ID_VALUE" \
                   --token "$VERCEL_TOKEN" \
+                  --non-interactive \
                   --no-wait
                 return 0
               fi
@@ -206,6 +215,7 @@ jobs:
   cleanup:
     if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Set up Node.js
@@ -217,6 +227,7 @@ jobs:
         run: npm install --global vercel@${{ env.VERCEL_CLI_VERSION }}
 
       - name: Remove branch-scoped preview database URLs
+        timeout-minutes: 6
         env:
           VERCEL_ACCOUNTS_PROJECT_ID: ${{ vars.VERCEL_ACCOUNTS_PROJECT_ID }}
           VERCEL_ADMIN_PROJECT_ID: ${{ vars.VERCEL_ADMIN_PROJECT_ID }}
@@ -234,17 +245,20 @@ jobs:
             vercel env remove DATABASE_URL preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_ORG_ID_VALUE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" \
+              --non-interactive || true
 
             vercel env remove DATABASE_URL_UNPOOLED preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_ORG_ID_VALUE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" \
+              --non-interactive || true
 
             vercel env remove ENABLE_PERFORMANCE_TRACE preview "$PREVIEW_GIT_BRANCH" \
               --yes \
               --token "$VERCEL_TOKEN" \
-              --scope "$VERCEL_ORG_ID_VALUE" || true
+              --scope "$VERCEL_ORG_ID_VALUE" \
+              --non-interactive || true
           }
 
           remove_branch_envs "$VERCEL_ACCOUNTS_PROJECT_ID"

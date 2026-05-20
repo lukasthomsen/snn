@@ -360,9 +360,9 @@ export const monoTheme: ThemeDefinition = {
   },
   typography: {
     bodyFamily:
-      'var(--font-inter), "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+      'var(--font-inter, system-ui), "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
     displayFamily:
-      'var(--font-inter), "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+      'var(--font-inter, system-ui), "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
     h1: "2.75rem",
     h2: "2.25rem",
     h3: "1.75rem",

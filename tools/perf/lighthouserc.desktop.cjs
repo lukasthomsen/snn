@@ -1,4 +1,9 @@
 const { assertions, extraHeaders, runs, urls } = require("./lighthouserc.shared.cjs");
+const { cleanLighthouseOutputDir } = require("./lighthouse-output.cjs");
+
+const outputDir = "perf-reports/lighthouse/desktop";
+
+cleanLighthouseOutputDir(outputDir);
 
 module.exports = {
   ci: {
@@ -15,7 +20,7 @@ module.exports = {
       assertions,
     },
     upload: {
-      outputDir: "perf-reports/lighthouse/desktop",
+      outputDir,
       target: "filesystem",
     },
   },

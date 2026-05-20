@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "next build",
-    "start": "next start --port 3001",
+    "build": "./node_modules/.bin/next build",
+    "start": "./node_modules/.bin/next start --port 3001",
     "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json --pretty false"
   },

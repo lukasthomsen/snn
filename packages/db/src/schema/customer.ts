@@ -69,6 +69,7 @@ export const customerProductLikes = pgTable(
   (table) => [
     uniqueIndex("customer_product_like_user_variant_unique").on(table.userId, table.variantId),
     index("customer_product_like_user_idx").on(table.userId),
+    index("customer_product_like_user_created_idx").on(table.userId, table.createdAt),
     index("customer_product_like_product_idx").on(table.productId),
     index("customer_product_like_variant_idx").on(table.variantId),
   ],

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { CSSProperties } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { isLocale, locales, type Locale } from "@snn/i18n";
-import { ThemeScope, monoTheme, themeToCssVariables } from "@snn/ui";
 import "@snn/ui/styles/base.css";
+import "@snn/ui/styles/components.css";
 
 import "./styles.css";
 
@@ -45,11 +44,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <html lang={locale as Locale}>
-      <body
-        data-theme="mono"
-        style={themeToCssVariables(monoTheme) as CSSProperties}
-      >
-        <ThemeScope theme={monoTheme}>{children}</ThemeScope>
+      <body data-theme="mono">
+        {children}
         {shouldRenderVercelInsights ? (
           <>
             <Analytics />

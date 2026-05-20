@@ -2,14 +2,9 @@
 
 import Link from "next/link";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
   useState,
   type ChangeEvent,
   type FormEvent,
-  type ReactNode,
 } from "react";
 
 import {
@@ -26,15 +21,6 @@ import {
 import { StorefrontBrandLogo } from "./storefront-brand";
 import { StorefrontCard } from "./storefront-card";
 
-type NewsletterSignupProviderProps = {
-  children: ReactNode;
-  locale: "da" | "en";
-};
-
-type NewsletterSignupContextValue = {
-  openNewsletterSignup: () => void;
-};
-
 type SignupFormState = {
   day: string;
   email: string;
@@ -44,10 +30,6 @@ type SignupFormState = {
   month: string;
   year: string;
 };
-
-const NewsletterSignupContext = createContext<NewsletterSignupContextValue | null>(
-  null,
-);
 
 const initialFormState: SignupFormState = {
   day: "",
@@ -188,54 +170,17 @@ function createYearOptions() {
   return Array.from({ length: 100 }, (_, index) => String(currentYear - index));
 }
 
-export function NewsletterSignupProvider({
-  children,
-  locale,
-}: NewsletterSignupProviderProps) {
-  const [open, setOpen] = useState(false);
-
-  const openNewsletterSignup = useCallback(() => {
-    setOpen(true);
-  }, []);
-
-  const closeNewsletterSignup = useCallback(() => {
-    setOpen(false);
-  }, []);
-
-  const contextValue = useMemo(
-    () => ({ openNewsletterSignup }),
-    [openNewsletterSignup],
-  );
-
-  return (
-    <NewsletterSignupContext.Provider value={contextValue}>
-      {children}
-      <NewsletterSignupModal
-        locale={locale}
-        onClose={closeNewsletterSignup}
-        open={open}
-      />
-    </NewsletterSignupContext.Provider>
-  );
-}
-
-export function useNewsletterSignup() {
-  return (
-    useContext(NewsletterSignupContext) ?? {
-      openNewsletterSignup: () => {},
-    }
-  );
-}
-
-function NewsletterSignupModal({
-  locale,
-  onClose,
-  open,
-}: {
+type NewsletterSignupModalProps = {
   locale: "da" | "en";
   onClose: () => void;
   open: boolean;
-}) {
+};
+
+export function NewsletterSignupModal({
+  locale,
+  onClose,
+  open,
+}: NewsletterSignupModalProps) {
   const content = newsletterContent[locale];
   const dayOptions = createDayOptions();
   const yearOptions = createYearOptions();
