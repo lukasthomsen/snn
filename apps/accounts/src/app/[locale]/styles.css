@@ -419,11 +419,11 @@
   pointer-events: none;
 }
 
-.turnstile__root__SW0m0[data-visible="true"] {
+.turnstile__root__SW0m0[data-challenge-visible="true"] {
   min-height: 4.1rem;
 }
 
-.turnstile__root__SW0m0:not([data-visible="true"]) .turnstile__widget__SW0m1 {
+.turnstile__root__SW0m0:not([data-challenge-visible="true"]) .turnstile__widget__SW0m1 {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -431,7 +431,7 @@
   clip-path: inset(50%);
 }
 
-.turnstile__root__SW0m0[data-visible="true"] .turnstile__widget__SW0m1 {
+.turnstile__root__SW0m0[data-challenge-visible="true"] .turnstile__widget__SW0m1 {
   min-height: 4.1rem;
 }
 

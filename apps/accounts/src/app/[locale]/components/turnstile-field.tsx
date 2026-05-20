@@ -71,6 +71,7 @@ export function TurnstileField({
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const hasResetSignalMounted = useRef(false);
+  const [hasChallengeFrame, setHasChallengeFrame] = useState(false);
   const [isInteractive, setIsInteractive] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
 
@@ -89,6 +90,7 @@ export function TurnstileField({
         }
 
         setMessage(undefined);
+        setHasChallengeFrame(false);
         setIsInteractive(false);
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           action: challenge.action,
@@ -97,19 +99,23 @@ export function TurnstileField({
             setIsInteractive(false);
           },
           "before-interactive-callback"() {
+            setHasChallengeFrame(Boolean(containerRef.current?.querySelector("iframe")));
             setIsInteractive(true);
           },
           callback(token: string) {
+            setHasChallengeFrame(false);
             setIsInteractive(false);
             setMessage(undefined);
             onTokenChange(token);
           },
           "error-callback"() {
+            setHasChallengeFrame(false);
             setIsInteractive(false);
             onTokenChange(null);
             setMessage(challenge.unavailableMessage);
           },
           "expired-callback"() {
+            setHasChallengeFrame(false);
             setIsInteractive(false);
             onTokenChange(null);
           },
@@ -119,6 +125,7 @@ export function TurnstileField({
       })
       .catch(() => {
         if (isMounted) {
+          setHasChallengeFrame(false);
           setIsInteractive(false);
           onTokenChange(null);
           setMessage(challenge.unavailableMessage);
@@ -137,6 +144,26 @@ export function TurnstileField({
   }, [challenge, onTokenChange]);
 
   useEffect(() => {
+    if (!challenge?.siteKey || !containerRef.current) {
+      setHasChallengeFrame(false);
+      return;
+    }
+
+    const container = containerRef.current;
+    const syncChallengeFrame = () => {
+      setHasChallengeFrame(Boolean(container.querySelector("iframe")));
+    };
+    const observer = new MutationObserver(syncChallengeFrame);
+
+    syncChallengeFrame();
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [challenge?.siteKey]);
+
+  useEffect(() => {
     if (!hasResetSignalMounted.current) {
       hasResetSignalMounted.current = true;
       return;
@@ -153,12 +180,15 @@ export function TurnstileField({
     return null;
   }
 
+  const isChallengeVisible = isInteractive && hasChallengeFrame;
+
   return (
     <div
       aria-busy={disabled}
       className="turnstile__root__SW0m0"
+      data-challenge-visible={isChallengeVisible ? "true" : undefined}
       data-disabled={disabled ? "true" : undefined}
-      data-visible={isInteractive || message ? "true" : undefined}
+      data-visible={message || isChallengeVisible ? "true" : undefined}
     >
       <div className="turnstile__widget__SW0m1" ref={containerRef} />
       {message ? (
