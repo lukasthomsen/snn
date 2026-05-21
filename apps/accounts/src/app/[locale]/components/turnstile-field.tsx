@@ -121,7 +121,6 @@ export function TurnstileField({
         setIsInteractive(false);
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           action: challenge.action,
-          appearance: "interaction-only",
           "after-interactive-callback"() {
             setIsInteractive(false);
           },
