@@ -12,6 +12,7 @@ import {
   getAuthCompleteURL,
   getFirstParam,
   getStorefrontFooterURL,
+  getStorefrontPrivacyURL,
   resolvePostAuthCallbackURL,
 } from "../auth-routing";
 import { getAuthTurnstileChallenge } from "../auth-turnstile";
@@ -218,6 +219,7 @@ export default async function SignUpPage({
   const newUserAuthCompleteURL = getAuthCompleteURL(safeLocale, welcomeCallbackURL);
   const session = await getCustomerSession(await headers()).catch(() => null);
   const storefrontFooterURL = getStorefrontFooterURL(safeLocale);
+  const storefrontPrivacyURL = getStorefrontPrivacyURL(safeLocale);
   const turnstileCopy = {
     requiredMessage: copy.messages.turnstileRequired,
     unavailableMessage: copy.messages.turnstileUnavailable,
@@ -242,7 +244,7 @@ export default async function SignUpPage({
             {safeLocale === "da" ? "vilkår" : "terms"}
           </a>
           {safeLocale === "da" ? " og " : " and "}
-          <a href={storefrontFooterURL}>
+          <a href={storefrontPrivacyURL}>
             {safeLocale === "da" ? "privatlivspolitik" : "privacy policy"}
           </a>
           .

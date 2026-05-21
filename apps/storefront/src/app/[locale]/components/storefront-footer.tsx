@@ -76,10 +76,10 @@ const footerContent = {
       },
     ],
     legal: [
-      "Handelsbetingelser",
-      "Brugsvilkår",
-      "Privatlivsmeddelelse",
-      "Cookiepolitik",
+      { href: "#footer", label: "Handelsbetingelser" },
+      { href: "#footer", label: "Brugsvilkår" },
+      { href: "/privacy", label: "Privatlivsmeddelelse" },
+      { href: "#footer", label: "Cookiepolitik" },
     ],
     countryLabel: "Danmark",
     copyright: "Copyright © 2026 SNN. Alle rettigheder forbeholdes.",
@@ -160,10 +160,10 @@ const footerContent = {
       },
     ],
     legal: [
-      "Terms & Conditions",
-      "Terms of Use",
-      "Privacy Notice",
-      "Cookie Policy",
+      { href: "#footer", label: "Terms & Conditions" },
+      { href: "#footer", label: "Terms of Use" },
+      { href: "/privacy", label: "Privacy Notice" },
+      { href: "#footer", label: "Cookie Policy" },
     ],
     countryLabel: "Denmark",
     copyright: "Copyright © 2026 SNN. All rights reserved.",
@@ -304,8 +304,12 @@ export function StorefrontFooter({ locale }: StorefrontFooterProps) {
           <p>{content.copyright}</p>
           <div className="footer-meta__links__SW0ey">
             {content.legal.map((item) => (
-              <Link className="footer__link__SW0ew" href={`/${locale}#hero`} key={item}>
-                {item}
+              <Link
+                className="footer__link__SW0ew"
+                href={`/${locale}${item.href}`}
+                key={item.label}
+              >
+                {item.label}
               </Link>
             ))}
           </div>

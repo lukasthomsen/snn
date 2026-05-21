@@ -358,7 +358,7 @@ export function NewsletterSignupModal({
             </div>
             <p className="newsletter-modal__agreement__SW2ne">
               {content.agreement}{" "}
-              <Link href={`/${locale}#privacy-policy`}>{content.privacy}</Link>.
+              <Link href={`/${locale}/privacy`}>{content.privacy}</Link>.
             </p>
             <Button disabled={!isFormReady} fullWidth size="lg" type="submit">
               {content.submit}

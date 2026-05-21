@@ -28,10 +28,16 @@ Use separate widgets per environment boundary.
 ### Production widget
 
 - Name: `snn-auth-prod`
-- Mode: `managed`
+- Mode: `invisible`
 - Hostnames:
   - `accounts.veloro.dk`
   - `auth.veloro.dk` temporary legacy redirect hostname
+
+Production uses Invisible mode so the auth pages can run security checks in the
+background without showing a persistent verification box. Cloudflare requires
+sites using Invisible mode to reference the Cloudflare Turnstile Privacy Addendum
+in their own privacy policy; the storefront privacy notice includes that
+reference.
 
 ## Preview Policy
 

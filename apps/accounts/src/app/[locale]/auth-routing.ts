@@ -52,6 +52,10 @@ export function getStorefrontFooterURL(locale: Locale) {
   return new URL(`/${locale}#footer`, getAppOrigin("storefront")).toString();
 }
 
+export function getStorefrontPrivacyURL(locale: Locale) {
+  return new URL(`/${locale}/privacy`, getAppOrigin("storefront")).toString();
+}
+
 export function getAccountAuthPath(
   locale: Locale,
   route: AccountRoute,

@@ -355,7 +355,7 @@ export function CheckoutForm({
           />
           <Checkbox label={copy.marketing} name="acceptsMarketing" />
           <p className="checkoutSection__copy__SW6b6">
-            <a href={`/${locale}#footer`}>{copy.privacy}</a>
+            <a href={`/${locale}/privacy`}>{copy.privacy}</a>
           </p>
         </section>
 
@@ -503,7 +503,12 @@ export function CheckoutForm({
           ) : null}
           <div>
             {copy.legalLinks.map((link) => (
-              <a href={`/${locale}#footer`} key={link}>{link}</a>
+              <a
+                href={/privacy|privatliv/i.test(link) ? `/${locale}/privacy` : `/${locale}#footer`}
+                key={link}
+              >
+                {link}
+              </a>
             ))}
           </div>
         </section>
