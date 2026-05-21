@@ -139,6 +139,7 @@ export function ForgotPasswordForm({
 
     if (turnstile?.siteKey && !turnstileToken) {
       setError(turnstile.requiredMessage);
+      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
       return;
     }
 

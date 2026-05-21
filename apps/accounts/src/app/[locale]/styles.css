@@ -407,12 +407,11 @@
 }
 
 .turnstile__root__SW0m0:not([data-visible="true"]) {
-  position: fixed;
-  top: 0;
-  left: -10000px;
+  position: absolute;
   width: 300px;
   height: 72px;
   overflow: visible;
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -426,13 +425,15 @@
 }
 
 .turnstile__root__SW0m0:not([data-challenge-visible="true"]) .turnstile__widget__SW0m1 {
-  position: fixed;
-  top: 0;
-  left: -10000px;
   width: 300px;
   height: 72px;
   overflow: visible;
+  opacity: 0;
   pointer-events: none;
+}
+
+.turnstile__root__SW0m0[data-visible="true"]:not([data-challenge-visible="true"]) .turnstile__widget__SW0m1 {
+  position: absolute;
 }
 
 .turnstile__root__SW0m0[data-challenge-visible="true"] .turnstile__widget__SW0m1 {

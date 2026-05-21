@@ -98,6 +98,7 @@ export function SocialAuthButtons({
 
     if (turnstile?.siteKey && !turnstileToken) {
       setMessage(turnstile.requiredMessage);
+      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
       return;
     }
 

@@ -61,6 +61,7 @@ export function AuthEmailStage({
     if (turnstile?.siteKey && !turnstileToken) {
       setTone("danger");
       setMessage(turnstile.requiredMessage);
+      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
       return;
     }
 
