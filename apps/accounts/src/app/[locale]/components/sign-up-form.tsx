@@ -30,7 +30,11 @@ import {
   removeFieldError,
   type FieldErrors,
 } from "./form-validation";
-import { TurnstileField, type TurnstileChallenge } from "./turnstile-field";
+import {
+  TurnstileField,
+  type TurnstileChallenge,
+  type TurnstileFieldHandle,
+} from "./turnstile-field";
 
 const passwordMinLength = authPasswordPolicy.minLength;
 const passwordMaxLength = authPasswordPolicy.maxLength;
@@ -263,6 +267,7 @@ export function SignUpForm({
   turnstile,
 }: SignUpFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
   const passwordRulesId = useId();
   const [message, setMessage] = useState<string | undefined>();
   const [tone, setTone] = useState<"danger" | "success">("danger");
@@ -324,16 +329,19 @@ export function SignUpForm({
       return;
     }
 
-    if (turnstile?.siteKey && !turnstileToken) {
-      setTone("danger");
-      setMessage(turnstile.requiredMessage);
-      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
+      const verifiedTurnstileToken = turnstile?.siteKey
+        ? await turnstileRef.current?.execute()
+        : null;
+
+      if (turnstile?.siteKey && !verifiedTurnstileToken) {
+        setTone("danger");
+        setMessage(turnstile.unavailableMessage);
+        return;
+      }
+
       const profileFields: Record<string, string> = {
         firstName,
         lastName,
@@ -349,7 +357,7 @@ export function SignUpForm({
         name,
         password,
         ...profileFields,
-        ...withTurnstileFetchOptions(turnstileToken),
+        ...withTurnstileFetchOptions(verifiedTurnstileToken ?? turnstileToken),
       });
 
       if (result.error) {
@@ -515,6 +523,7 @@ export function SignUpForm({
         challenge={turnstile}
         disabled={isSubmitting}
         onTokenChange={setTurnstileToken}
+        ref={turnstileRef}
         resetSignal={turnstileResetSignal}
       />
 

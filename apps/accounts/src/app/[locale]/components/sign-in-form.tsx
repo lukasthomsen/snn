@@ -12,7 +12,11 @@ import {
   removeFieldError,
   type FieldErrors,
 } from "./form-validation";
-import { TurnstileField, type TurnstileChallenge } from "./turnstile-field";
+import {
+  TurnstileField,
+  type TurnstileChallenge,
+  type TurnstileFieldHandle,
+} from "./turnstile-field";
 
 type SignInFieldName = "email" | "password";
 
@@ -54,6 +58,7 @@ export function SignInForm({
   twoFactorHref,
 }: SignInFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
   const [message, setMessage] = useState<string | undefined>(initialError);
   const [tone, setTone] = useState<"danger" | "success">("danger");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<SignInFieldName>>({});
@@ -94,16 +99,19 @@ export function SignInForm({
       return;
     }
 
-    if (turnstile?.siteKey && !turnstileToken) {
-      setTone("danger");
-      setMessage(turnstile.requiredMessage);
-      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
+      const verifiedTurnstileToken = turnstile?.siteKey
+        ? await turnstileRef.current?.execute()
+        : null;
+
+      if (turnstile?.siteKey && !verifiedTurnstileToken) {
+        setTone("danger");
+        setMessage(turnstile.unavailableMessage);
+        return;
+      }
+
       const authClient = createSnnAuthClient(undefined, {
         twoFactorPage: twoFactorHref,
       });
@@ -112,7 +120,7 @@ export function SignInForm({
         email,
         password,
         rememberMe: true,
-        ...withTurnstileFetchOptions(turnstileToken),
+        ...withTurnstileFetchOptions(verifiedTurnstileToken ?? turnstileToken),
       });
 
       if (result.error) {
@@ -201,6 +209,7 @@ export function SignInForm({
         challenge={turnstile}
         disabled={isSubmitting}
         onTokenChange={setTurnstileToken}
+        ref={turnstileRef}
         resetSignal={turnstileResetSignal}
       />
 

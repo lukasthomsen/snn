@@ -1,12 +1,16 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 
 import { createSnnAuthClient, withTurnstileFetchOptions } from "@snn/auth/client";
 import { Button, Heading, InputOtp, LinkAction } from "@snn/ui";
 
 import { AuthStatusMessage } from "./auth-status-message";
-import { TurnstileField, type TurnstileChallenge } from "./turnstile-field";
+import {
+  TurnstileField,
+  type TurnstileChallenge,
+  type TurnstileFieldHandle,
+} from "./turnstile-field";
 
 type AuthEmailStageProps = {
   backLabel: string;
@@ -53,25 +57,29 @@ export function AuthEmailStage({
   const [isVerifying, setIsVerifying] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
   const maskedEmail = maskEmail(email);
 
   async function handleResend() {
     setMessage(undefined);
 
-    if (turnstile?.siteKey && !turnstileToken) {
-      setTone("danger");
-      setMessage(turnstile.requiredMessage);
-      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
-      return;
-    }
-
     setIsResending(true);
 
     try {
+      const verifiedTurnstileToken = turnstile?.siteKey
+        ? await turnstileRef.current?.execute()
+        : null;
+
+      if (turnstile?.siteKey && !verifiedTurnstileToken) {
+        setTone("danger");
+        setMessage(turnstile.unavailableMessage);
+        return;
+      }
+
       const result = await createSnnAuthClient().emailOtp.sendVerificationOtp({
         email,
         type: "email-verification",
-        ...withTurnstileFetchOptions(turnstileToken),
+        ...withTurnstileFetchOptions(verifiedTurnstileToken ?? turnstileToken),
       });
 
       if (result.error) {
@@ -176,6 +184,7 @@ export function AuthEmailStage({
           challenge={turnstile}
           disabled={isVerifying || isResending}
           onTokenChange={setTurnstileToken}
+          ref={turnstileRef}
           resetSignal={turnstileResetSignal}
         />
         <p className="auth-email-stage__resend__SW0l4">

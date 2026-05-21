@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createSnnAuthClient, withTurnstileFetchOptions } from "@snn/auth/client";
 import { AppleLogoIcon, Button, GoogleLogoIcon } from "@snn/ui";
 import type { ControlSize } from "@snn/ui";
 
 import { AuthStatusMessage } from "./auth-status-message";
-import { TurnstileField, type TurnstileChallenge } from "./turnstile-field";
+import {
+  TurnstileField,
+  type TurnstileChallenge,
+  type TurnstileFieldHandle,
+} from "./turnstile-field";
 
 export type SocialAuthButtonsProps = {
   appleLabel: string;
@@ -45,6 +49,7 @@ export function SocialAuthButtons({
   );
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
   const authClient = useMemo(() => createSnnAuthClient(), []);
 
   useEffect(() => {
@@ -96,21 +101,24 @@ export function SocialAuthButtons({
       return;
     }
 
-    if (turnstile?.siteKey && !turnstileToken) {
-      setMessage(turnstile.requiredMessage);
-      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
-      return;
-    }
-
     setPendingProvider(provider);
 
     try {
+      const verifiedTurnstileToken = turnstile?.siteKey
+        ? await turnstileRef.current?.execute()
+        : null;
+
+      if (turnstile?.siteKey && !verifiedTurnstileToken) {
+        setMessage(turnstile.unavailableMessage);
+        return;
+      }
+
       const result = await authClient.signIn.social({
         callbackURL,
         errorCallbackURL,
         ...(newUserCallbackURL ? { newUserCallbackURL } : {}),
         provider,
-        ...withTurnstileFetchOptions(turnstileToken),
+        ...withTurnstileFetchOptions(verifiedTurnstileToken ?? turnstileToken),
       });
 
       if (result.error) {
@@ -171,6 +179,7 @@ export function SocialAuthButtons({
         challenge={turnstile}
         disabled={pendingProvider !== null}
         onTokenChange={setTurnstileToken}
+        ref={turnstileRef}
         resetSignal={turnstileResetSignal}
       />
       <AuthStatusMessage message={message} tone="danger" />

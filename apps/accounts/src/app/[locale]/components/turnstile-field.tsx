@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 import type { AuthTurnstileAction } from "@snn/auth/policy";
 
 type TurnstileApi = {
+  execute?: (container: HTMLElement | string) => void;
   getResponse?: (widgetId?: string) => string | undefined;
   remove?: (widgetId: string) => void;
   render: (
@@ -35,6 +43,11 @@ type TurnstileFieldProps = {
   resetSignal: number;
 };
 
+export type TurnstileFieldHandle = {
+  execute: () => Promise<string | null>;
+  reset: () => void;
+};
+
 function loadTurnstileScript() {
   if (window.turnstile) {
     return Promise.resolve();
@@ -63,34 +76,141 @@ function loadTurnstileScript() {
   return window.__snnTurnstileScript;
 }
 
-export function TurnstileField({
+export const TurnstileField = forwardRef<TurnstileFieldHandle, TurnstileFieldProps>(function TurnstileField({
   challenge,
   disabled = false,
   onTokenChange,
   resetSignal,
-}: TurnstileFieldProps) {
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const activeTokenRef = useRef<string | null>(null);
   const hasResetSignalMounted = useRef(false);
+  const pendingTokenResolversRef = useRef<Array<(token: string | null) => void>>([]);
+  const readyPromiseRef = useRef<Promise<boolean> | null>(null);
+  const resolveReadyRef = useRef<((ready: boolean) => void) | null>(null);
   const [hasChallengeFrame, setHasChallengeFrame] = useState(false);
   const [isInteractive, setIsInteractive] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
+
+  const resolvePendingTokenRequests = useCallback((token: string | null) => {
+    const resolvers = pendingTokenResolversRef.current.splice(0);
+
+    for (const resolve of resolvers) {
+      resolve(token);
+    }
+  }, []);
+
+  const publishToken = useCallback((token: string | null) => {
+    activeTokenRef.current = token;
+    onTokenChange(token);
+    resolvePendingTokenRequests(token);
+  }, [onTokenChange, resolvePendingTokenRequests]);
+
+  const resolveReady = useCallback((ready: boolean) => {
+    resolveReadyRef.current?.(ready);
+    readyPromiseRef.current = Promise.resolve(ready);
+    resolveReadyRef.current = null;
+  }, []);
+
+  const waitForReady = useCallback(() => {
+    if (!challenge?.siteKey) {
+      return Promise.resolve(false);
+    }
+
+    if (widgetIdRef.current && window.turnstile) {
+      return Promise.resolve(true);
+    }
+
+    readyPromiseRef.current ??= new Promise<boolean>((resolve) => {
+      resolveReadyRef.current = resolve;
+    });
+
+    return readyPromiseRef.current;
+  }, [challenge?.siteKey]);
+
+  const resetChallenge = useCallback(() => {
+    activeTokenRef.current = null;
+    onTokenChange(null);
+    resolvePendingTokenRequests(null);
+    setHasChallengeFrame(false);
+    setIsInteractive(false);
+
+    if (widgetIdRef.current) {
+      window.turnstile?.reset?.(widgetIdRef.current);
+    }
+  }, [onTokenChange, resolvePendingTokenRequests]);
+
+  const executeChallenge = useCallback(async () => {
+    if (!challenge?.siteKey) {
+      return null;
+    }
+
+    if (activeTokenRef.current) {
+      return activeTokenRef.current;
+    }
+
+    setMessage(undefined);
+    const isReady = await waitForReady();
+
+    const container = containerRef.current;
+    const turnstile = window.turnstile;
+    const execute = turnstile?.execute;
+
+    if (!isReady || !container || !turnstile || !execute) {
+      setMessage(challenge.unavailableMessage);
+      return null;
+    }
+
+    return new Promise<string | null>((resolve) => {
+      let hasSettled = false;
+
+      const settle = (token: string | null) => {
+        if (hasSettled) {
+          return;
+        }
+
+        hasSettled = true;
+        window.clearTimeout(timeoutId);
+        resolve(token);
+      };
+
+      pendingTokenResolversRef.current.push(settle);
+      const timeoutId = window.setTimeout(() => {
+        pendingTokenResolversRef.current = pendingTokenResolversRef.current.filter(
+          (resolver) => resolver !== settle,
+        );
+        setMessage(challenge.unavailableMessage);
+        settle(null);
+      }, 15000);
+
+      try {
+        execute.call(turnstile, container);
+      } catch {
+        pendingTokenResolversRef.current = pendingTokenResolversRef.current.filter(
+          (resolver) => resolver !== settle,
+        );
+        setMessage(challenge.unavailableMessage);
+        settle(null);
+      }
+    });
+  }, [challenge?.siteKey, challenge?.unavailableMessage, waitForReady]);
+
+  useImperativeHandle(ref, () => ({
+    execute: executeChallenge,
+    reset: resetChallenge,
+  }), [executeChallenge, resetChallenge]);
 
   useEffect(() => {
     if (!challenge?.siteKey || !containerRef.current) {
       activeTokenRef.current = null;
       onTokenChange(null);
+      resolveReady(false);
       return;
     }
 
     let isMounted = true;
     let responseSyncId: number | undefined;
-
-    const publishToken = (token: string | null) => {
-      activeTokenRef.current = token;
-      onTokenChange(token);
-    };
 
     const syncResponseToken = () => {
       if (!isMounted || !widgetIdRef.current || !window.turnstile?.getResponse) {
@@ -116,6 +236,11 @@ export function TurnstileField({
         setMessage(undefined);
         setHasChallengeFrame(false);
         setIsInteractive(false);
+        activeTokenRef.current = null;
+        onTokenChange(null);
+        readyPromiseRef.current = new Promise<boolean>((resolve) => {
+          resolveReadyRef.current = resolve;
+        });
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           action: challenge.action,
           appearance: "interaction-only",
@@ -137,7 +262,9 @@ export function TurnstileField({
             setIsInteractive(false);
             publishToken(null);
             setMessage(challenge.unavailableMessage);
+            return true;
           },
+          execution: "execute",
           "expired-callback"() {
             setHasChallengeFrame(false);
             setIsInteractive(false);
@@ -161,10 +288,12 @@ export function TurnstileField({
             setIsInteractive(false);
             publishToken(null);
             setMessage(challenge.unavailableMessage);
+            return true;
           },
           sitekey: challenge.siteKey,
           theme: "light",
         });
+        resolveReady(true);
         syncResponseToken();
         responseSyncId = window.setInterval(syncResponseToken, 750);
       })
@@ -173,6 +302,7 @@ export function TurnstileField({
           setHasChallengeFrame(false);
           setIsInteractive(false);
           publishToken(null);
+          resolveReady(false);
           setMessage(challenge.unavailableMessage);
         }
       });
@@ -188,9 +318,16 @@ export function TurnstileField({
         window.turnstile.remove(widgetIdRef.current);
       }
 
+      resolvePendingTokenRequests(null);
       widgetIdRef.current = null;
     };
-  }, [challenge, onTokenChange]);
+  }, [
+    challenge,
+    onTokenChange,
+    publishToken,
+    resolvePendingTokenRequests,
+    resolveReady,
+  ]);
 
   useEffect(() => {
     if (!challenge?.siteKey || !containerRef.current) {
@@ -218,13 +355,8 @@ export function TurnstileField({
       return;
     }
 
-    activeTokenRef.current = null;
-    onTokenChange(null);
-
-    if (widgetIdRef.current) {
-      window.turnstile?.reset?.(widgetIdRef.current);
-    }
-  }, [onTokenChange, resetSignal]);
+    resetChallenge();
+  }, [resetChallenge, resetSignal]);
 
   if (!challenge?.siteKey) {
     return null;
@@ -248,4 +380,4 @@ export function TurnstileField({
       ) : null}
     </div>
   );
-}
+});

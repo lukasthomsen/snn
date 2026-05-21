@@ -408,7 +408,6 @@
 
 .turnstile__root__SW0m0[data-disabled="true"] {
   opacity: 0.72;
-  pointer-events: none;
 }
 
 .turnstile__root__SW0m0[data-challenge-visible="true"],

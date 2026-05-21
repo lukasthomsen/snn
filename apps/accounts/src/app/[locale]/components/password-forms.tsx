@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { createSnnAuthClient, withTurnstileFetchOptions } from "@snn/auth/client";
 import { authPasswordPolicy } from "@snn/auth/policy";
@@ -12,7 +12,11 @@ import {
   removeFieldError,
   type FieldErrors,
 } from "./form-validation";
-import { TurnstileField, type TurnstileChallenge } from "./turnstile-field";
+import {
+  TurnstileField,
+  type TurnstileChallenge,
+  type TurnstileFieldHandle,
+} from "./turnstile-field";
 
 const passwordMinLength = authPasswordPolicy.minLength;
 const passwordMaxLength = authPasswordPolicy.maxLength;
@@ -111,6 +115,7 @@ export function ForgotPasswordForm({
   const [isPending, setIsPending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
 
   function clearFieldError(field: ForgotPasswordFieldName) {
     setFieldErrors((currentErrors) => removeFieldError(currentErrors, field));
@@ -137,19 +142,22 @@ export function ForgotPasswordForm({
       return;
     }
 
-    if (turnstile?.siteKey && !turnstileToken) {
-      setError(turnstile.requiredMessage);
-      setTurnstileResetSignal((currentSignal) => currentSignal + 1);
-      return;
-    }
-
     setIsPending(true);
 
     try {
+      const verifiedTurnstileToken = turnstile?.siteKey
+        ? await turnstileRef.current?.execute()
+        : null;
+
+      if (turnstile?.siteKey && !verifiedTurnstileToken) {
+        setError(turnstile.unavailableMessage);
+        return;
+      }
+
       await createSnnAuthClient().requestPasswordReset({
         email,
         redirectTo: resetRedirectURL,
-        ...withTurnstileFetchOptions(turnstileToken),
+        ...withTurnstileFetchOptions(verifiedTurnstileToken ?? turnstileToken),
       });
 
       setSuccess(successMessage);
@@ -194,6 +202,7 @@ export function ForgotPasswordForm({
         challenge={turnstile}
         disabled={isPending}
         onTokenChange={setTurnstileToken}
+        ref={turnstileRef}
         resetSignal={turnstileResetSignal}
       />
       <Button

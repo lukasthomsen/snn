@@ -39,6 +39,14 @@ sites using Invisible mode to reference the Cloudflare Turnstile Privacy Addendu
 in their own privacy policy; the storefront privacy notice includes that
 reference.
 
+The accounts app uses explicit rendering because auth forms are React client
+components. It renders Turnstile with `execution: "execute"` and calls
+`turnstile.execute()` inside the submit handler after client-side field
+validation passes. The resulting callback token is sent in
+`x-snn-turnstile-token` on the same protected auth request. Do not gate submit on
+a token that may or may not have been generated during page load, and do not hide
+visible Managed widgets with CSS.
+
 ## Preview Policy
 
 Preview deployments intentionally do not receive a Turnstile widget by default.
