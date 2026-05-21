@@ -847,7 +847,7 @@ function auditTurnstileConfig(authHtml, sourceText) {
 
   return {
     authPage: authLoadsScript || authHasSiteKey || authHasAnySiteKey
-      ? "Turnstile widget appears on the production auth page."
+      ? "Turnstile is active on the production auth page."
       : "Foundation configured, widget not active yet.",
     keyPair: {
       hasSecretKey,

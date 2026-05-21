@@ -1,6 +1,6 @@
 # Step 2 Edge Setup Audit
 
-Generated: 2026-05-20T21:51:51.167Z
+Generated: 2026-05-21T08:48:04.798Z
 
 ## Summary
 
@@ -17,21 +17,21 @@ Overall status: **PASS**
 | DNS/host headers | PASS | Page hostnames should resolve to Vercel and avoid Cloudflare proxy headers. |
 | Public routes | PASS | Routes should return expected statuses with Vercel headers. |
 | Cloudflare Images | PASS | 12 Cloudflare Images sample(s) checked. |
-| Turnstile | PASS | Turnstile widget appears on the production auth page. |
+| Turnstile | PASS | Turnstile is active on the production auth page. |
 | Cloudflare API | PASS | All expected Cloudflare Images variants are present and match repo definitions. Cloudflare Turnstile API returned 2 widget(s); live auth page uses snn-auth-prod and authorizes accounts.veloro.dk. |
 | Vercel API | PASS | 3 Vercel project(s) checked with read-only API calls. |
 | Docs | PASS | Cloudflare docs describe Vercel-primary page delivery. |
 
 ## DNS And Page Host Headers
 
-Nameservers for `veloro.dk`: ns1.simply.com, ns2.simply.com, ns3.simply.com
+Nameservers for `veloro.dk`: ns1.simply.com, ns3.simply.com, ns2.simply.com
 
 | Name | Host | Status | A | CNAME | Server | x-vercel-id | cf-ray |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| apex | veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::zf9j2-1779313899227-fdb7beab2e6d | - |
-| storefront | www.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::wbn9n-1779313899570-68e9125a0da2 | - |
-| accounts | accounts.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::bhfdm-1779313899877-ee58a0d45661 | - |
-| admin | admin.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::tvjgv-1779313900428-5204d6c448fd | - |
+| apex | veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::28pjt-1779353273935-d2bf55605192 | - |
+| storefront | www.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::qgkq5-1779353274329-4ffd84c4b394 | - |
+| accounts | accounts.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::ltf65-1779353274654-543349a377d7 | - |
+| admin | admin.veloro.dk | PASS | 216.198.79.1 | - | Vercel | arn1::fra1::6c6k6-1779353275306-5b1da3c63460 | - |
 
 ## Public Route Headers
 
@@ -52,25 +52,25 @@ Configured delivery hash: present
 
 | Status | Sample URL | HTTP | Content-Type | Server | cf-ray |
 | --- | --- | --- | --- | --- | --- |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-4...212ab/productcard | 200 | image/svg+xml | cloudflare | 9fee90815b4d267b-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-9...de23f/productcard | 200 | image/svg+xml | cloudflare | 9fee90827b01a8b6-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e83b8/productcard | 200 | image/svg+xml | cloudflare | 9fee90831fa60839-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-2...cc7e4/productcard | 200 | image/svg+xml | cloudflare | 9fee90842e18a5a4-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-8...5b57d/productcard | 200 | image/svg+xml | cloudflare | 9fee9084ca949a01-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...b5d34/productcard | 200 | image/svg+xml | cloudflare | 9fee9085ccc4d2d0-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-0...b9262/productcard | 200 | image/svg+xml | cloudflare | 9fee908669165b0a-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...d7e6c/productcard | 200 | image/svg+xml | cloudflare | 9fee9087adef4f62-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-b...42ad6/productcard | 200 | image/svg+xml | cloudflare | 9fee9088dac58755-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-7...89e04/productcard | 200 | image/svg+xml | cloudflare | 9fee90898afbd90a-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e6722/productcard | 200 | image/svg+xml | cloudflare | 9fee908aba904e1e-CPH |
-| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...ab52f/productcard | 200 | image/svg+xml | cloudflare | 9fee908beea85b0a-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-4...212ab/productcard | 200 | image/svg+xml | cloudflare | 9ff251cbbadc868c-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-9...de23f/productcard | 200 | image/svg+xml | cloudflare | 9ff251cc5ad83355-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e83b8/productcard | 200 | image/svg+xml | cloudflare | 9ff251ccfe8ffea1-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-2...cc7e4/productcard | 200 | image/svg+xml | cloudflare | 9ff251cdaf582af8-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-8...5b57d/productcard | 200 | image/svg+xml | cloudflare | 9ff251ce4e1631a2-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-a...b5d34/productcard | 200 | image/svg+xml | cloudflare | 9ff251ceeb54a628-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-0...b9262/productcard | 200 | image/svg+xml | cloudflare | 9ff251cf88413355-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...d7e6c/productcard | 200 | image/svg+xml | cloudflare | 9ff251d03ac5daa7-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-b...42ad6/productcard | 200 | image/svg+xml | cloudflare | 9ff251d0dbc9cd9c-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-7...89e04/productcard | 200 | image/svg+xml | cloudflare | 9ff251d17a663f14-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-d...e6722/productcard | 200 | image/svg+xml | cloudflare | 9ff251d229cf1255-CPH |
+| PASS | https://imagedelivery.net/YAkvJ...rJcPw/snn-5...ab52f/productcard | 200 | image/svg+xml | cloudflare | 9ff251d2c8982c59-CPH |
 
 Cloudflare Images API: All expected Cloudflare Images variants are present and match repo definitions.
 
 ## Turnstile
 
 - Key pair: site key present / secret key present
-- Auth page: Turnstile widget appears on the production auth page.
+- Auth page: Turnstile is active on the production auth page.
 - Server validation: wired to Siteverify
 - Cloudflare API: Cloudflare Turnstile API returned 2 widget(s); live auth page uses snn-auth-prod and authorizes accounts.veloro.dk.
 
