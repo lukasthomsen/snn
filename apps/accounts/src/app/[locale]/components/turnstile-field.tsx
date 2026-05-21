@@ -74,7 +74,6 @@ export function TurnstileField({
   const activeTokenRef = useRef<string | null>(null);
   const hasResetSignalMounted = useRef(false);
   const [hasChallengeFrame, setHasChallengeFrame] = useState(false);
-  const [isFallbackVisible, setIsFallbackVisible] = useState(false);
   const [isInteractive, setIsInteractive] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
 
@@ -102,7 +101,6 @@ export function TurnstileField({
 
       if (token && token !== activeTokenRef.current) {
         setHasChallengeFrame(false);
-        setIsFallbackVisible(false);
         setIsInteractive(false);
         setMessage(undefined);
         publishToken(token);
@@ -117,10 +115,10 @@ export function TurnstileField({
 
         setMessage(undefined);
         setHasChallengeFrame(false);
-        setIsFallbackVisible(false);
         setIsInteractive(false);
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           action: challenge.action,
+          appearance: "interaction-only",
           "after-interactive-callback"() {
             setIsInteractive(false);
           },
@@ -130,21 +128,18 @@ export function TurnstileField({
           },
           callback(token: string) {
             setHasChallengeFrame(false);
-            setIsFallbackVisible(false);
             setIsInteractive(false);
             setMessage(undefined);
             publishToken(token);
           },
           "error-callback"() {
             setHasChallengeFrame(false);
-            setIsFallbackVisible(false);
             setIsInteractive(false);
             publishToken(null);
             setMessage(challenge.unavailableMessage);
           },
           "expired-callback"() {
             setHasChallengeFrame(false);
-            setIsFallbackVisible(false);
             setIsInteractive(false);
             publishToken(null);
 
@@ -154,7 +149,6 @@ export function TurnstileField({
           },
           "timeout-callback"() {
             setHasChallengeFrame(false);
-            setIsFallbackVisible(false);
             setIsInteractive(false);
             publishToken(null);
 
@@ -164,7 +158,6 @@ export function TurnstileField({
           },
           "unsupported-callback"() {
             setHasChallengeFrame(false);
-            setIsFallbackVisible(false);
             setIsInteractive(false);
             publishToken(null);
             setMessage(challenge.unavailableMessage);
@@ -178,7 +171,6 @@ export function TurnstileField({
       .catch(() => {
         if (isMounted) {
           setHasChallengeFrame(false);
-          setIsFallbackVisible(false);
           setIsInteractive(false);
           publishToken(null);
           setMessage(challenge.unavailableMessage);
@@ -203,7 +195,6 @@ export function TurnstileField({
   useEffect(() => {
     if (!challenge?.siteKey || !containerRef.current) {
       setHasChallengeFrame(false);
-      setIsFallbackVisible(false);
       return;
     }
 
@@ -228,7 +219,6 @@ export function TurnstileField({
     }
 
     activeTokenRef.current = null;
-    setIsFallbackVisible(true);
     onTokenChange(null);
 
     if (widgetIdRef.current) {
@@ -240,7 +230,7 @@ export function TurnstileField({
     return null;
   }
 
-  const isChallengeVisible = isFallbackVisible || (isInteractive && hasChallengeFrame);
+  const isChallengeVisible = isInteractive && hasChallengeFrame;
 
   return (
     <div
