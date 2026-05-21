@@ -407,10 +407,12 @@
 }
 
 .turnstile__root__SW0m0:not([data-visible="true"]) {
-  position: absolute;
-  width: 1px;
-  height: 0;
-  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 300px;
+  height: 72px;
+  overflow: visible;
   pointer-events: none;
 }
 
@@ -424,11 +426,13 @@
 }
 
 .turnstile__root__SW0m0:not([data-challenge-visible="true"]) .turnstile__widget__SW0m1 {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 300px;
+  height: 72px;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .turnstile__root__SW0m0[data-challenge-visible="true"] .turnstile__widget__SW0m1 {

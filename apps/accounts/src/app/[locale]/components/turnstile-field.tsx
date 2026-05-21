@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AuthTurnstileAction } from "@snn/auth/policy";
 
 type TurnstileApi = {
+  getResponse?: (widgetId?: string) => string | undefined;
   remove?: (widgetId: string) => void;
   render: (
     container: HTMLElement,
@@ -70,6 +71,7 @@ export function TurnstileField({
 }: TurnstileFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const activeTokenRef = useRef<string | null>(null);
   const hasResetSignalMounted = useRef(false);
   const [hasChallengeFrame, setHasChallengeFrame] = useState(false);
   const [isInteractive, setIsInteractive] = useState(false);
@@ -77,11 +79,33 @@ export function TurnstileField({
 
   useEffect(() => {
     if (!challenge?.siteKey || !containerRef.current) {
+      activeTokenRef.current = null;
       onTokenChange(null);
       return;
     }
 
     let isMounted = true;
+    let responseSyncId: number | undefined;
+
+    const publishToken = (token: string | null) => {
+      activeTokenRef.current = token;
+      onTokenChange(token);
+    };
+
+    const syncResponseToken = () => {
+      if (!isMounted || !widgetIdRef.current || !window.turnstile?.getResponse) {
+        return;
+      }
+
+      const token = window.turnstile.getResponse(widgetIdRef.current);
+
+      if (token && token !== activeTokenRef.current) {
+        setHasChallengeFrame(false);
+        setIsInteractive(false);
+        setMessage(undefined);
+        publishToken(token);
+      }
+    };
 
     void loadTurnstileScript()
       .then(() => {
@@ -106,34 +130,59 @@ export function TurnstileField({
             setHasChallengeFrame(false);
             setIsInteractive(false);
             setMessage(undefined);
-            onTokenChange(token);
+            publishToken(token);
           },
           "error-callback"() {
             setHasChallengeFrame(false);
             setIsInteractive(false);
-            onTokenChange(null);
+            publishToken(null);
             setMessage(challenge.unavailableMessage);
           },
           "expired-callback"() {
             setHasChallengeFrame(false);
             setIsInteractive(false);
-            onTokenChange(null);
+            publishToken(null);
+
+            if (widgetIdRef.current) {
+              window.turnstile?.reset?.(widgetIdRef.current);
+            }
+          },
+          "timeout-callback"() {
+            setHasChallengeFrame(false);
+            setIsInteractive(false);
+            publishToken(null);
+
+            if (widgetIdRef.current) {
+              window.turnstile?.reset?.(widgetIdRef.current);
+            }
+          },
+          "unsupported-callback"() {
+            setHasChallengeFrame(false);
+            setIsInteractive(false);
+            publishToken(null);
+            setMessage(challenge.unavailableMessage);
           },
           sitekey: challenge.siteKey,
           theme: "light",
         });
+        syncResponseToken();
+        responseSyncId = window.setInterval(syncResponseToken, 750);
       })
       .catch(() => {
         if (isMounted) {
           setHasChallengeFrame(false);
           setIsInteractive(false);
-          onTokenChange(null);
+          publishToken(null);
           setMessage(challenge.unavailableMessage);
         }
       });
 
     return () => {
       isMounted = false;
+
+      if (responseSyncId !== undefined) {
+        window.clearInterval(responseSyncId);
+      }
 
       if (widgetIdRef.current && window.turnstile?.remove) {
         window.turnstile.remove(widgetIdRef.current);
@@ -169,6 +218,7 @@ export function TurnstileField({
       return;
     }
 
+    activeTokenRef.current = null;
     onTokenChange(null);
 
     if (widgetIdRef.current) {
