@@ -132,20 +132,21 @@ export function BackToAccountLink({ locale }: { locale: Locale }) {
 
 export function RewardsHero({
   displayName,
-  locale,
   rewards,
 }: {
   displayName: string;
   locale: Locale;
   rewards: CustomerRewardsPreview;
 }) {
+  const benefitItems = rewards.benefits.length > 0
+    ? rewards.benefits
+    : ["Earn XP with future orders", "Track your rewards progress", "Unlock member benefits"];
+
   return (
     <section className="accountHero__root__SW2a0">
       <div className="accountHero__inner__SW2a9">
         <div className="accountHero__name__SW2a1">
-          <p>Account dashboard</p>
           <h1>{displayName}</h1>
-          <span>{rewards.currentTier.label} member</span>
         </div>
 
         <div className="accountHero__xp__SW2a2">
@@ -165,18 +166,11 @@ export function RewardsHero({
             <strong>{rewards.currentXp}XP</strong>
             {rewards.nextTier ? <span>{rewards.xpToNextTier}XP to go</span> : <span>Top tier</span>}
           </div>
-          <Link
-            className="accountHero__rewardLink__SW2a6"
-            href={`/${locale}/account/rewards` as Route}
-            prefetch={false}
-          >
-            {rewards.isLocked ? "Unlock XP & rewards" : "View rewards"}
-          </Link>
         </div>
 
         <div className="accountHero__benefits__SW2a7">
-          <p>{rewards.currentTier.label} benefits</p>
-          {rewards.benefits.map((benefit) => (
+          <p>Benefits</p>
+          {benefitItems.map((benefit) => (
             <div className="accountHero__benefit__SW2a8" key={benefit}>
               <span aria-hidden="true">✓</span>
               {benefit}

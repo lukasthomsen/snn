@@ -156,7 +156,7 @@ const previewRewardTiers: CustomerRewardTier[] = [
     id: "starter",
     label: "Starter",
     threshold: 0,
-    benefits: ["Unlock XP & rewards", "Track points history", "Access member-only drops"],
+    benefits: ["Earn XP with orders", "Track points history", "Unlock member-only drops"],
   },
   {
     id: "tier-1",
@@ -505,7 +505,7 @@ function buildCustomerRewardsPreviewFromStats(input: {
   const orderXp = input.orderCount > 0
     ? input.orderCount * 280 + Math.floor(totalOrderAmount / 100)
     : 0;
-  const profileXp = 100;
+  const profileXp: number = 0;
   const addressXp = Math.min(input.addressCount * 50, 150);
   const likedXp = Math.min(input.likedProductCount * 20, 200);
   const securityXp =
@@ -531,14 +531,19 @@ function buildCustomerRewardsPreviewFromStats(input: {
     points: 280 + Math.floor(order.totalAmount / 100),
     occurredAt: order.placedAt,
   }));
+  const welcomeHistory: CustomerPointsHistoryItem[] = profileXp > 0
+    ? [
+        {
+          id: "welcome",
+          label: "Welcome XP",
+          description: "Account created",
+          points: profileXp,
+          occurredAt: input.profile.createdAt,
+        },
+      ]
+    : [];
   const history: CustomerPointsHistoryItem[] = [
-    {
-      id: "welcome",
-      label: "Welcome XP",
-      description: "Account created",
-      points: profileXp,
-      occurredAt: input.profile.createdAt,
-    },
+    ...welcomeHistory,
     ...orderHistory,
     ...(addressXp > 0
       ? [
