@@ -141,44 +141,48 @@ export function RewardsHero({
 }) {
   return (
     <section className="accountHero__root__SW2a0">
-      <div className="accountHero__name__SW2a1">
-        <h1>{displayName}</h1>
-      </div>
+      <div className="accountHero__inner__SW2a9">
+        <div className="accountHero__name__SW2a1">
+          <p>Account dashboard</p>
+          <h1>{displayName}</h1>
+          <span>{rewards.currentTier.label} member</span>
+        </div>
 
-      <div className="accountHero__xp__SW2a2">
-        <div className="accountHero__xpNumber__SW2a3">
-          <strong>{rewards.currentXp}</strong>
-          <span>XP</span>
-        </div>
-        <div className="accountHero__progress__SW2a4">
-          <ProgressBar
-            aria-label="Reward progress"
-            showValueLabel={false}
-            size="sm"
-            value={rewards.progressPercent}
-          />
-        </div>
-        <div className="accountHero__progressMeta__SW2a5">
-          <strong>{rewards.currentXp}XP</strong>
-          {rewards.nextTier ? <span>{rewards.xpToNextTier}XP to go</span> : <span>Top tier</span>}
-        </div>
-        <Link
-          className="accountHero__rewardLink__SW2a6"
-          href={`/${locale}/account/rewards` as Route}
-          prefetch={false}
-        >
-          {rewards.isLocked ? "Unlock XP & rewards" : "View rewards"}
-        </Link>
-      </div>
-
-      <div className="accountHero__benefits__SW2a7">
-        <p>{rewards.currentTier.label} benefits</p>
-        {rewards.benefits.map((benefit) => (
-          <div className="accountHero__benefit__SW2a8" key={benefit}>
-            <span aria-hidden="true">✓</span>
-            {benefit}
+        <div className="accountHero__xp__SW2a2">
+          <div className="accountHero__xpNumber__SW2a3">
+            <strong>{rewards.currentXp}</strong>
+            <span>XP</span>
           </div>
-        ))}
+          <div className="accountHero__progress__SW2a4">
+            <ProgressBar
+              aria-label="Reward progress"
+              showValueLabel={false}
+              size="sm"
+              value={rewards.progressPercent}
+            />
+          </div>
+          <div className="accountHero__progressMeta__SW2a5">
+            <strong>{rewards.currentXp}XP</strong>
+            {rewards.nextTier ? <span>{rewards.xpToNextTier}XP to go</span> : <span>Top tier</span>}
+          </div>
+          <Link
+            className="accountHero__rewardLink__SW2a6"
+            href={`/${locale}/account/rewards` as Route}
+            prefetch={false}
+          >
+            {rewards.isLocked ? "Unlock XP & rewards" : "View rewards"}
+          </Link>
+        </div>
+
+        <div className="accountHero__benefits__SW2a7">
+          <p>{rewards.currentTier.label} benefits</p>
+          {rewards.benefits.map((benefit) => (
+            <div className="accountHero__benefit__SW2a8" key={benefit}>
+              <span aria-hidden="true">✓</span>
+              {benefit}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
