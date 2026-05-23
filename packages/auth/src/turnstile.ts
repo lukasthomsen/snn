@@ -74,6 +74,13 @@ function getExpectedHostname(override?: string) {
   return new URL(getCanonicalAuthOrigin()).hostname;
 }
 
+function isUuid(value: string | undefined): value is string {
+  return Boolean(
+    value &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value),
+  );
+}
+
 export async function validateTurnstileToken(
   options: TurnstileValidationOptions,
 ): Promise<TurnstileValidationResult> {
@@ -93,15 +100,25 @@ export async function validateTurnstileToken(
     };
   }
 
+  const requestBody: Record<string, string> = {
+    response: options.token,
+    secret: secretKey,
+  };
+
+  if (options.remoteIp) {
+    requestBody.remoteip = options.remoteIp;
+  }
+
+  const idempotencyKey = options.idempotencyKey;
+
+  if (isUuid(idempotencyKey)) {
+    requestBody.idempotency_key = idempotencyKey;
+  }
+
   const response = await fetch(
     "https://challenges.cloudflare.com/turnstile/v0/siteverify",
     {
-      body: JSON.stringify({
-        idempotency_key: options.idempotencyKey,
-        remoteip: options.remoteIp,
-        response: options.token,
-        secret: secretKey,
-      }),
+      body: JSON.stringify(requestBody),
       headers: {
         "Content-Type": "application/json",
       },

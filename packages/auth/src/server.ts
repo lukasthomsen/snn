@@ -175,7 +175,6 @@ async function validateAuthTurnstileForPath(ctx: AuthTurnstileContext) {
 
   const result = await validateTurnstileToken({
     expectedAction,
-    idempotencyKey: getHeader(headers, "x-vercel-id"),
     remoteIp: getRequestRemoteIp(headers),
     token: getHeader(headers, authTurnstileHeaderName) ?? "",
   });
