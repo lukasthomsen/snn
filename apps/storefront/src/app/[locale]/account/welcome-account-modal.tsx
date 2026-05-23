@@ -118,18 +118,11 @@ export function WelcomeAccountModal({
       open={visible}
       scroll="inside"
       showCloseButton
-      size="full"
+      size="cover"
       title={copy.title}
     >
       <div className="accountWelcome__visual__SW9w2" aria-hidden="true">
-        <div className="accountWelcome__track__SW9w3">
-          <span>01</span>
-          <strong>XP</strong>
-          <span>02</span>
-          <strong>SEC</strong>
-          <span>03</span>
-        </div>
-        <div className="accountWelcome__rewardCard__SW9w4">
+        <div className="accountWelcome__media__SW9w3">
           <span>SNN</span>
           <strong>Member</strong>
           <small>Orders · Rewards · Security</small>

@@ -1254,7 +1254,7 @@
   max-height: 0;
   overflow: hidden;
   color: var(--color-danger-foreground);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-normal);
   opacity: 0;
   text-overflow: ellipsis;
   transition:
